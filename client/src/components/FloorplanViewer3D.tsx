@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from "react";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 interface Project {
   id: string;
@@ -30,9 +30,21 @@ interface FloorplanViewer3DProps {
 }
 
 const PROJECTS: Project[] = [
-  { id: '2320eeb4-596b-437d-b4cb-830bdb3c3b01', name: 'The Jackson', modelPath: '/the_jackson_v2.glb' },
-  { id: 'f3ae960d-a0a9-4449-82fe-ffab7b01f3fa', name: 'The Dime', modelPath: '/the_dime_v1.glb' },
-  { id: '6f9a358c-0fc6-41bd-bd5e-6234b68295cb', name: 'Gowanus', modelPath: '/gowanus_v1.glb' },
+  {
+    id: "2320eeb4-596b-437d-b4cb-830bdb3c3b01",
+    name: "The Jackson",
+    modelPath: "/the_jackson_v2.glb",
+  },
+  {
+    id: "f3ae960d-a0a9-4449-82fe-ffab7b01f3fa",
+    name: "The Dime",
+    modelPath: "/the_dime_v1.glb",
+  },
+  {
+    id: "6f9a358c-0fc6-41bd-bd5e-6234b68295cb",
+    name: "Gowanus",
+    modelPath: "/gowanus_v1.glb",
+  },
 ];
 
 const STATUS_COLORS: Record<string, number> = {
@@ -42,7 +54,11 @@ const STATUS_COLORS: Record<string, number> = {
   sold: 0xe74c3c,
 };
 
-export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: FloorplanViewer3DProps) {
+export default function FloorplanViewer3D({
+  projectId,
+  unitNumber,
+  onClose,
+}: FloorplanViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -58,7 +74,7 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
   const continuousCompassAngleRef = useRef<number>(0);
 
   const [currentProject, setCurrentProject] = useState<Project>(
-    PROJECTS.find(p => p.id === projectId) || PROJECTS[0]
+    PROJECTS.find((p) => p.id === projectId) || PROJECTS[0],
   );
   const [selectedUnit, setSelectedUnit] = useState<UnitData | null>(null);
   const [showPanel, setShowPanel] = useState(false);
@@ -71,62 +87,72 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
     setSelectedUnit(null);
   }, []);
 
-  const loadProject = useCallback(async (project: Project) => {
-    if (!sceneRef.current) return;
+  const loadProject = useCallback(
+    async (project: Project) => {
+      if (!sceneRef.current) return;
 
-    if (currentModelRef.current) {
-      sceneRef.current.remove(currentModelRef.current);
-    }
-    unitMeshMapRef.current.clear();
-    hideDetailsPanel();
-
-    const loader = new GLTFLoader();
-    loader.load(
-      project.modelPath,
-      (gltf) => {
-        currentModelRef.current = gltf.scene;
-        sceneRef.current!.add(currentModelRef.current);
-
-        currentModelRef.current.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.name.startsWith('Unit_')) {
-            unitMeshMapRef.current.set(child.name, child);
-            const edges = new THREE.EdgesGeometry(child.geometry);
-            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
-            const lineSegments = new THREE.LineSegments(edges, lineMaterial);
-            child.add(lineSegments);
-          }
-        });
-
-        fetchAndUpdateUnitColors(project.id);
-      },
-      (xhr) => {
-        console.log(`Loading ${project.name}: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`);
-      },
-      (error: unknown) => {
-        console.error('Error loading model:', {
-          project: project.name,
-          path: project.modelPath,
-          error: error,
-          message: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined
-        });
+      if (currentModelRef.current) {
+        sceneRef.current.remove(currentModelRef.current);
       }
-    );
-  }, [hideDetailsPanel]);
+      unitMeshMapRef.current.clear();
+      hideDetailsPanel();
+
+      const loader = new GLTFLoader();
+      loader.load(
+        project.modelPath,
+        (gltf) => {
+          currentModelRef.current = gltf.scene;
+          sceneRef.current!.add(currentModelRef.current);
+
+          currentModelRef.current.traverse((child) => {
+            if (child instanceof THREE.Mesh && child.name.startsWith("Unit_")) {
+              unitMeshMapRef.current.set(child.name, child);
+              const edges = new THREE.EdgesGeometry(child.geometry);
+              const lineMaterial = new THREE.LineBasicMaterial({
+                color: 0x000000,
+                linewidth: 2,
+              });
+              const lineSegments = new THREE.LineSegments(edges, lineMaterial);
+              child.add(lineSegments);
+            }
+          });
+
+          fetchAndUpdateUnitColors(project.id);
+        },
+        (xhr) => {
+          console.log(
+            `Loading ${project.name}: ${((xhr.loaded / xhr.total) * 100).toFixed(2)}%`,
+          );
+        },
+        (error: unknown) => {
+          console.error("Error loading model:", {
+            project: project.name,
+            path: project.modelPath,
+            error: error,
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          });
+        },
+      );
+    },
+    [hideDetailsPanel],
+  );
 
   const fetchAndUpdateUnitColors = async (projectId: string) => {
     try {
-      const response = await fetch('/api/units');
+      const response = await fetch("/api/units");
       const units = await response.json();
-      
-      const defaultMaterial = new THREE.MeshStandardMaterial({ color: 0xbdc3c7 });
-      unitMeshMapRef.current.forEach(mesh => {
+
+      const defaultMaterial = new THREE.MeshStandardMaterial({
+        color: 0xbdc3c7,
+      });
+      unitMeshMapRef.current.forEach((mesh) => {
         mesh.material = defaultMaterial;
       });
 
       units.forEach((unit: any) => {
         if (unit.project?.id !== projectId) return;
-        
+
         const meshName = `Unit_${unit.unitNumber}`;
         const mesh = unitMeshMapRef.current.get(meshName);
         if (mesh) {
@@ -139,21 +165,24 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
         const targetMeshName = `Unit_${unitNumber}`;
         const targetMesh = unitMeshMapRef.current.get(targetMeshName);
         if (targetMesh) {
-          const unit = units.find((u: any) => 
-            u.unitNumber === unitNumber && u.project?.id === projectId
+          const unit = units.find(
+            (u: any) =>
+              u.unitNumber === unitNumber && u.project?.id === projectId,
           );
-          const statusColor = unit ? (STATUS_COLORS[unit.status] || 0xbdc3c7) : 0xbdc3c7;
-          targetMesh.material = new THREE.MeshStandardMaterial({ 
-            color: statusColor, 
-            emissive: 0xffff00, 
-            emissiveIntensity: 0.5 
+          const statusColor = unit
+            ? STATUS_COLORS[unit.status] || 0xbdc3c7
+            : 0xbdc3c7;
+          targetMesh.material = new THREE.MeshStandardMaterial({
+            color: statusColor,
+            emissive: 0xffff00,
+            emissiveIntensity: 0.5,
           });
           highlightedMeshRef.current = targetMesh;
           fetchUnitDetails(unitNumber);
         }
       }
     } catch (error) {
-      console.error('Error fetching units:', error);
+      console.error("Error fetching units:", error);
     }
   };
 
@@ -162,11 +191,12 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/units');
+      const response = await fetch("/api/units");
       const units = await response.json();
-      
-      const unit = units.find((u: any) => 
-        u.unitNumber === unitNumber && u.project?.id === currentProject.id
+
+      const unit = units.find(
+        (u: any) =>
+          u.unitNumber === unitNumber && u.project?.id === currentProject.id,
       );
 
       if (unit) {
@@ -175,16 +205,18 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
           unitNumber: unit.unitNumber,
           price: unit.price,
           status: unit.status,
-          floorPlan: unit.floorPlan ? {
-            planName: unit.floorPlan.planName,
-            sqFt: unit.floorPlan.sqFt,
-            imgUrl: unit.floorPlan.imgUrl,
-          } : undefined,
+          floorPlan: unit.floorPlan
+            ? {
+                planName: unit.floorPlan.planName,
+                sqFt: unit.floorPlan.sqFt,
+                imgUrl: unit.floorPlan.imgUrl,
+              }
+            : undefined,
         });
         setShowPanel(true);
       }
     } catch (error) {
-      console.error('Error fetching unit details:', error);
+      console.error("Error fetching unit details:", error);
     } finally {
       setIsLoading(false);
     }
@@ -196,61 +228,69 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
 
     try {
       const response = await fetch(`/api/units/${selectedUnit.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: selectedUnit.status }),
       });
 
       if (response.ok) {
-        const mesh = unitMeshMapRef.current.get(`Unit_${selectedUnit.unitNumber}`);
+        const mesh = unitMeshMapRef.current.get(
+          `Unit_${selectedUnit.unitNumber}`,
+        );
         if (mesh) {
           const color = STATUS_COLORS[selectedUnit.status] || 0xbdc3c7;
           mesh.material = new THREE.MeshStandardMaterial({ color });
         }
       }
     } catch (error) {
-      console.error('Error updating unit:', error);
+      console.error("Error updating unit:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCanvasInteraction = useCallback((event: MouseEvent | TouchEvent) => {
-    if (!canvasRef.current || !cameraRef.current || !sceneRef.current) return;
+  const handleCanvasInteraction = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      if (!canvasRef.current || !cameraRef.current || !sceneRef.current) return;
 
-    const panelElement = document.getElementById('unit-details-panel');
-    if (panelElement?.contains(event.target as Node)) return;
+      const panelElement = document.getElementById("unit-details-panel");
+      if (panelElement?.contains(event.target as Node)) return;
 
-    const touch = 'changedTouches' in event ? event.changedTouches[0] : null;
-    const clientX = touch ? touch.clientX : (event as MouseEvent).clientX;
-    const clientY = touch ? touch.clientY : (event as MouseEvent).clientY;
+      const touch = "changedTouches" in event ? event.changedTouches[0] : null;
+      const clientX = touch ? touch.clientX : (event as MouseEvent).clientX;
+      const clientY = touch ? touch.clientY : (event as MouseEvent).clientY;
 
-    const rect = canvasRef.current.getBoundingClientRect();
-    mouseRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    mouseRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      const rect = canvasRef.current.getBoundingClientRect();
+      mouseRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
-    raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
-    const intersects = raycasterRef.current.intersectObjects(sceneRef.current.children, true);
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      const intersects = raycasterRef.current.intersectObjects(
+        sceneRef.current.children,
+        true,
+      );
 
-    let targetUnit: THREE.Object3D | null = null;
-    if (intersects.length > 0) {
-      let object: THREE.Object3D | null = intersects[0].object;
-      while (object) {
-        if (object.name.startsWith('Unit_')) {
-          targetUnit = object;
-          break;
+      let targetUnit: THREE.Object3D | null = null;
+      if (intersects.length > 0) {
+        let object: THREE.Object3D | null = intersects[0].object;
+        while (object) {
+          if (object.name.startsWith("Unit_")) {
+            targetUnit = object;
+            break;
+          }
+          object = object.parent;
         }
-        object = object.parent;
       }
-    }
 
-    if (targetUnit) {
-      const unitNumber = targetUnit.name.split('_')[1];
-      fetchUnitDetails(unitNumber);
-    } else {
-      hideDetailsPanel();
-    }
-  }, [hideDetailsPanel]);
+      if (targetUnit) {
+        const unitNumber = targetUnit.name.split("_")[1];
+        fetchUnitDetails(unitNumber);
+      } else {
+        hideDetailsPanel();
+      }
+    },
+    [hideDetailsPanel],
+  );
 
   // Client-side only mounting
   useEffect(() => {
@@ -268,9 +308,9 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      1000,
     );
-    camera.position.set(2.15, 100, 200.83);
+    camera.position.set(2.15, 0, 200.83);
     cameraRef.current = camera;
 
     let renderer: THREE.WebGLRenderer;
@@ -283,7 +323,7 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
       renderer.setPixelRatio(window.devicePixelRatio);
       rendererRef.current = renderer;
     } catch (error) {
-      console.error('WebGL not supported:', error);
+      console.error("WebGL not supported:", error);
       setWebglError(true);
       return;
     }
@@ -306,7 +346,7 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
     const minPan = new THREE.Vector3(-50, -20, -50);
     const maxPan = new THREE.Vector3(50, 20, 50);
     const _v = new THREE.Vector3();
-    controls.addEventListener('change', () => {
+    controls.addEventListener("change", () => {
       _v.copy(controls.target);
       controls.target.clamp(minPan, maxPan);
       _v.sub(controls.target);
@@ -319,7 +359,12 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
 
       if (compassImgRef.current) {
         const currentAzimuthalAngle = controls.getAzimuthalAngle();
-        const delta = (currentAzimuthalAngle - (continuousCompassAngleRef.current % (2 * Math.PI)) + (3 * Math.PI)) % (2 * Math.PI) - Math.PI;
+        const delta =
+          ((currentAzimuthalAngle -
+            (continuousCompassAngleRef.current % (2 * Math.PI)) +
+            3 * Math.PI) %
+            (2 * Math.PI)) -
+          Math.PI;
         continuousCompassAngleRef.current += delta;
         compassImgRef.current.style.transform = `rotate(${continuousCompassAngleRef.current}rad)`;
       }
@@ -334,9 +379,11 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(window.innerWidth, window.innerHeight);
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
-    let touchStartX = 0, touchStartY = 0, isDragging = false;
+    let touchStartX = 0,
+      touchStartY = 0,
+      isDragging = false;
     const dragThreshold = 10;
     const handleTouchStart = (e: TouchEvent) => {
       isDragging = false;
@@ -344,8 +391,10 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
       touchStartY = e.touches[0].clientY;
     };
     const handleTouchMove = (e: TouchEvent) => {
-      if (Math.abs(e.touches[0].clientX - touchStartX) > dragThreshold ||
-          Math.abs(e.touches[0].clientY - touchStartY) > dragThreshold) {
+      if (
+        Math.abs(e.touches[0].clientX - touchStartX) > dragThreshold ||
+        Math.abs(e.touches[0].clientY - touchStartY) > dragThreshold
+      ) {
         isDragging = true;
       }
     };
@@ -353,20 +402,23 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
       if (!isDragging) handleCanvasInteraction(e);
     };
 
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd);
-    window.addEventListener('click', handleCanvasInteraction as EventListener);
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd);
+    window.addEventListener("click", handleCanvasInteraction as EventListener);
 
     loadProject(currentProject);
 
     return () => {
       cancelAnimationFrame(animationFrameRef.current);
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-      window.removeEventListener('click', handleCanvasInteraction as EventListener);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener(
+        "click",
+        handleCanvasInteraction as EventListener,
+      );
       controls.dispose();
       renderer.dispose();
     };
@@ -377,12 +429,19 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
       {webglError && (
         <div className="absolute inset-0 flex items-center justify-center z-[100]">
           <div className="bg-card p-8 rounded-lg shadow-lg max-w-md text-center">
-            <h2 className="text-2xl font-black uppercase mb-4">3D VIEW UNAVAILABLE</h2>
+            <h2 className="text-2xl font-black uppercase mb-4">
+              3D VIEW UNAVAILABLE
+            </h2>
             <p className="text-muted-foreground mb-6">
-              Your browser or device doesn't support WebGL, which is required for the 3D viewer.
+              Your browser or device doesn't support WebGL, which is required
+              for the 3D viewer.
             </p>
             {onClose && (
-              <Button onClick={onClose} className="uppercase font-black" data-testid="button-close-webgl-error">
+              <Button
+                onClick={onClose}
+                className="uppercase font-black"
+                data-testid="button-close-webgl-error"
+              >
                 CLOSE
               </Button>
             )}
@@ -393,8 +452,8 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
         {PROJECTS.map((project) => (
           <Button
             key={project.id}
-            data-testid={`button-project-${project.name.toLowerCase().replace(/\s+/g, '-')}`}
-            variant={currentProject.id === project.id ? 'default' : 'outline'}
+            data-testid={`button-project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
+            variant={currentProject.id === project.id ? "default" : "outline"}
             onClick={() => {
               setCurrentProject(project);
               loadProject(project);
@@ -429,7 +488,7 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
           >
             &times;
           </button>
-          
+
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold uppercase">
               UNIT {selectedUnit.unitNumber}
@@ -453,17 +512,23 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
           <div className="space-y-3">
             <div className="flex justify-between">
               <strong>PRICE:</strong>
-              <span data-testid="text-unit-price">${selectedUnit.price.toLocaleString()}</span>
+              <span data-testid="text-unit-price">
+                ${selectedUnit.price.toLocaleString()}
+              </span>
             </div>
             {selectedUnit.floorPlan && (
               <>
                 <div className="flex justify-between">
                   <strong>FLOOR PLAN:</strong>
-                  <span data-testid="text-floor-plan">{selectedUnit.floorPlan.planName}</span>
+                  <span data-testid="text-floor-plan">
+                    {selectedUnit.floorPlan.planName}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <strong>SQ FT:</strong>
-                  <span data-testid="text-sq-ft">{selectedUnit.floorPlan.sqFt.toLocaleString()}</span>
+                  <span data-testid="text-sq-ft">
+                    {selectedUnit.floorPlan.sqFt.toLocaleString()}
+                  </span>
                 </div>
               </>
             )}
@@ -472,7 +537,9 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
               <select
                 data-testid="select-unit-status"
                 value={selectedUnit.status}
-                onChange={(e) => setSelectedUnit({ ...selectedUnit, status: e.target.value })}
+                onChange={(e) =>
+                  setSelectedUnit({ ...selectedUnit, status: e.target.value })
+                }
                 className="px-2 py-1 rounded border bg-background"
               >
                 <option value="available">Available</option>
@@ -503,7 +570,11 @@ export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: Fl
         />
       </div>
 
-      <canvas ref={canvasRef} className="w-full h-full block" data-testid="canvas-3d-viewer" />
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full block"
+        data-testid="canvas-3d-viewer"
+      />
     </div>
   );
 }

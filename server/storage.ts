@@ -1,13 +1,11 @@
 import { 
-  type Unit, type InsertUnit, type UnitStatus,
+  type Unit, type InsertUnit, type UnitStatus, type UnitUpdateRequest,
   type Contact, type InsertContact,
   type Broker, type InsertBroker,
   type Lead, type InsertLead, type LeadWithDetails,
-  type Activity, type InsertActivity,
-  units, contacts, brokers, leads, activities
+  type Activity, type InsertActivity
 } from "@shared/schema";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
 
 export interface IStorage {
   // Units
@@ -35,132 +33,25 @@ export interface IStorage {
   // Activities
   getActivitiesByLeadId(leadId: string): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
-  
-  // Seed
-  seedData(): Promise<void>;
 }
 
-export class DatabaseStorage implements IStorage {
-  // Units
-  async getAllUnits(): Promise<Unit[]> {
-    return await db.select().from(units);
+export class MemStorage implements IStorage {
+  private units: Map<string, Unit>;
+  private contacts: Map<string, Contact>;
+  private brokers: Map<string, Broker>;
+  private leads: Map<string, Lead>;
+  private activities: Map<string, Activity>;
+
+  constructor() {
+    this.units = new Map();
+    this.contacts = new Map();
+    this.brokers = new Map();
+    this.leads = new Map();
+    this.activities = new Map();
+    this.seedData();
   }
 
-  async getUnitById(id: string): Promise<Unit | undefined> {
-    const [unit] = await db.select().from(units).where(eq(units.id, id));
-    return unit || undefined;
-  }
-
-  async createUnit(insertUnit: InsertUnit): Promise<Unit> {
-    const [unit] = await db.insert(units).values(insertUnit).returning();
-    return unit;
-  }
-
-  async updateUnitStatus(id: string, status: UnitStatus): Promise<Unit | undefined> {
-    const [updatedUnit] = await db
-      .update(units)
-      .set({ status })
-      .where(eq(units.id, id))
-      .returning();
-    return updatedUnit || undefined;
-  }
-
-  async updateUnitPrice(id: string, price: number): Promise<Unit | undefined> {
-    const [updatedUnit] = await db
-      .update(units)
-      .set({ price })
-      .where(eq(units.id, id))
-      .returning();
-    return updatedUnit || undefined;
-  }
-
-  // Contacts
-  async getAllContacts(): Promise<Contact[]> {
-    return await db.select().from(contacts);
-  }
-
-  async getContactById(id: string): Promise<Contact | undefined> {
-    const [contact] = await db.select().from(contacts).where(eq(contacts.id, id));
-    return contact || undefined;
-  }
-
-  async createContact(insertContact: InsertContact): Promise<Contact> {
-    const [contact] = await db.insert(contacts).values(insertContact).returning();
-    return contact;
-  }
-
-  // Brokers
-  async getAllBrokers(): Promise<Broker[]> {
-    return await db.select().from(brokers);
-  }
-
-  async getBrokerById(id: string): Promise<Broker | undefined> {
-    const [broker] = await db.select().from(brokers).where(eq(brokers.id, id));
-    return broker || undefined;
-  }
-
-  async createBroker(insertBroker: InsertBroker): Promise<Broker> {
-    const [broker] = await db.insert(brokers).values(insertBroker).returning();
-    return broker;
-  }
-
-  // Leads
-  async getAllLeads(): Promise<LeadWithDetails[]> {
-    const allLeads = await db.select().from(leads);
-    return await Promise.all(allLeads.map(lead => this.enrichLead(lead)));
-  }
-
-  async getLeadById(id: string): Promise<LeadWithDetails | undefined> {
-    const [lead] = await db.select().from(leads).where(eq(leads.id, id));
-    if (!lead) return undefined;
-    return await this.enrichLead(lead);
-  }
-
-  async createLead(insertLead: InsertLead): Promise<Lead> {
-    const [lead] = await db.insert(leads).values(insertLead).returning();
-    return lead;
-  }
-
-  private async enrichLead(lead: Lead): Promise<LeadWithDetails> {
-    const contact = await this.getContactById(lead.contactId);
-    const broker = lead.brokerId ? await this.getBrokerById(lead.brokerId) : undefined;
-    const unit = lead.unitId ? await this.getUnitById(lead.unitId) : undefined;
-    const leadActivities = await this.getActivitiesByLeadId(lead.id);
-
-    if (!contact) {
-      throw new Error(`Contact not found for lead ${lead.id}`);
-    }
-
-    return {
-      ...lead,
-      contact,
-      broker,
-      unit,
-      activities: leadActivities,
-    };
-  }
-
-  // Activities
-  async getActivitiesByLeadId(leadId: string): Promise<Activity[]> {
-    return await db.select().from(activities).where(eq(activities.leadId, leadId));
-  }
-
-  async createActivity(insertActivity: InsertActivity): Promise<Activity> {
-    const [activity] = await db.insert(activities).values(insertActivity).returning();
-    return activity;
-  }
-
-  // Seed data
-  async seedData(): Promise<void> {
-    // Check if data already exists
-    const existingUnits = await this.getAllUnits();
-    if (existingUnits.length > 0) {
-      console.log('Database already seeded, skipping seed data');
-      return;
-    }
-
-    console.log('Seeding database with initial data...');
-
+  private seedData() {
     // Seed Units
     const unitsData: InsertUnit[] = [
       { unitNumber: "101", floor: 1, bedrooms: 1, bathrooms: 1, squareFeet: 650, price: 425000, status: "available", building: "Tower A" },
@@ -169,17 +60,18 @@ export class DatabaseStorage implements IStorage {
       { unitNumber: "202", floor: 2, bedrooms: 2, bathrooms: 2, squareFeet: 980, price: 645000, status: "contract", building: "Tower A" },
       { unitNumber: "301", floor: 3, bedrooms: 2, bathrooms: 2, squareFeet: 1050, price: 695000, status: "available", building: "Tower A" },
       { unitNumber: "302", floor: 3, bedrooms: 2, bathrooms: 2, squareFeet: 1080, price: 715000, status: "sold", building: "Tower A" },
-      { unitNumber: "401", floor: 4, bedrooms: 3, bathrooms: 3, squareFeet: 1450, price: 895000, status: "available", building: "Tower B" },
-      { unitNumber: "402", floor: 4, bedrooms: 3, bathrooms: 3, squareFeet: 1480, price: 915000, status: "on_hold", building: "Tower B" },
+      { unitNumber: "401", floor: 4, bedrooms: 3, bathrooms: 2.5, squareFeet: 1450, price: 895000, status: "available", building: "Tower B" },
+      { unitNumber: "402", floor: 4, bedrooms: 3, bathrooms: 2.5, squareFeet: 1480, price: 915000, status: "on_hold", building: "Tower B" },
       { unitNumber: "501", floor: 5, bedrooms: 3, bathrooms: 3, squareFeet: 1650, price: 1025000, status: "contract", building: "Tower B" },
       { unitNumber: "502", floor: 5, bedrooms: 3, bathrooms: 3, squareFeet: 1680, price: 1045000, status: "available", building: "Tower B" },
       { unitNumber: "601", floor: 6, bedrooms: 3, bathrooms: 3, squareFeet: 1750, price: 1125000, status: "sold", building: "Tower B" },
       { unitNumber: "PH1", floor: 7, bedrooms: 4, bathrooms: 4, squareFeet: 2500, price: 1750000, status: "available", building: "Tower B" },
     ];
 
-    const createdUnits = await Promise.all(
-      unitsData.map(unit => this.createUnit(unit))
-    );
+    unitsData.forEach(unit => {
+      const id = randomUUID();
+      this.units.set(id, { ...unit, id } as Unit);
+    });
 
     // Seed Contacts
     const contactsData: InsertContact[] = [
@@ -190,9 +82,10 @@ export class DatabaseStorage implements IStorage {
       { firstName: "Jessica", lastName: "Martinez", email: "j.martinez@email.com", phone: "(555) 567-8901", type: "buyer" },
     ];
 
-    const createdContacts = await Promise.all(
-      contactsData.map(contact => this.createContact(contact))
-    );
+    contactsData.forEach(contact => {
+      const id = randomUUID();
+      this.contacts.set(id, { ...contact, id });
+    });
 
     // Seed Brokers
     const brokersData: InsertBroker[] = [
@@ -201,41 +94,182 @@ export class DatabaseStorage implements IStorage {
       { firstName: "James", lastName: "Brown", email: "j.brown@realty.com", phone: "(555) 333-4444", company: "Elite Real Estate", license: "BR345678" },
     ];
 
-    const createdBrokers = await Promise.all(
-      brokersData.map(broker => this.createBroker(broker))
-    );
+    brokersData.forEach(broker => {
+      const id = randomUUID();
+      this.brokers.set(id, { ...broker, id });
+    });
 
     // Seed Leads
+    const contactIds = Array.from(this.contacts.keys());
+    const brokerIds = Array.from(this.brokers.keys());
+    const unitIds = Array.from(this.units.keys());
+
     const leadsData: InsertLead[] = [
-      { contactId: createdContacts[0].id, brokerId: createdBrokers[0].id, unitId: createdUnits[2].id, status: "qualified", score: 85, notes: "Very interested in 2BR with city view" },
-      { contactId: createdContacts[1].id, brokerId: createdBrokers[1].id, unitId: createdUnits[3].id, status: "negotiating", score: 90, notes: "Ready to make an offer" },
-      { contactId: createdContacts[2].id, brokerId: createdBrokers[0].id, unitId: createdUnits[7].id, status: "contacted", score: 65, notes: "First-time buyer, needs financing info" },
-      { contactId: createdContacts[3].id, brokerId: createdBrokers[2].id, unitId: createdUnits[11].id, status: "qualified", score: 95, notes: "Looking for penthouse, cash buyer" },
-      { contactId: createdContacts[4].id, brokerId: createdBrokers[1].id, unitId: createdUnits[4].id, status: "new", score: 50, notes: "Requested virtual tour" },
+      { contactId: contactIds[0], brokerId: brokerIds[0], unitId: unitIds[2], status: "qualified", score: 85, notes: "Very interested in 2BR with city view" },
+      { contactId: contactIds[1], brokerId: brokerIds[1], unitId: unitIds[3], status: "negotiating", score: 90, notes: "Ready to make an offer" },
+      { contactId: contactIds[2], brokerId: brokerIds[0], unitId: unitIds[7], status: "contacted", score: 65, notes: "First-time buyer, needs financing info" },
+      { contactId: contactIds[3], brokerId: brokerIds[2], unitId: unitIds[11], status: "qualified", score: 95, notes: "Looking for penthouse, cash buyer" },
+      { contactId: contactIds[4], brokerId: brokerIds[1], unitId: unitIds[4], status: "new", score: 50, notes: "Requested virtual tour" },
     ];
 
-    const createdLeads = await Promise.all(
-      leadsData.map(lead => this.createLead(lead))
-    );
+    leadsData.forEach(lead => {
+      const id = randomUUID();
+      const leadWithDefaults: Lead = { 
+        ...lead, 
+        id, 
+        createdAt: new Date(),
+        brokerId: lead.brokerId ?? null,
+        unitId: lead.unitId ?? null,
+        score: lead.score ?? 0,
+        notes: lead.notes ?? null
+      };
+      this.leads.set(id, leadWithDefaults);
+    });
 
     // Seed Activities
+    const leadIds = Array.from(this.leads.keys());
     const activitiesData: InsertActivity[] = [
-      { leadId: createdLeads[0].id, type: "call", description: "Initial phone consultation - discussed budget and preferences" },
-      { leadId: createdLeads[0].id, type: "email", description: "Sent property brochure and floor plans" },
-      { leadId: createdLeads[0].id, type: "viewing", description: "Scheduled in-person viewing for this weekend" },
-      { leadId: createdLeads[1].id, type: "meeting", description: "Met at property - very positive feedback" },
-      { leadId: createdLeads[1].id, type: "note", description: "Client is preparing offer documentation" },
-      { leadId: createdLeads[2].id, type: "call", description: "Discussed financing options with mortgage specialist" },
-      { leadId: createdLeads[3].id, type: "viewing", description: "Private penthouse showing conducted" },
-      { leadId: createdLeads[3].id, type: "note", description: "Client impressed with views and amenities" },
+      { leadId: leadIds[0], type: "call", description: "Initial phone consultation - discussed budget and preferences" },
+      { leadId: leadIds[0], type: "email", description: "Sent property brochure and floor plans" },
+      { leadId: leadIds[0], type: "viewing", description: "Scheduled in-person viewing for this weekend" },
+      { leadId: leadIds[1], type: "meeting", description: "Met at property - very positive feedback" },
+      { leadId: leadIds[1], type: "note", description: "Client is preparing offer documentation" },
+      { leadId: leadIds[2], type: "call", description: "Discussed financing options with mortgage specialist" },
+      { leadId: leadIds[3], type: "viewing", description: "Private penthouse showing conducted" },
+      { leadId: leadIds[3], type: "note", description: "Client impressed with views and amenities" },
     ];
 
-    await Promise.all(
-      activitiesData.map(activity => this.createActivity(activity))
-    );
+    activitiesData.forEach(activity => {
+      const id = randomUUID();
+      this.activities.set(id, { ...activity, id, createdAt: new Date() });
+    });
+  }
 
-    console.log('Database seeded successfully');
+  // Units
+  async getAllUnits(): Promise<Unit[]> {
+    return Array.from(this.units.values());
+  }
+
+  async getUnitById(id: string): Promise<Unit | undefined> {
+    return this.units.get(id);
+  }
+
+  async createUnit(insertUnit: InsertUnit): Promise<Unit> {
+    const id = randomUUID();
+    const unit: Unit = { ...insertUnit, id } as Unit;
+    this.units.set(id, unit);
+    return unit;
+  }
+
+  async updateUnitStatus(id: string, status: UnitStatus): Promise<Unit | undefined> {
+    const unit = this.units.get(id);
+    if (!unit) return undefined;
+    
+    const updatedUnit = { ...unit, status };
+    this.units.set(id, updatedUnit);
+    return updatedUnit;
+  }
+
+  async updateUnitPrice(id: string, price: number): Promise<Unit | undefined> {
+    const unit = this.units.get(id);
+    if (!unit) return undefined;
+    
+    const updatedUnit = { ...unit, price };
+    this.units.set(id, updatedUnit);
+    return updatedUnit;
+  }
+
+  // Contacts
+  async getAllContacts(): Promise<Contact[]> {
+    return Array.from(this.contacts.values());
+  }
+
+  async getContactById(id: string): Promise<Contact | undefined> {
+    return this.contacts.get(id);
+  }
+
+  async createContact(insertContact: InsertContact): Promise<Contact> {
+    const id = randomUUID();
+    const contact: Contact = { ...insertContact, id };
+    this.contacts.set(id, contact);
+    return contact;
+  }
+
+  // Brokers
+  async getAllBrokers(): Promise<Broker[]> {
+    return Array.from(this.brokers.values());
+  }
+
+  async getBrokerById(id: string): Promise<Broker | undefined> {
+    return this.brokers.get(id);
+  }
+
+  async createBroker(insertBroker: InsertBroker): Promise<Broker> {
+    const id = randomUUID();
+    const broker: Broker = { ...insertBroker, id };
+    this.brokers.set(id, broker);
+    return broker;
+  }
+
+  // Leads
+  async getAllLeads(): Promise<LeadWithDetails[]> {
+    const leads = Array.from(this.leads.values());
+    return Promise.all(leads.map(lead => this.enrichLead(lead)));
+  }
+
+  async getLeadById(id: string): Promise<LeadWithDetails | undefined> {
+    const lead = this.leads.get(id);
+    if (!lead) return undefined;
+    return this.enrichLead(lead);
+  }
+
+  async createLead(insertLead: InsertLead): Promise<Lead> {
+    const id = randomUUID();
+    const lead: Lead = { 
+      ...insertLead, 
+      id, 
+      createdAt: new Date(),
+      brokerId: insertLead.brokerId ?? null,
+      unitId: insertLead.unitId ?? null,
+      score: insertLead.score ?? 0,
+      notes: insertLead.notes ?? null
+    };
+    this.leads.set(id, lead);
+    return lead;
+  }
+
+  private async enrichLead(lead: Lead): Promise<LeadWithDetails> {
+    const contact = await this.getContactById(lead.contactId);
+    const broker = lead.brokerId ? await this.getBrokerById(lead.brokerId) : undefined;
+    const unit = lead.unitId ? await this.getUnitById(lead.unitId) : undefined;
+    const activities = await this.getActivitiesByLeadId(lead.id);
+
+    if (!contact) {
+      throw new Error(`Contact not found for lead ${lead.id}`);
+    }
+
+    return {
+      ...lead,
+      contact,
+      broker,
+      unit,
+      activities,
+    };
+  }
+
+  // Activities
+  async getActivitiesByLeadId(leadId: string): Promise<Activity[]> {
+    return Array.from(this.activities.values()).filter(
+      activity => activity.leadId === leadId
+    );
+  }
+
+  async createActivity(insertActivity: InsertActivity): Promise<Activity> {
+    const id = randomUUID();
+    const activity: Activity = { ...insertActivity, id, createdAt: new Date() };
+    this.activities.set(id, activity);
+    return activity;
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();

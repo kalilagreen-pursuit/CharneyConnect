@@ -104,12 +104,15 @@ Charney CRM is a professional iPad-optimized CRM system designed for real-time c
 - `PUT /api/units/:id` - Update unit status/price
 
 ### Leads
-- `GET /api/leads` - Get all leads with full details (contact, broker, unit, activities)
-- `GET /api/leads/:id` - Get lead by ID with full details
+- `GET /api/leads` - Get all leads from public.leads table
+- `GET /api/leads/:id` - Get lead by ID
+- `POST /api/leads` - Create a new lead (broadcasts WebSocket update)
+- `PUT /api/leads/:id` - Update a lead (broadcasts WebSocket update)
 
 ### WebSocket
-- `WS /ws` - Real-time connection for unit updates
+- `WS /ws` - Real-time connection for unit and lead updates
   - Broadcasts `unit_update` events when units are modified
+  - Broadcasts `lead_update` events when leads are created or updated
 
 ## Data Models & Supabase Integration
 
@@ -123,6 +126,7 @@ The CRM uses an **existing Supabase PostgreSQL database** with the following str
 - **Contacts**: id, first_name, last_name, email, phone, contact_type, consent_given_at, created_at
 - **Deals**: id, unit_id, buyer_contact_id, broker_contact_id, deal_stage, sale_price, category, created_at
 - **Activities**: id, deal_id, activity_type, notes, created_at
+- **public.leads**: id, name, email, company, status, value, phone, address (simple CRM lead tracking with realtime updates)
 
 #### Data Joins & Mapping
 The storage layer performs SQL joins to combine data:
@@ -194,7 +198,16 @@ shared/
 - **Schema**: Defined in `shared/schema.ts` matching existing Supabase tables
 
 ## Recent Changes
-- **2025-10-04 (Latest)**: Integrated with existing Supabase PostgreSQL database
+- **2025-10-04 (Latest)**: Integrated public.leads table with realtime WebSocket updates
+  - Created public.leads table in Supabase with fields: id, name, email, company, status, value, phone, address
+  - Enabled Supabase realtime publication for public.leads table
+  - Implemented CRUD API endpoints: GET/POST /api/leads, GET/PUT /api/leads/:id
+  - Added WebSocket broadcasting for lead_update events (create and update actions)
+  - Updated frontend Leads page to display public.leads data with status badges and stats
+  - Extended useWebSocket hook to handle lead_update messages for realtime UI updates
+  - Fixed schema to mark nullable fields (company, value, phone, address) as optional in insertLeadSchema
+  - Verified E2E: lead creation (minimal/full payloads), realtime updates, stats calculations
+- **2025-10-04**: Integrated with existing Supabase PostgreSQL database
   - Connected CRM to user's live Supabase database using Replit's Supabase integration
   - Implemented PostgresStorage layer with SQL joins (Units+FloorPlans+Projects for unit details)
   - Added automatic status value mapping (Supabase "Available"/"Held"/"Sold" → CRM format)

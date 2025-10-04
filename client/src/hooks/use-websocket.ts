@@ -45,6 +45,21 @@ export function useWebSocket() {
                 }, 1000);
               }
             }
+          } else if (message.type === 'lead_update') {
+            // Invalidate leads query to trigger refetch
+            queryClient.invalidateQueries({ queryKey: ['/api/leads'] });
+            
+            // Show visual feedback
+            const leadId = message.data?.id;
+            if (leadId) {
+              const element = document.querySelector(`[data-testid="card-lead-${leadId}"]`);
+              if (element) {
+                element.classList.add('animate-pulse');
+                setTimeout(() => {
+                  element.classList.remove('animate-pulse');
+                }, 1000);
+              }
+            }
           }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);

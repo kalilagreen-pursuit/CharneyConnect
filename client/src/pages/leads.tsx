@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { LeadWithDetails } from "@shared/schema";
+import { Lead } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Mail, Phone, Building2, Users, Award } from "lucide-react";
+import { Mail, Phone, Building2, MapPin, DollarSign } from "lucide-react";
 
 const leadStatusConfig: Record<string, { label: string; color: string }> = {
   new: { label: "New", color: "bg-blue-500 text-white dark:text-white border-blue-500" },
@@ -14,7 +14,7 @@ const leadStatusConfig: Record<string, { label: string; color: string }> = {
   lost: { label: "Lost", color: "bg-red-500 text-white dark:text-white border-red-500" },
 };
 
-function LeadCard({ lead }: { lead: LeadWithDetails }) {
+function LeadCard({ lead }: { lead: Lead }) {
   const statusConfig = leadStatusConfig[lead.status] || leadStatusConfig.new;
   
   return (
@@ -24,7 +24,7 @@ function LeadCard({ lead }: { lead: LeadWithDetails }) {
     >
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
         <CardTitle className="text-lg font-bold uppercase tracking-tight" data-testid={`text-lead-name-${lead.id}`}>
-          {lead.contact.firstName} {lead.contact.lastName}
+          {lead.name}
         </CardTitle>
         <Badge className={`${statusConfig.color} border-2`} data-testid={`badge-lead-status-${lead.id}`}>
           {statusConfig.label}
@@ -35,56 +35,51 @@ function LeadCard({ lead }: { lead: LeadWithDetails }) {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Mail className="h-4 w-4" />
             <span data-testid={`text-email-${lead.id}`}>
-              {lead.contact.email}
+              {lead.email}
             </span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Phone className="h-4 w-4" />
-            <span data-testid={`text-phone-${lead.id}`}>
-              {lead.contact.phone}
-            </span>
-          </div>
-        </div>
-
-        {lead.broker && (
-          <div className="pt-3 border-t">
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium" data-testid={`text-broker-${lead.id}`}>
-                {lead.broker.firstName} {lead.broker.lastName}
+          {lead.phone && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Phone className="h-4 w-4" />
+              <span data-testid={`text-phone-${lead.id}`}>
+                {lead.phone}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1 ml-6">
-              {lead.broker.company}
-            </p>
-          </div>
-        )}
+          )}
+        </div>
 
-        {lead.unit && (
+        {lead.company && (
           <div className="pt-3 border-t">
             <div className="flex items-center gap-2 text-sm">
               <Building2 className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium" data-testid={`text-unit-${lead.id}`}>
-                Unit {lead.unit.unitNumber}
+              <span className="font-medium" data-testid={`text-company-${lead.id}`}>
+                {lead.company}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1 ml-6">
-              {lead.unit.bedrooms} BD • {lead.unit.bathrooms} BA • {lead.unit.squareFeet.toLocaleString()} SF
-            </p>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-3 border-t">
-          <div className="flex items-center gap-2">
-            <Award className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium" data-testid={`text-score-${lead.id}`}>
-              Score: {lead.score}
-            </span>
+        {lead.address && (
+          <div className="pt-3 border-t">
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground" data-testid={`text-address-${lead.id}`}>
+                {lead.address}
+              </span>
+            </div>
           </div>
-          <span className="text-xs text-muted-foreground">
-            {lead.activities.length} {lead.activities.length === 1 ? 'activity' : 'activities'}
-          </span>
-        </div>
+        )}
+
+        {lead.value && (
+          <div className="flex items-center justify-between pt-3 border-t">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium" data-testid={`text-value-${lead.id}`}>
+                {lead.value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+              </span>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -129,7 +124,7 @@ function StatCard({ title, value }: { title: string; value: string | number }) {
 }
 
 export default function Leads() {
-  const { data: leads, isLoading } = useQuery<LeadWithDetails[]>({
+  const { data: leads, isLoading } = useQuery<Lead[]>({
     queryKey: ["/api/leads"],
   });
 

@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Building2, Bed, Bath, Maximize, SlidersHorizontal, X } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useState, useMemo } from "react";
+import FloorplanViewer3D from "@/components/FloorplanViewer3D";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
   available: { 
@@ -33,16 +34,20 @@ const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: 
   },
 };
 
-function UnitCard({ unit }: { unit: UnitWithDetails }) {
+function UnitCard({ unit, onViewIn3D }: { unit: UnitWithDetails; onViewIn3D?: (projectId: string) => void }) {
   const config = statusConfig[unit.status as UnitStatus] || statusConfig.available;
   
   return (
     <Card 
-      className="hover-elevate active-elevate-2 transition-all duration-200 cursor-pointer" 
+      className="hover-elevate active-elevate-2 transition-all duration-200" 
       data-testid={`card-unit-${unit.id}`}
     >
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-        <CardTitle className="text-lg font-black uppercase tracking-tight" data-testid={`text-unit-number-${unit.id}`}>
+        <CardTitle 
+          className="text-lg font-black uppercase tracking-tight cursor-pointer hover:text-primary transition-colors" 
+          data-testid={`text-unit-number-${unit.id}`}
+          onClick={() => onViewIn3D?.(unit.project?.id || '')}
+        >
           Unit {unit.unitNumber}
         </CardTitle>
         <Badge className={`${config.bgColor} ${config.color} border-2`} data-testid={`badge-status-${unit.id}`}>
@@ -149,6 +154,8 @@ export default function Dashboard() {
   const [selectedBathrooms, setSelectedBathrooms] = useState<string>("all");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000000]);
   const [sqftRange, setSqftRange] = useState<[number, number]>([0, 3000]);
+  const [show3DViewer, setShow3DViewer] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
   const { buildings, bedroomOptions, bathroomOptions, minPrice, maxPrice, minSqft, maxSqft } = useMemo(() => {
     if (!units) return {
@@ -424,7 +431,14 @@ export default function Dashboard() {
             ) : filteredUnits && filteredUnits.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-testid="grid-units">
                 {filteredUnits.map((unit) => (
-                  <UnitCard key={unit.id} unit={unit} />
+                  <UnitCard 
+                    key={unit.id} 
+                    unit={unit} 
+                    onViewIn3D={(projectId) => {
+                      setSelectedProjectId(projectId);
+                      setShow3DViewer(true);
+                    }}
+                  />
                 ))}
               </div>
             ) : (
@@ -456,6 +470,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {show3DViewer && (
+        <FloorplanViewer3D
+          projectId={selectedProjectId}
+          onClose={() => setShow3DViewer(false)}
+        />
+      )}
     </div>
   );
 }

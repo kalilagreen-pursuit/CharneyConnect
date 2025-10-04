@@ -28,18 +28,31 @@ Charney CRM is a professional iPad-optimized CRM system designed for real-time c
    - Real-time stats (Total Units, Available, On Hold, Contract, Sold, Total Value)
    - Responsive grid layout optimized for iPad (1-4 columns based on screen size)
 
-2. **Leads Management**
+2. **Advanced Filtering System**
+   - Comprehensive filters for unit search:
+     - Building/Tower selection (Tower A, Tower B)
+     - Bedrooms filter (1-4 bedrooms)
+     - Bathrooms filter (1-4 bathrooms)
+     - Price range slider ($425K - $1.75M)
+     - Square footage range slider (650 - 2,500 SF)
+   - All filters work together with AND logic
+   - Real-time stats update to reflect filtered results
+   - Visual indicators: filter count, active badge, "Clear All" button
+   - iPad-optimized with 44px+ touch targets on all controls
+   - Collapsible filter panel to maximize screen space
+
+3. **Leads Management**
    - Lead cards with contact info, broker details, associated units
    - Lead status tracking (New, Contacted, Qualified, Negotiating, Closed, Lost)
    - Activity timeline integration
    - Lead scoring system
 
-3. **Real-time Updates**
+4. **Real-time Updates**
    - WebSocket connection for live unit status changes
    - Visual pulse animation on updated cards
    - Automatic cache invalidation and UI refresh
 
-4. **iPad Optimization**
+5. **iPad Optimization**
    - Large touch targets (min 44x44px)
    - Responsive layouts for portrait and landscape
    - Clean, professional design with Charney brand colors
@@ -132,6 +145,11 @@ shared/
 ```
 
 ## Recent Changes
+- **2025-10-04**: Added comprehensive filtering system to Unit Map dashboard
+  - Implemented Building/Tower, Bedrooms, Bathrooms, Price Range, and Square Footage filters
+  - All filters work in combination with real-time stats updates
+  - Fixed touch target accessibility (44px+ for iPad optimization)
+  - Added visual feedback (filter count, active indicators, Clear All button)
 - Initial project setup with full-stack TypeScript
 - Implemented Unit Map with color-coded status visualization
 - Built comprehensive lead tracking system

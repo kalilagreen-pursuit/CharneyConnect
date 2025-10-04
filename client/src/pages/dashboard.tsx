@@ -3,8 +3,12 @@ import { Unit, UnitStatus } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Bed, Bath, Maximize } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Building2, Bed, Bath, Maximize, SlidersHorizontal, X } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { useState, useMemo } from "react";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
   available: { 
@@ -139,26 +143,233 @@ export default function Dashboard() {
     queryKey: ["/api/units"],
   });
 
-  const stats = units ? {
-    total: units.length,
-    available: units.filter(u => u.status === "available").length,
-    onHold: units.filter(u => u.status === "on_hold").length,
-    contract: units.filter(u => u.status === "contract").length,
-    sold: units.filter(u => u.status === "sold").length,
-    totalValue: units.reduce((sum, u) => sum + u.price, 0),
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedBuilding, setSelectedBuilding] = useState<string>("all");
+  const [selectedBedrooms, setSelectedBedrooms] = useState<string>("all");
+  const [selectedBathrooms, setSelectedBathrooms] = useState<string>("all");
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000000]);
+  const [sqftRange, setSqftRange] = useState<[number, number]>([0, 3000]);
+
+  const { buildings, bedroomOptions, bathroomOptions, minPrice, maxPrice, minSqft, maxSqft } = useMemo(() => {
+    if (!units) return {
+      buildings: [],
+      bedroomOptions: [],
+      bathroomOptions: [],
+      minPrice: 0,
+      maxPrice: 2000000,
+      minSqft: 0,
+      maxSqft: 3000
+    };
+
+    const buildingSet = new Set(units.map(u => u.building));
+    const bedroomSet = new Set(units.map(u => u.bedrooms));
+    const bathroomSet = new Set(units.map(u => u.bathrooms));
+    
+    return {
+      buildings: Array.from(buildingSet).sort(),
+      bedroomOptions: Array.from(bedroomSet).sort((a, b) => a - b),
+      bathroomOptions: Array.from(bathroomSet).sort((a, b) => a - b),
+      minPrice: Math.min(...units.map(u => u.price)),
+      maxPrice: Math.max(...units.map(u => u.price)),
+      minSqft: Math.min(...units.map(u => u.squareFeet)),
+      maxSqft: Math.max(...units.map(u => u.squareFeet))
+    };
+  }, [units]);
+
+  const filteredUnits = useMemo(() => {
+    if (!units) return [];
+
+    return units.filter(unit => {
+      if (selectedBuilding !== "all" && unit.building !== selectedBuilding) return false;
+      if (selectedBedrooms !== "all" && unit.bedrooms !== parseInt(selectedBedrooms)) return false;
+      if (selectedBathrooms !== "all" && unit.bathrooms !== parseInt(selectedBathrooms)) return false;
+      if (unit.price < priceRange[0] || unit.price > priceRange[1]) return false;
+      if (unit.squareFeet < sqftRange[0] || unit.squareFeet > sqftRange[1]) return false;
+      return true;
+    });
+  }, [units, selectedBuilding, selectedBedrooms, selectedBathrooms, priceRange, sqftRange]);
+
+  const stats = filteredUnits ? {
+    total: filteredUnits.length,
+    available: filteredUnits.filter(u => u.status === "available").length,
+    onHold: filteredUnits.filter(u => u.status === "on_hold").length,
+    contract: filteredUnits.filter(u => u.status === "contract").length,
+    sold: filteredUnits.filter(u => u.status === "sold").length,
+    totalValue: filteredUnits.reduce((sum, u) => sum + u.price, 0),
   } : null;
+
+  const hasActiveFilters = selectedBuilding !== "all" || 
+    selectedBedrooms !== "all" || 
+    selectedBathrooms !== "all" ||
+    priceRange[0] !== minPrice ||
+    priceRange[1] !== maxPrice ||
+    sqftRange[0] !== minSqft ||
+    sqftRange[1] !== maxSqft;
+
+  const clearFilters = () => {
+    setSelectedBuilding("all");
+    setSelectedBedrooms("all");
+    setSelectedBathrooms("all");
+    setPriceRange([minPrice, maxPrice]);
+    setSqftRange([minSqft, maxSqft]);
+  };
 
   return (
     <div className="flex flex-col h-full">
       <div className="border-b bg-background sticky top-0 z-10">
         <div className="px-6 py-4">
-          <h1 className="text-2xl font-semibold" data-testid="text-page-title">
-            Unit Map
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Real-time inventory tracking and status management
-          </p>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold" data-testid="text-page-title">
+                Unit Map
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Real-time inventory tracking and status management
+              </p>
+            </div>
+            <Button
+              variant={showFilters ? "default" : "outline"}
+              size="default"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2"
+              data-testid="button-toggle-filters"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  !
+                </Badge>
+              )}
+            </Button>
+          </div>
         </div>
+
+        {showFilters && (
+          <div className="border-t bg-muted/30" data-testid="panel-filters">
+            <div className="px-6 py-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Filter Units</h3>
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="gap-2"
+                    data-testid="button-clear-filters"
+                  >
+                    <X className="h-4 w-4" />
+                    Clear All
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Building/Tower Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="filter-building">
+                    Building/Tower
+                  </label>
+                  <Select value={selectedBuilding} onValueChange={setSelectedBuilding}>
+                    <SelectTrigger id="filter-building" data-testid="select-building" className="min-h-11">
+                      <SelectValue placeholder="All Buildings" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Buildings</SelectItem>
+                      {buildings.map(building => (
+                        <SelectItem key={building} value={building}>
+                          {building}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bedrooms Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="filter-bedrooms">
+                    Bedrooms
+                  </label>
+                  <Select value={selectedBedrooms} onValueChange={setSelectedBedrooms}>
+                    <SelectTrigger id="filter-bedrooms" data-testid="select-bedrooms" className="min-h-11">
+                      <SelectValue placeholder="All Bedrooms" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Bedrooms</SelectItem>
+                      {bedroomOptions.map(beds => (
+                        <SelectItem key={beds} value={beds.toString()}>
+                          {beds} Bedroom{beds !== 1 ? 's' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bathrooms Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="filter-bathrooms">
+                    Bathrooms
+                  </label>
+                  <Select value={selectedBathrooms} onValueChange={setSelectedBathrooms}>
+                    <SelectTrigger id="filter-bathrooms" data-testid="select-bathrooms" className="min-h-11">
+                      <SelectValue placeholder="All Bathrooms" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Bathrooms</SelectItem>
+                      {bathroomOptions.map(baths => (
+                        <SelectItem key={baths} value={baths.toString()}>
+                          {baths} Bathroom{baths !== 1 ? 's' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+                {/* Price Range Filter */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Price Range</label>
+                    <span className="text-sm text-muted-foreground" data-testid="text-price-range">
+                      {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}
+                    </span>
+                  </div>
+                  <div className="min-h-11 flex items-center" data-testid="slider-price">
+                    <Slider
+                      min={minPrice}
+                      max={maxPrice}
+                      step={50000}
+                      value={priceRange}
+                      onValueChange={(value) => setPriceRange(value as [number, number])}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Square Footage Filter */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Square Footage</label>
+                    <span className="text-sm text-muted-foreground" data-testid="text-sqft-range">
+                      {sqftRange[0].toLocaleString()} - {sqftRange[1].toLocaleString()} SF
+                    </span>
+                  </div>
+                  <div className="min-h-11 flex items-center" data-testid="slider-sqft">
+                    <Slider
+                      min={minSqft}
+                      max={maxSqft}
+                      step={50}
+                      value={sqftRange}
+                      onValueChange={(value) => setSqftRange(value as [number, number])}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -192,9 +403,16 @@ export default function Dashboard() {
 
           {/* Units Grid */}
           <div>
-            <h2 className="text-lg font-semibold mb-4" data-testid="text-units-section-title">
-              All Units
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold" data-testid="text-units-section-title">
+                {hasActiveFilters ? 'Filtered Units' : 'All Units'}
+              </h2>
+              {hasActiveFilters && (
+                <span className="text-sm text-muted-foreground" data-testid="text-filter-count">
+                  Showing {filteredUnits.length} of {units?.length || 0} units
+                </span>
+              )}
+            </div>
             
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -202,9 +420,9 @@ export default function Dashboard() {
                   <UnitCardSkeleton key={i} />
                 ))}
               </div>
-            ) : units && units.length > 0 ? (
+            ) : filteredUnits && filteredUnits.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-testid="grid-units">
-                {units.map((unit) => (
+                {filteredUnits.map((unit) => (
                   <UnitCard key={unit.id} unit={unit} />
                 ))}
               </div>
@@ -213,11 +431,24 @@ export default function Dashboard() {
                 <div className="text-center space-y-3">
                   <Building2 className="h-12 w-12 mx-auto text-muted-foreground" />
                   <h3 className="text-lg font-semibold" data-testid="text-empty-state-title">
-                    No Units Available
+                    {hasActiveFilters ? 'No Units Match Your Filters' : 'No Units Available'}
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    There are currently no units in the system. Units will appear here once they are added to the inventory.
+                    {hasActiveFilters 
+                      ? 'Try adjusting your filter criteria to see more results.'
+                      : 'There are currently no units in the system. Units will appear here once they are added to the inventory.'
+                    }
                   </p>
+                  {hasActiveFilters && (
+                    <Button
+                      variant="outline"
+                      onClick={clearFilters}
+                      className="mt-4"
+                      data-testid="button-clear-filters-empty"
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
                 </div>
               </Card>
             )}

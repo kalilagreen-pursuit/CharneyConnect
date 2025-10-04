@@ -23,7 +23,7 @@ function LeadCard({ lead }: { lead: LeadWithDetails }) {
       data-testid={`card-lead-${lead.id}`}
     >
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-        <CardTitle className="text-lg font-semibold" data-testid={`text-lead-name-${lead.id}`}>
+        <CardTitle className="text-lg font-bold uppercase tracking-tight" data-testid={`text-lead-name-${lead.id}`}>
           {lead.contact.firstName} {lead.contact.lastName}
         </CardTitle>
         <Badge className={`${statusConfig.color} border-2`} data-testid={`badge-lead-status-${lead.id}`}>
@@ -142,10 +142,10 @@ export default function Leads() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b bg-background sticky top-0 z-10">
+      <div className="border-b bg-card sticky top-0 z-10">
         <div className="px-6 py-4">
-          <h1 className="text-2xl font-semibold" data-testid="text-leads-page-title">
-            Leads
+          <h1 className="text-3xl font-black uppercase tracking-tight" data-testid="text-leads-page-title">
+            Sales <span className="text-primary">Leads</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Track and manage your sales pipeline
@@ -182,7 +182,7 @@ export default function Leads() {
 
           {/* Leads Grid */}
           <div>
-            <h2 className="text-lg font-semibold mb-4" data-testid="text-leads-section-title">
+            <h2 className="text-xl font-black uppercase tracking-tight mb-4" data-testid="text-leads-section-title">
               All Leads
             </h2>
             
@@ -202,7 +202,7 @@ export default function Leads() {
               <Card className="p-12">
                 <div className="text-center space-y-3">
                   <Users className="h-12 w-12 mx-auto text-muted-foreground" />
-                  <h3 className="text-lg font-semibold" data-testid="text-leads-empty-state-title">
+                  <h3 className="text-lg font-black uppercase tracking-tight" data-testid="text-leads-empty-state-title">
                     No Leads Yet
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto">

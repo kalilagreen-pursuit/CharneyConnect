@@ -216,12 +216,12 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b bg-background sticky top-0 z-10">
+      <div className="border-b bg-card sticky top-0 z-10">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold" data-testid="text-page-title">
-                Unit Map
+              <h1 className="text-3xl font-black uppercase tracking-tight" data-testid="text-page-title">
+                Unit <span className="text-primary">Map</span>
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Real-time inventory tracking and status management
@@ -249,7 +249,7 @@ export default function Dashboard() {
           <div className="border-t bg-muted/30" data-testid="panel-filters">
             <div className="px-6 py-4 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Filter Units</h3>
+                <h3 className="font-black uppercase tracking-tight text-sm">Filter Units</h3>
                 {hasActiveFilters && (
                   <Button
                     variant="ghost"
@@ -404,7 +404,7 @@ export default function Dashboard() {
           {/* Units Grid */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold" data-testid="text-units-section-title">
+              <h2 className="text-xl font-black uppercase tracking-tight" data-testid="text-units-section-title">
                 {hasActiveFilters ? 'Filtered Units' : 'All Units'}
               </h2>
               {hasActiveFilters && (
@@ -430,7 +430,7 @@ export default function Dashboard() {
               <Card className="p-12">
                 <div className="text-center space-y-3">
                   <Building2 className="h-12 w-12 mx-auto text-muted-foreground" />
-                  <h3 className="text-lg font-semibold" data-testid="text-empty-state-title">
+                  <h3 className="text-lg font-black uppercase tracking-tight" data-testid="text-empty-state-title">
                     {hasActiveFilters ? 'No Units Match Your Filters' : 'No Units Available'}
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto">

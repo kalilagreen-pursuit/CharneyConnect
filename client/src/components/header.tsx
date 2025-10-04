@@ -12,13 +12,13 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background">
+    <header className="sticky top-0 z-50 w-full bg-card border-b-4 border-primary">
       <div className="flex h-16 items-center justify-between px-6 gap-4">
         <div className="flex items-center gap-8">
           <Link href="/">
-            <div className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded-md transition-all cursor-pointer" data-testid="link-home">
+            <div className="flex items-center gap-2 hover-elevate active-elevate-2 px-3 py-2 rounded transition-all cursor-pointer" data-testid="link-home">
               <Building2 className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-bold">Charney CRM</h1>
+              <h1 className="text-xl font-black uppercase tracking-tight">Charney <span className="text-primary">CRM</span></h1>
             </div>
           </Link>
 
@@ -32,7 +32,10 @@ export function Header() {
                   <Button
                     variant={isActive ? "default" : "ghost"}
                     size="default"
-                    className="gap-2"
+                    className={cn(
+                      "gap-2 uppercase font-bold tracking-wide text-xs",
+                      isActive && "text-foreground"
+                    )}
                     data-testid={item.testId}
                     asChild
                   >
@@ -48,9 +51,9 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-muted">
+          <div className="flex items-center gap-2 px-3 py-1 rounded bg-muted">
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" data-testid="indicator-realtime" />
-            <span className="text-xs font-medium">Real-time</span>
+            <span className="text-xs font-bold uppercase tracking-wide">Real-time</span>
           </div>
         </div>
       </div>

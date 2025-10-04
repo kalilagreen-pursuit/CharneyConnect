@@ -62,6 +62,7 @@ export default function FloorplanViewer3D({ projectId, onClose }: FloorplanViewe
   const [showPanel, setShowPanel] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [webglError, setWebglError] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const hideDetailsPanel = useCallback(() => {
     setShowPanel(false);
@@ -96,8 +97,18 @@ export default function FloorplanViewer3D({ projectId, onClose }: FloorplanViewe
 
         fetchAndUpdateUnitColors(project.id);
       },
-      undefined,
-      (error) => console.error('Error loading model:', error)
+      (xhr) => {
+        console.log(`Loading ${project.name}: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`);
+      },
+      (error: unknown) => {
+        console.error('Error loading model:', {
+          project: project.name,
+          path: project.modelPath,
+          error: error,
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        });
+      }
     );
   }, [hideDetailsPanel]);
 
@@ -221,8 +232,13 @@ export default function FloorplanViewer3D({ projectId, onClose }: FloorplanViewe
     }
   }, [hideDetailsPanel]);
 
+  // Client-side only mounting
   useEffect(() => {
-    if (!canvasRef.current) return;
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted || !canvasRef.current) return;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf0f0f0);
@@ -334,7 +350,7 @@ export default function FloorplanViewer3D({ projectId, onClose }: FloorplanViewe
       controls.dispose();
       renderer.dispose();
     };
-  }, [currentProject, loadProject, handleCanvasInteraction]);
+  }, [isMounted, currentProject, loadProject, handleCanvasInteraction]);
 
   return (
     <div className="fixed inset-0 z-50 bg-[#f6f1eb]">

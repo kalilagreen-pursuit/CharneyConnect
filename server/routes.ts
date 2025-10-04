@@ -4,6 +4,12 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { unitStatuses, type UnitUpdateRequest, insertLeadSchema } from "@shared/schema";
 import { z } from "zod";
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const updateStatusSchema = z.object({
   status: z.enum(unitStatuses),
@@ -16,6 +22,10 @@ const updatePriceSchema = z.object({
 const updateLeadSchema = insertLeadSchema.partial();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve static 3D models and assets from public folder
+  const publicPath = path.resolve(__dirname, "..", "public");
+  app.use(express.static(publicPath));
+
   // Units endpoints
   app.get("/api/units", async (req, res) => {
     try {

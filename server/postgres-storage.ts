@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { 
-  units, floorPlans, projects, contacts, deals, activities,
+  units, floorPlans, projects, contacts, deals, activities, leads,
   type Unit, type UnitWithDetails, type UnitStatus,
   type Contact, type InsertContact,
-  type Deal, type InsertDeal,
+  type Deal, type InsertDeal, type DealLead,
   type Activity, type InsertActivity,
-  type Lead, type LeadWithDetails
+  type Lead, type InsertLead, type LeadWithDetails
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -107,8 +107,28 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
-  // Leads (mapped from Deals)
-  async getAllLeads(): Promise<LeadWithDetails[]> {
+  // Leads (from public.leads table)
+  async getAllLeads(): Promise<Lead[]> {
+    return db.select().from(leads);
+  }
+
+  async getLeadById(id: string): Promise<Lead | undefined> {
+    const result = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createLead(insertLead: InsertLead): Promise<Lead> {
+    const result = await db.insert(leads).values(insertLead).returning();
+    return result[0];
+  }
+
+  async updateLead(id: string, updateData: Partial<InsertLead>): Promise<Lead | undefined> {
+    const result = await db.update(leads).set(updateData).where(eq(leads.id, id)).returning();
+    return result[0];
+  }
+
+  // Deal-based leads (legacy)
+  async getAllDealLeads(): Promise<LeadWithDetails[]> {
     const result = await db
       .select({
         deal: deals,
@@ -126,14 +146,14 @@ export class PostgresStorage implements IStorage {
     const leadsWithActivities = await Promise.all(
       result.map(async (row) => {
         const activities = await this.getActivitiesByLeadId(row.deal.id);
-        return this.mapToLead(row, activities);
+        return this.mapToDealLead(row, activities);
       })
     );
 
     return leadsWithActivities;
   }
 
-  async getLeadById(id: string): Promise<LeadWithDetails | undefined> {
+  async getDealLeadById(id: string): Promise<LeadWithDetails | undefined> {
     const result = await db
       .select({
         deal: deals,
@@ -153,10 +173,10 @@ export class PostgresStorage implements IStorage {
     if (result.length === 0) return undefined;
 
     const activities = await this.getActivitiesByLeadId(id);
-    return this.mapToLead(result[0], activities);
+    return this.mapToDealLead(result[0], activities);
   }
 
-  async createLead(insertLead: InsertDeal): Promise<Lead> {
+  async createDealLead(insertLead: InsertDeal): Promise<DealLead> {
     const result = await db.insert(deals).values(insertLead).returning();
     const deal = result[0];
     
@@ -214,7 +234,7 @@ export class PostgresStorage implements IStorage {
     };
   }
 
-  private async mapToLead(row: any, activities: Activity[]): Promise<LeadWithDetails> {
+  private async mapToDealLead(row: any, activities: Activity[]): Promise<LeadWithDetails> {
     const deal = row.deal;
     const contact = row.contact;
     const unit = row.unit;

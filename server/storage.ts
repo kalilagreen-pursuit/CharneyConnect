@@ -1,7 +1,7 @@
 import { 
   type UnitWithDetails, type InsertUnit, type UnitStatus, type UnitUpdateRequest,
   type Contact, type InsertContact,
-  type Lead, type InsertDeal, type LeadWithDetails,
+  type Lead, type InsertLead, type DealLead, type InsertDeal, type LeadWithDetails,
   type Activity, type InsertActivity
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -24,10 +24,16 @@ export interface IStorage {
   getBrokerById(id: string): Promise<Contact | undefined>;
   createBroker(broker: any): Promise<Contact>;
   
-  // Leads (mapped from Deals)
-  getAllLeads(): Promise<LeadWithDetails[]>;
-  getLeadById(id: string): Promise<LeadWithDetails | undefined>;
-  createLead(lead: InsertDeal): Promise<Lead>;
+  // Leads (from public.leads table)
+  getAllLeads(): Promise<Lead[]>;
+  getLeadById(id: string): Promise<Lead | undefined>;
+  createLead(lead: InsertLead): Promise<Lead>;
+  updateLead(id: string, lead: Partial<InsertLead>): Promise<Lead | undefined>;
+  
+  // Deal-based leads (legacy)
+  getAllDealLeads(): Promise<LeadWithDetails[]>;
+  getDealLeadById(id: string): Promise<LeadWithDetails | undefined>;
+  createDealLead(lead: InsertDeal): Promise<DealLead>;
   
   // Activities
   getActivitiesByLeadId(leadId: string): Promise<Activity[]>;

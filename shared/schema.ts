@@ -137,7 +137,12 @@ export const leads = pgTable("leads", {
 });
 
 export type Lead = typeof leads.$inferSelect;
-export const insertLeadSchema = createInsertSchema(leads).omit({ id: true });
+export const insertLeadSchema = createInsertSchema(leads).omit({ id: true }).extend({
+  company: z.string().optional(),
+  value: z.number().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+});
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type InsertDeal = z.infer<typeof insertDealSchema>;
 

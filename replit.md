@@ -216,7 +216,13 @@ shared/
 - **Schema**: Defined in `shared/schema.ts` matching existing Supabase tables
 
 ## Recent Changes
-- **2025-10-04 (Latest)**: Integrated 3D building viewer with three.js
+- **2025-10-04 (Latest)**: Enhanced 3D building viewer with unit highlighting and floorplan images
+  - **Unit Highlighting**: Dashboard passes unitNumber to 3D viewer; selected unit automatically highlighted with yellow emissive glow (0xffff00, intensity 0.5)
+  - **Auto-open Details**: Unit details panel automatically opens for selected unit when 3D viewer loads
+  - **Floorplan Images**: Downloaded 9 floorplan images from GitHub (dime1br.png, dime2br.png, dimeph.png, gowanus1br.png, gowanus2br.png, gowanusph.png, jackson1br.png, jackson2br.png, jacksonph.png)
+  - FloorPlans table img_url paths now correctly map to static files served from public/ folder
+  - Unit details panel displays floorplan images when available
+- **2025-10-04**: Integrated 3D building viewer with three.js
   - Created FloorplanViewer3D React component converting vanilla JS to React with hooks
   - Downloaded 3D models (The Jackson, The Dime, Gowanus) and compass assets to public/ folder
   - Dashboard unit cards now open 3D viewer modal when clicking unit number

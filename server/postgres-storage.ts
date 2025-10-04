@@ -51,7 +51,16 @@ export class PostgresStorage implements IStorage {
   }
 
   async updateUnitStatus(id: string, status: UnitStatus): Promise<UnitWithDetails | undefined> {
-    await db.update(units).set({ status }).where(eq(units.id, id));
+    // Map CRM status back to Supabase status values
+    const reverseStatusMap: Record<string, string> = {
+      'available': 'Available',
+      'on_hold': 'Held',
+      'sold': 'Sold',
+      'contract': 'Contract',
+    };
+    
+    const supabaseStatus = reverseStatusMap[status] || 'Available';
+    await db.update(units).set({ status: supabaseStatus }).where(eq(units.id, id));
     return this.getUnitById(id);
   }
 

@@ -14,7 +14,8 @@ Charney CRM is a professional iPad-optimized CRM system designed for real-time c
 
 ### Backend (Express + Node.js)
 - **Server**: Express.js with TypeScript
-- **Storage**: In-memory storage (MemStorage) with comprehensive seed data
+- **Database**: Supabase PostgreSQL (Neon-backed) with Drizzle ORM
+- **Storage**: PostgreSQL storage layer with SQL joins for related data
 - **Real-time**: WebSocket server on `/ws` path for live unit updates
 - **Validation**: Zod schemas for request validation
 
@@ -110,34 +111,56 @@ Charney CRM is a professional iPad-optimized CRM system designed for real-time c
 - `WS /ws` - Real-time connection for unit updates
   - Broadcasts `unit_update` events when units are modified
 
-## Data Models
+## Data Models & Supabase Integration
 
-### Unit
-- unitNumber, floor, bedrooms, bathrooms, squareFeet, price, status, building
+### Database Architecture
+The CRM uses an **existing Supabase PostgreSQL database** with the following structure:
 
-### Lead (with details)
-- contact: Contact info
-- broker: Broker details (optional)
-- unit: Associated unit (optional)
-- activities: Activity timeline
-- status, score, notes
+#### Supabase Tables
+- **Units**: id, project_id, floor_plan_id, unit_number, price, floor, status, notes, created_at
+- **FloorPlans**: id, project_id, plan_name, bedrooms, bathrooms, sq_ft, img_url, created_at
+- **Projects**: id, name, address, status, image_url, created_at
+- **Contacts**: id, first_name, last_name, email, phone, contact_type, consent_given_at, created_at
+- **Deals**: id, unit_id, buyer_contact_id, broker_contact_id, deal_stage, sale_price, category, created_at
+- **Activities**: id, deal_id, activity_type, notes, created_at
 
-### Contact
-- firstName, lastName, email, phone, type
+#### Data Joins & Mapping
+The storage layer performs SQL joins to combine data:
+- **Units + FloorPlans** → Provides bedrooms, bathrooms, and square footage
+- **Units + Projects** → Provides building/project name
+- **Deals + Contacts + Units** → Maps to CRM "Leads" with full contact and unit details
 
-### Broker
-- firstName, lastName, email, phone, company, license
+#### Status Value Mapping
+Supabase status values are automatically mapped to CRM status values:
+- `"Available"` → `"available"` (Green)
+- `"Held"` → `"on_hold"` (Yellow/Amber)
+- `"Sold"` → `"sold"` (Red)
+- `"Contract"` → `"contract"` (Blue)
 
-### Activity
-- leadId, type (call/email/meeting/viewing/note), description, createdAt
+### CRM Data Models
 
-## Mock Data
-The system includes comprehensive seed data:
-- 12 units across two buildings (Tower A & Tower B)
-- 5 contacts (potential buyers)
-- 3 brokers from different agencies
-- 5 leads in various stages
-- 8 activities across different leads
+#### UnitWithDetails (Frontend)
+- All Unit table fields
+- bedrooms, bathrooms, squareFeet (from FloorPlans join)
+- building (from Projects join as project name)
+- floorPlan, project (optional related objects)
+
+#### Lead/Deal Mapping
+- Supabase "Deals" → CRM "Leads"
+- contact: Buyer contact information
+- broker: Broker contact (optional, from broker_contact_id)
+- unit: Associated unit with full details
+- activities: Activity timeline from Activities table
+- status: Mapped from deal_stage
+- score: Calculated from deal stage and activity count
+
+### Live Data
+The system connects to a **live Supabase database** with:
+- **94 units** across multiple projects
+- Real unit data from FloorPlans and Projects tables
+- Contact records for buyers and brokers
+- Deal records tracked as leads
+- Activity history linked to deals
 
 ## Development
 
@@ -157,13 +180,29 @@ client/
     lib/            # Utilities (queryClient, utils)
 server/
   routes.ts         # API routes and WebSocket server
-  storage.ts        # In-memory storage implementation
+  storage.ts        # Storage interface definition
+  postgres-storage.ts  # PostgreSQL/Supabase storage implementation
+  db.ts            # Drizzle ORM database connection
 shared/
-  schema.ts         # TypeScript types and Zod schemas
+  schema.ts         # Drizzle schema matching Supabase tables + TypeScript types
 ```
 
+### Database Connection
+- **Provider**: Supabase PostgreSQL (Transaction Pooler)
+- **ORM**: Drizzle ORM with postgres-js driver
+- **Connection**: Managed via `DATABASE_URL` environment variable
+- **Schema**: Defined in `shared/schema.ts` matching existing Supabase tables
+
 ## Recent Changes
-- **2025-10-04 (Latest)**: Complete Charney brand design implementation
+- **2025-10-04 (Latest)**: Integrated with existing Supabase PostgreSQL database
+  - Connected CRM to user's live Supabase database using Replit's Supabase integration
+  - Implemented PostgresStorage layer with SQL joins (Units+FloorPlans+Projects for unit details)
+  - Added automatic status value mapping (Supabase "Available"/"Held"/"Sold" → CRM format)
+  - Verified 94 units display correctly with joined data (bedrooms, bathrooms, sqft, building names)
+  - Confirmed real-time WebSocket updates work with Supabase data persistence
+  - Tested unit status updates (PUT /api/units/:id/status) successfully update database
+  - All E2E tests passing with live Supabase data
+- **2025-10-04**: Complete Charney brand design implementation
   - Updated color system to Charney Red (#FF5959), Black, Cream (#F6F1EB), and White
   - Implemented Franklin Gothic typography with uppercase headings throughout
   - Added 4px red accent bar to header

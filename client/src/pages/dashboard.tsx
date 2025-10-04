@@ -42,7 +42,7 @@ function UnitCard({ unit }: { unit: Unit }) {
       data-testid={`card-unit-${unit.id}`}
     >
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-        <CardTitle className="text-lg font-semibold" data-testid={`text-unit-number-${unit.id}`}>
+        <CardTitle className="text-lg font-black uppercase tracking-tight" data-testid={`text-unit-number-${unit.id}`}>
           Unit {unit.unitNumber}
         </CardTitle>
         <Badge className={`${config.bgColor} ${config.color} border-2`} data-testid={`badge-status-${unit.id}`}>
@@ -120,7 +120,7 @@ function StatCard({ title, value, trend }: { title: string; value: string | numb
   return (
     <Card data-testid={`card-stat-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <CardHeader className="space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+        <CardTitle className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
           {title}
         </CardTitle>
       </CardHeader>

@@ -58,24 +58,42 @@ Charney CRM is a professional iPad-optimized CRM system designed for real-time c
    - Clean, professional design with Charney brand colors
    - Optimized for split-screen multitasking
 
-## Design System
+## Design System - Charney Brand
 
 ### Colors
-- **Primary**: Deep Blue (220 85% 45%) - Professional brand color
-- **Status Colors**:
-  - Available: Green (142 70% 45%)
-  - On Hold: Amber (45 90% 55%)
-  - Contract: Blue (210 85% 55%)
-  - Sold: Red (0 70% 50%)
+- **Charney Red**: #FF5959 (0 100% 67% HSL) - Primary brand color for accents, active states, CTA buttons
+- **Charney Black**: #000000 (0 0% 0% HSL) - Primary text color
+- **Charney Cream**: #F6F1EB (33 35% 94% HSL) - Background color
+- **White**: #FFFFFF - Card backgrounds
+- **Gray**: #666666 (0 0% 40% HSL) - Muted text
+
+**Critical Brand Rule**: Red backgrounds MUST have black text for proper contrast
+
+### Status Colors
+- **Available**: Green (142 70% 45%)
+- **On Hold**: Amber (45 90% 55%)
+- **Contract**: Blue (210 85% 55%)
+- **Sold**: Red (0 70% 50%)
 
 ### Typography
-- **Primary Font**: Inter (sans-serif)
-- **Monospace Font**: JetBrains Mono (for prices and data)
+- **Primary Font**: Franklin Gothic with fallbacks (Arial Narrow, Arial, sans-serif)
+- **Headings**: Uppercase, bold/black weight, tight tracking (-1.5px to -0.5px letter-spacing)
+- **Mixed Headlines**: Black + Red color combination (e.g., "CHARNEY" in black, "CRM" in red)
+- **Buttons**: Uppercase, bold, with wide letter spacing (1px)
+- **Body Text**: Regular weight, black color
+
+### Visual Elements
+- **Red Accent Bar**: 4px red border at bottom of header (border-b-4 border-primary)
+- **Border Radius**: 4px (sm), 8px (md), 12px (lg)
+- **Spacing**: Consistent spacing system (8px, 16px, 24px, 40px, 60px, 80px)
+- **Elevation**: Subtle shadows and hover states
 
 ### Components
 - All interactive elements use Shadcn UI components
-- Consistent spacing using Tailwind utilities (p-4, p-6, gap-4)
+- All headings are uppercase per Charney brand guidelines
+- Navigation buttons are uppercase and bold
 - Hover and active states with elevation system (hover-elevate, active-elevate-2)
+- Consistent 4px border radius on most UI elements
 
 ## API Endpoints
 
@@ -145,6 +163,14 @@ shared/
 ```
 
 ## Recent Changes
+- **2025-10-04 (Latest)**: Complete Charney brand design implementation
+  - Updated color system to Charney Red (#FF5959), Black, Cream (#F6F1EB), and White
+  - Implemented Franklin Gothic typography with uppercase headings throughout
+  - Added 4px red accent bar to header
+  - Applied mixed-color headlines (e.g., "CHARNEY CRM" with red emphasis)
+  - Updated all buttons and navigation to uppercase with bold styling
+  - Maintained full functionality while enhancing brand consistency
+  - Verified brand implementation through comprehensive E2E testing
 - **2025-10-04**: Added comprehensive filtering system to Unit Map dashboard
   - Implemented Building/Tower, Bedrooms, Bathrooms, Price Range, and Square Footage filters
   - All filters work in combination with real-time stats updates
@@ -158,7 +184,10 @@ shared/
 - Integrated Shadcn UI components with custom design tokens
 
 ## User Preferences
-- iPad-first design with large touch targets
-- Professional color scheme with status-based visualization
+- **Brand Guidelines**: Charney brand design system with red (#FF5959), black, and cream colors
+- **Typography**: Franklin Gothic exclusively, uppercase headings, bold emphasis
+- **Visual Style**: Simplicity and strength, 6px red accent bars, mixed-color headlines
+- iPad-first design with large touch targets (44px+ minimum)
 - Real-time updates are critical for sales tracking
 - Clean, data-focused interface without unnecessary decorations
+- Professional appearance suitable for Demo Day presentations

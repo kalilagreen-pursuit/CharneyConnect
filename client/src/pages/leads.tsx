@@ -115,7 +115,7 @@ function StatCard({ title, value }: { title: string; value: string | number }) {
   return (
     <Card data-testid={`card-lead-stat-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <CardHeader className="space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+        <CardTitle className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
           {title}
         </CardTitle>
       </CardHeader>

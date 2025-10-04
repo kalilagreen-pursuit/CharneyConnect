@@ -1,0 +1,57 @@
+Replit Build Prompt for Charney CRM Archetype (Low-Token, Brand-Aligned)
+Project: Charney CRM - AI-Native Condo Sales Tracking
+
+Goal: Prototype iPad-optimized CRM for Demo Day.
+
+1. Replit Setup:
+
+Template: Node.js
+
+Name: charney-crm
+
+package.json: Use previously defined dependencies (React, Express, ws, concurrently).
+
+run command: Set to npm run dev (runs frontend & backend concurrently).
+
+2. Project Structure:
+
+Root: public/, src/, server/
+
+src/ (Frontend - React): components/, views/, App.js, index.js
+
+server/ (Backend - Node/Express): api/ (for units, leads), services/ (AI, automation), db/ (mock_data.json), server.js
+
+3. Data Foundation:
+
+server/db/mock_data.json: Populate with the full mock data set provided in our prior discussion (Contacts, Brokers, Client/Lead, Property/Unit, Activity).
+
+server/server.js: Configure Express, cors, serve static build files. Establish /api/units & /api/leads routes.
+
+4. Core API Endpoints (Mocked):
+
+server/api/units.js: Implement GET / (all units), GET /:id (single unit), PUT /:id/status (update status/price). Logic to read/update mock_data.json for real-time simulation.
+
+server/api/leads.js: Implement GET / (all leads), GET /:id (single lead).
+
+server/services/websocketService.js (Optional/Advanced Mock): Basic WebSocket server to push unit status updates to frontend.
+
+5. Frontend (React) Archetype:
+
+Initial Setup: Standard create-react-app in src/.
+
+Global Styling (src/index.css or similar):
+
+Fonts: Use brand's primary/secondary typography.
+
+Colors: Define CSS variables for Charney brand palette (primary, secondary, neutrals).
+
+src/App.js: Basic router for /dashboard (main view).
+
+src/views/Dashboard.js (Placeholder): Fetches units from /api/units. Crucially, implement the Unit Map concept:
+
+Visually display units, color-coded by status (Available: Green, On Hold: Yellow, Contract: Blue, Sold: Red) using brand-aligned tones.
+
+Cards for each unit displaying Unit ID, Current Price.
+
+Ensure iPad-responsive layout (large touch targets, clean hierarchy).
+

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { unitStatuses, type UnitUpdateRequest } from "@shared/schema";
+import { unitStatuses, insertActivitySchema } from "@shared/schema";
 import { z } from "zod";
 
 const updateStatusSchema = z.object({
@@ -105,6 +105,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching lead:", error);
       res.status(500).json({ error: "Failed to fetch lead" });
+    }
+  });
+
+  // Activities endpoints
+  app.get("/api/leads/:leadId/activities", async (req, res) => {
+    try {
+      const activities = await storage.getActivitiesByLeadId(req.params.leadId);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+
+  app.post("/api/activities", async (req, res) => {
+    try {
+      const validation = insertActivitySchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const activity = await storage.createActivity(validation.data);
+      res.status(201).json(activity);
+    } catch (error) {
+      console.error("Error creating activity:", error);
+      res.status(500).json({ error: "Failed to create activity" });
     }
   });
 

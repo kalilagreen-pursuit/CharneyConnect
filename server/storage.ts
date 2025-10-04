@@ -1,34 +1,33 @@
 import { 
-  type Unit, type InsertUnit, type UnitStatus, type UnitUpdateRequest,
+  type UnitWithDetails, type InsertUnit, type UnitStatus, type UnitUpdateRequest,
   type Contact, type InsertContact,
-  type Broker, type InsertBroker,
-  type Lead, type InsertLead, type LeadWithDetails,
+  type Lead, type InsertDeal, type LeadWithDetails,
   type Activity, type InsertActivity
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
   // Units
-  getAllUnits(): Promise<Unit[]>;
-  getUnitById(id: string): Promise<Unit | undefined>;
-  createUnit(unit: InsertUnit): Promise<Unit>;
-  updateUnitStatus(id: string, status: UnitStatus): Promise<Unit | undefined>;
-  updateUnitPrice(id: string, price: number): Promise<Unit | undefined>;
+  getAllUnits(): Promise<UnitWithDetails[]>;
+  getUnitById(id: string): Promise<UnitWithDetails | undefined>;
+  createUnit(unit: InsertUnit): Promise<UnitWithDetails>;
+  updateUnitStatus(id: string, status: UnitStatus): Promise<UnitWithDetails | undefined>;
+  updateUnitPrice(id: string, price: number): Promise<UnitWithDetails | undefined>;
   
   // Contacts
   getAllContacts(): Promise<Contact[]>;
   getContactById(id: string): Promise<Contact | undefined>;
   createContact(contact: InsertContact): Promise<Contact>;
   
-  // Brokers
-  getAllBrokers(): Promise<Broker[]>;
-  getBrokerById(id: string): Promise<Broker | undefined>;
-  createBroker(broker: InsertBroker): Promise<Broker>;
+  // Brokers (using contacts with contactType = 'broker')
+  getAllBrokers(): Promise<Contact[]>;
+  getBrokerById(id: string): Promise<Contact | undefined>;
+  createBroker(broker: any): Promise<Contact>;
   
-  // Leads
+  // Leads (mapped from Deals)
   getAllLeads(): Promise<LeadWithDetails[]>;
   getLeadById(id: string): Promise<LeadWithDetails | undefined>;
-  createLead(lead: InsertLead): Promise<Lead>;
+  createLead(lead: InsertDeal): Promise<Lead>;
   
   // Activities
   getActivitiesByLeadId(leadId: string): Promise<Activity[]>;
@@ -272,7 +271,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-import { DbStorage } from './db-storage';
+import { PostgresStorage } from './postgres-storage';
 
-// Use DbStorage for production, MemStorage for development/testing
-export const storage = process.env.DATABASE_URL ? new DbStorage() : new MemStorage();
+// Use PostgresStorage with Supabase database
+export const storage = process.env.DATABASE_URL ? new PostgresStorage() : new MemStorage();

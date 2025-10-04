@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Unit, UnitStatus } from "@shared/schema";
+import { UnitWithDetails, UnitStatus } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,8 +33,8 @@ const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: 
   },
 };
 
-function UnitCard({ unit }: { unit: Unit }) {
-  const config = statusConfig[unit.status];
+function UnitCard({ unit }: { unit: UnitWithDetails }) {
+  const config = statusConfig[unit.status as UnitStatus] || statusConfig.available;
   
   return (
     <Card 
@@ -51,7 +51,7 @@ function UnitCard({ unit }: { unit: Unit }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-2xl font-mono font-bold" data-testid={`text-price-${unit.id}`}>
-          {formatCurrency(unit.price)}
+          {formatCurrency(typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price)}
         </div>
         
         <div className="grid grid-cols-2 gap-3 text-sm">
@@ -139,7 +139,7 @@ function StatCard({ title, value, trend }: { title: string; value: string | numb
 }
 
 export default function Dashboard() {
-  const { data: units, isLoading } = useQuery<Unit[]>({
+  const { data: units, isLoading } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/units"],
   });
 
@@ -169,8 +169,8 @@ export default function Dashboard() {
       buildings: Array.from(buildingSet).sort(),
       bedroomOptions: Array.from(bedroomSet).sort((a, b) => a - b),
       bathroomOptions: Array.from(bathroomSet).sort((a, b) => a - b),
-      minPrice: Math.min(...units.map(u => u.price)),
-      maxPrice: Math.max(...units.map(u => u.price)),
+      minPrice: Math.min(...units.map(u => typeof u.price === 'string' ? parseFloat(u.price) : u.price)),
+      maxPrice: Math.max(...units.map(u => typeof u.price === 'string' ? parseFloat(u.price) : u.price)),
       minSqft: Math.min(...units.map(u => u.squareFeet)),
       maxSqft: Math.max(...units.map(u => u.squareFeet))
     };
@@ -183,7 +183,8 @@ export default function Dashboard() {
       if (selectedBuilding !== "all" && unit.building !== selectedBuilding) return false;
       if (selectedBedrooms !== "all" && unit.bedrooms !== parseInt(selectedBedrooms)) return false;
       if (selectedBathrooms !== "all" && unit.bathrooms !== parseInt(selectedBathrooms)) return false;
-      if (unit.price < priceRange[0] || unit.price > priceRange[1]) return false;
+      const price = typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price;
+      if (price < priceRange[0] || price > priceRange[1]) return false;
       if (unit.squareFeet < sqftRange[0] || unit.squareFeet > sqftRange[1]) return false;
       return true;
     });
@@ -195,7 +196,7 @@ export default function Dashboard() {
     onHold: filteredUnits.filter(u => u.status === "on_hold").length,
     contract: filteredUnits.filter(u => u.status === "contract").length,
     sold: filteredUnits.filter(u => u.status === "sold").length,
-    totalValue: filteredUnits.reduce((sum, u) => sum + u.price, 0),
+    totalValue: filteredUnits.reduce((sum, u) => sum + (typeof u.price === 'string' ? parseFloat(u.price) : u.price), 0),
   } : null;
 
   const hasActiveFilters = selectedBuilding !== "all" || 

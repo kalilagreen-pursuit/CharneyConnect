@@ -7,8 +7,8 @@ import { z } from "zod";
 export const unitStatuses = ["available", "on_hold", "contract", "sold"] as const;
 export type UnitStatus = typeof unitStatuses[number];
 
-// Units table (matches Supabase table name "Units")
-export const units = pgTable("Units", {
+// CRM Units table (separate from existing Units table)
+export const units = pgTable("crm_units", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   unitNumber: text("unit_number").notNull(),
   floor: integer("floor").notNull(),
@@ -24,8 +24,8 @@ export const insertUnitSchema = createInsertSchema(units).omit({ id: true });
 export type InsertUnit = z.infer<typeof insertUnitSchema>;
 export type Unit = typeof units.$inferSelect;
 
-// Contacts table (matches Supabase table name "Contacts")
-export const contacts = pgTable("Contacts", {
+// CRM Contacts table (separate from existing Contacts table)
+export const contacts = pgTable("crm_contacts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
@@ -38,8 +38,8 @@ export const insertContactSchema = createInsertSchema(contacts).omit({ id: true 
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
 
-// Brokers table
-export const brokers = pgTable("brokers", {
+// CRM Brokers table
+export const brokers = pgTable("crm_brokers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
@@ -53,8 +53,8 @@ export const insertBrokerSchema = createInsertSchema(brokers).omit({ id: true })
 export type InsertBroker = z.infer<typeof insertBrokerSchema>;
 export type Broker = typeof brokers.$inferSelect;
 
-// Leads table
-export const leads = pgTable("leads", {
+// CRM Leads table
+export const leads = pgTable("crm_leads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   contactId: varchar("contact_id").notNull(),
   brokerId: varchar("broker_id"),
@@ -69,8 +69,8 @@ export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, creat
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type Lead = typeof leads.$inferSelect;
 
-// Activities table (matches Supabase table name "Activities")
-export const activities = pgTable("Activities", {
+// CRM Activities table
+export const activities = pgTable("crm_activities", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   leadId: varchar("lead_id").notNull(),
   type: text("type").notNull(), // 'call' | 'email' | 'meeting' | 'viewing' | 'note'

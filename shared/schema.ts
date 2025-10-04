@@ -97,8 +97,8 @@ export const activities = pgTable("Activities", {
 
 export type Activity = typeof activities.$inferSelect;
 
-// Extended types for CRM frontend
-export type Lead = Deal & {
+// Extended types for CRM frontend (Deal-based, legacy)
+export type DealLead = Deal & {
   contact: Contact;
   broker?: Contact;
   unit?: UnitWithDetails;
@@ -108,7 +108,7 @@ export type Lead = Deal & {
   notes?: string;
 };
 
-export type LeadWithDetails = Lead;
+export type LeadWithDetails = DealLead;
 
 export type UnitUpdateRequest = {
   status?: string;
@@ -123,6 +123,22 @@ export const insertContactSchema = createInsertSchema(contacts).omit({ id: true,
 export type InsertContact = z.infer<typeof insertContactSchema>;
 
 export const insertDealSchema = createInsertSchema(deals).omit({ id: true, createdAt: true });
+
+// Leads table (public.leads) - CRM lead management
+export const leads = pgTable("leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  company: text("company"),
+  status: text("status").notNull(),
+  value: integer("value"),
+  phone: text("phone"),
+  address: text("address"),
+});
+
+export type Lead = typeof leads.$inferSelect;
+export const insertLeadSchema = createInsertSchema(leads).omit({ id: true });
+export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type InsertDeal = z.infer<typeof insertDealSchema>;
 
 export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true });

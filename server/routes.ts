@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { unitStatuses, type UnitUpdateRequest } from "@shared/schema";
+import { unitStatuses, type UnitUpdateRequest, insertLeadSchema } from "@shared/schema";
 import { z } from "zod";
 
 const updateStatusSchema = z.object({
@@ -12,6 +12,8 @@ const updateStatusSchema = z.object({
 const updatePriceSchema = z.object({
   price: z.number().positive(),
 });
+
+const updateLeadSchema = insertLeadSchema.partial();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Units endpoints
@@ -108,6 +110,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/leads", async (req, res) => {
+    try {
+      const validation = insertLeadSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const newLead = await storage.createLead(validation.data);
+      
+      // Broadcast update to all WebSocket clients
+      broadcastLeadUpdate(newLead, 'created');
+
+      res.status(201).json(newLead);
+    } catch (error) {
+      console.error("Error creating lead:", error);
+      res.status(500).json({ error: "Failed to create lead" });
+    }
+  });
+
+  app.put("/api/leads/:id", async (req, res) => {
+    try {
+      const validation = updateLeadSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const updatedLead = await storage.updateLead(req.params.id, validation.data);
+      
+      if (!updatedLead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      // Broadcast update to all WebSocket clients
+      broadcastLeadUpdate(updatedLead, 'updated');
+
+      res.json(updatedLead);
+    } catch (error) {
+      console.error("Error updating lead:", error);
+      res.status(500).json({ error: "Failed to update lead" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server setup
@@ -148,8 +192,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
-  // Store broadcast function globally so it can be used from routes
+  // Function to broadcast lead updates to all connected clients
+  function broadcastLeadUpdate(lead: any, action: 'created' | 'updated' | 'deleted') {
+    const message = JSON.stringify({
+      type: 'lead_update',
+      action,
+      data: lead,
+    });
+
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  }
+
+  // Store broadcast functions globally so they can be used from routes
   (global as any).broadcastUnitUpdate = broadcastUnitUpdate;
+  (global as any).broadcastLeadUpdate = broadcastLeadUpdate;
 
   return httpServer;
 }

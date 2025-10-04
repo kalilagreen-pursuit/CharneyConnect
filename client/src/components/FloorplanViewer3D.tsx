@@ -25,6 +25,7 @@ interface UnitData {
 
 interface FloorplanViewer3DProps {
   projectId?: string;
+  unitNumber?: string;
   onClose?: () => void;
 }
 
@@ -41,7 +42,7 @@ const STATUS_COLORS: Record<string, number> = {
   sold: 0xe74c3c,
 };
 
-export default function FloorplanViewer3D({ projectId, onClose }: FloorplanViewer3DProps) {
+export default function FloorplanViewer3D({ projectId, unitNumber, onClose }: FloorplanViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -49,6 +50,7 @@ export default function FloorplanViewer3D({ projectId, onClose }: FloorplanViewe
   const controlsRef = useRef<OrbitControls | null>(null);
   const currentModelRef = useRef<THREE.Group | null>(null);
   const unitMeshMapRef = useRef<Map<string, THREE.Mesh>>(new Map());
+  const highlightedMeshRef = useRef<THREE.Mesh | null>(null);
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const compassImgRef = useRef<HTMLImageElement>(null);
@@ -132,6 +134,24 @@ export default function FloorplanViewer3D({ projectId, onClose }: FloorplanViewe
           mesh.material = new THREE.MeshStandardMaterial({ color });
         }
       });
+
+      if (unitNumber) {
+        const targetMeshName = `Unit_${unitNumber}`;
+        const targetMesh = unitMeshMapRef.current.get(targetMeshName);
+        if (targetMesh) {
+          const unit = units.find((u: any) => 
+            u.unitNumber === unitNumber && u.project?.id === projectId
+          );
+          const statusColor = unit ? (STATUS_COLORS[unit.status] || 0xbdc3c7) : 0xbdc3c7;
+          targetMesh.material = new THREE.MeshStandardMaterial({ 
+            color: statusColor, 
+            emissive: 0xffff00, 
+            emissiveIntensity: 0.5 
+          });
+          highlightedMeshRef.current = targetMesh;
+          fetchUnitDetails(unitNumber);
+        }
+      }
     } catch (error) {
       console.error('Error fetching units:', error);
     }

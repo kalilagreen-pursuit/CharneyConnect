@@ -34,7 +34,7 @@ const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: 
   },
 };
 
-function UnitCard({ unit, onViewIn3D }: { unit: UnitWithDetails; onViewIn3D?: (projectId: string) => void }) {
+function UnitCard({ unit, onViewIn3D }: { unit: UnitWithDetails; onViewIn3D?: (projectId: string, unitNumber: string) => void }) {
   const config = statusConfig[unit.status as UnitStatus] || statusConfig.available;
   
   return (
@@ -46,7 +46,7 @@ function UnitCard({ unit, onViewIn3D }: { unit: UnitWithDetails; onViewIn3D?: (p
         <CardTitle 
           className="text-lg font-black uppercase tracking-tight cursor-pointer hover:text-primary transition-colors" 
           data-testid={`text-unit-number-${unit.id}`}
-          onClick={() => onViewIn3D?.(unit.project?.id || '')}
+          onClick={() => onViewIn3D?.(unit.project?.id || '', unit.unitNumber)}
         >
           Unit {unit.unitNumber}
         </CardTitle>
@@ -156,6 +156,7 @@ export default function Dashboard() {
   const [sqftRange, setSqftRange] = useState<[number, number]>([0, 3000]);
   const [show3DViewer, setShow3DViewer] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [selectedUnitNumber, setSelectedUnitNumber] = useState<string>('');
 
   const { buildings, bedroomOptions, bathroomOptions, minPrice, maxPrice, minSqft, maxSqft } = useMemo(() => {
     if (!units) return {
@@ -434,8 +435,9 @@ export default function Dashboard() {
                   <UnitCard 
                     key={unit.id} 
                     unit={unit} 
-                    onViewIn3D={(projectId) => {
+                    onViewIn3D={(projectId, unitNumber) => {
                       setSelectedProjectId(projectId);
+                      setSelectedUnitNumber(unitNumber);
                       setShow3DViewer(true);
                     }}
                   />
@@ -474,6 +476,7 @@ export default function Dashboard() {
       {show3DViewer && (
         <FloorplanViewer3D
           projectId={selectedProjectId}
+          unitNumber={selectedUnitNumber}
           onClose={() => setShow3DViewer(false)}
         />
       )}

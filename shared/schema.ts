@@ -7,8 +7,8 @@ import { z } from "zod";
 export const unitStatuses = ["available", "on_hold", "contract", "sold"] as const;
 export type UnitStatus = typeof unitStatuses[number];
 
-// Units table
-export const units = pgTable("units", {
+// Units table (matches Supabase table name "Units")
+export const units = pgTable("Units", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   unitNumber: text("unit_number").notNull(),
   floor: integer("floor").notNull(),
@@ -24,8 +24,8 @@ export const insertUnitSchema = createInsertSchema(units).omit({ id: true });
 export type InsertUnit = z.infer<typeof insertUnitSchema>;
 export type Unit = typeof units.$inferSelect;
 
-// Contacts table
-export const contacts = pgTable("contacts", {
+// Contacts table (matches Supabase table name "Contacts")
+export const contacts = pgTable("Contacts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
@@ -69,8 +69,8 @@ export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, creat
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type Lead = typeof leads.$inferSelect;
 
-// Activities table
-export const activities = pgTable("activities", {
+// Activities table (matches Supabase table name "Activities")
+export const activities = pgTable("Activities", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   leadId: varchar("lead_id").notNull(),
   type: text("type").notNull(), // 'call' | 'email' | 'meeting' | 'viewing' | 'note'

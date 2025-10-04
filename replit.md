@@ -53,7 +53,19 @@ Charney CRM is a professional iPad-optimized CRM system designed for real-time c
    - Visual pulse animation on updated cards
    - Automatic cache invalidation and UI refresh
 
-5. **iPad Optimization**
+5. **3D Building Viewer**
+   - Interactive 3D visualization of building models using three.js
+   - Click unit numbers on dashboard to open immersive 3D modal
+   - Three buildings supported: The Jackson, The Dime, Gowanus
+   - Color-coded units in 3D (Available=Green, On Hold=Yellow, Contract=Blue, Sold=Red)
+   - Touch controls: Tap to select unit, drag to rotate, pinch to zoom
+   - Unit details panel with status editing and save functionality
+   - Rotating compass for orientation awareness
+   - Project switcher to view different buildings
+   - Graceful WebGL error handling for unsupported environments
+   - Charney brand styling: cream background, uppercase UI, red accents
+
+6. **iPad Optimization**
    - Large touch targets (min 44x44px)
    - Responsive layouts for portrait and landscape
    - Clean, professional design with Charney brand colors
@@ -179,9 +191,15 @@ This starts both the Express backend and Vite frontend on the same port.
 client/
   src/
     components/     # Reusable UI components
+      FloorplanViewer3D.tsx  # 3D building viewer using three.js
     pages/          # Page components (dashboard, leads)
     hooks/          # Custom hooks (useWebSocket)
     lib/            # Utilities (queryClient, utils)
+public/
+  the_jackson_v2.glb   # 3D model for The Jackson
+  the_dime_v1.glb      # 3D model for The Dime
+  gowanus_v1.glb       # 3D model for Gowanus
+  compass.png          # Compass asset for 3D viewer
 server/
   routes.ts         # API routes and WebSocket server
   storage.ts        # Storage interface definition
@@ -198,7 +216,17 @@ shared/
 - **Schema**: Defined in `shared/schema.ts` matching existing Supabase tables
 
 ## Recent Changes
-- **2025-10-04 (Latest)**: Integrated public.leads table with realtime WebSocket updates
+- **2025-10-04 (Latest)**: Integrated 3D building viewer with three.js
+  - Created FloorplanViewer3D React component converting vanilla JS to React with hooks
+  - Downloaded 3D models (The Jackson, The Dime, Gowanus) and compass assets to public/ folder
+  - Dashboard unit cards now open 3D viewer modal when clicking unit number
+  - Implemented touch controls: tap to select, drag to rotate, pinch to zoom
+  - Unit details panel shows unit info with status editing and save functionality
+  - Project switcher allows viewing different buildings in 3D
+  - Added WebGL error handling for unsupported environments (shows error dialog with close button)
+  - Applied Charney brand styling: cream background (#F6F1EB), uppercase text, red accents
+  - Verified E2E: 3D viewer opens, WebGL error handled gracefully, close button works
+- **2025-10-04**: Integrated public.leads table with realtime WebSocket updates
   - Created public.leads table in Supabase with fields: id, name, email, company, status, value, phone, address
   - Enabled Supabase realtime publication for public.leads table
   - Implemented CRUD API endpoints: GET/POST /api/leads, GET/PUT /api/leads/:id

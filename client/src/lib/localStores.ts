@@ -15,7 +15,7 @@ export interface Prospect {
 export interface Visit {
   id: string;
   prospectId: string;
-  unitId: number;
+  unitId: string;
   agentId: string;
   timestamp: string;
   notes?: string;

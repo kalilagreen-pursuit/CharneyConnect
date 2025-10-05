@@ -27,6 +27,7 @@ interface FloorplanViewer3DProps {
   projectId?: string;
   unitNumber?: string;
   onClose?: () => void;
+  onUnitClick?: (unitNumber: string) => void;
 }
 
 const PROJECTS: Project[] = [
@@ -58,6 +59,7 @@ export default function FloorplanViewer3D({
   projectId,
   unitNumber,
   onClose,
+  onUnitClick,
 }: FloorplanViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -284,12 +286,17 @@ export default function FloorplanViewer3D({
 
       if (targetUnit) {
         const unitNumber = targetUnit.name.split("_")[1];
-        fetchUnitDetails(unitNumber);
+        // If onUnitClick callback is provided, use it instead of showing built-in panel
+        if (onUnitClick) {
+          onUnitClick(unitNumber);
+        } else {
+          fetchUnitDetails(unitNumber);
+        }
       } else {
         hideDetailsPanel();
       }
     },
-    [hideDetailsPanel],
+    [hideDetailsPanel, onUnitClick],
   );
 
   // Client-side only mounting

@@ -29,7 +29,7 @@ export default function ProjectSelect() {
     console.log('[ProjectSelect] Project selected', { projectId, projectName, actionId: crypto.randomUUID() });
     
     setTimeout(() => {
-      setLocation('/agent/unit-map');
+      setLocation('/agent/viewer');
     }, 150);
   };
 

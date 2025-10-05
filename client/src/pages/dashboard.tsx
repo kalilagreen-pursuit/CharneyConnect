@@ -121,9 +121,25 @@ function UnitCardSkeleton() {
   );
 }
 
-function StatCard({ title, value, trend }: { title: string; value: string | number; trend?: string }) {
+function StatCard({ 
+  title, 
+  value, 
+  trend, 
+  onClick, 
+  isActive 
+}: { 
+  title: string; 
+  value: string | number; 
+  trend?: string;
+  onClick?: () => void;
+  isActive?: boolean;
+}) {
   return (
-    <Card data-testid={`card-stat-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+    <Card 
+      data-testid={`card-stat-${title.toLowerCase().replace(/\s+/g, '-')}`}
+      className={`transition-all ${onClick ? 'cursor-pointer hover-elevate active-elevate-2' : ''} ${isActive ? 'ring-2 ring-primary' : ''}`}
+      onClick={onClick}
+    >
       <CardHeader className="space-y-0 pb-2">
         <CardTitle className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
           {title}
@@ -149,6 +165,7 @@ export default function Dashboard() {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const [activeStatusFilter, setActiveStatusFilter] = useState<string | null>(null);
   const [selectedBuilding, setSelectedBuilding] = useState<string>("all");
   const [selectedBedrooms, setSelectedBedrooms] = useState<string>("all");
   const [selectedBathrooms, setSelectedBathrooms] = useState<string>("all");
@@ -188,6 +205,10 @@ export default function Dashboard() {
     if (!units) return [];
 
     return units.filter(unit => {
+      // Status filter (quick filter from stat cards)
+      if (activeStatusFilter && unit.status !== activeStatusFilter) return false;
+      
+      // Advanced filters
       if (selectedBuilding !== "all" && unit.building !== selectedBuilding) return false;
       if (selectedBedrooms !== "all" && unit.bedrooms !== parseInt(selectedBedrooms)) return false;
       if (selectedBathrooms !== "all" && unit.bathrooms !== parseInt(selectedBathrooms)) return false;
@@ -196,18 +217,19 @@ export default function Dashboard() {
       if (unit.squareFeet < sqftRange[0] || unit.squareFeet > sqftRange[1]) return false;
       return true;
     });
-  }, [units, selectedBuilding, selectedBedrooms, selectedBathrooms, priceRange, sqftRange]);
+  }, [units, activeStatusFilter, selectedBuilding, selectedBedrooms, selectedBathrooms, priceRange, sqftRange]);
 
-  const stats = filteredUnits ? {
-    total: filteredUnits.length,
-    available: filteredUnits.filter(u => u.status === "available").length,
-    onHold: filteredUnits.filter(u => u.status === "on_hold").length,
-    contract: filteredUnits.filter(u => u.status === "contract").length,
-    sold: filteredUnits.filter(u => u.status === "sold").length,
-    totalValue: filteredUnits.reduce((sum, u) => sum + (typeof u.price === 'string' ? parseFloat(u.price) : u.price), 0),
+  const stats = units ? {
+    total: units.length,
+    available: units.filter(u => u.status === "available").length,
+    onHold: units.filter(u => u.status === "on_hold").length,
+    contract: units.filter(u => u.status === "contract").length,
+    sold: units.filter(u => u.status === "sold").length,
+    totalValue: units.reduce((sum, u) => sum + (typeof u.price === 'string' ? parseFloat(u.price) : u.price), 0),
   } : null;
 
-  const hasActiveFilters = selectedBuilding !== "all" || 
+  const hasActiveFilters = activeStatusFilter !== null ||
+    selectedBuilding !== "all" || 
     selectedBedrooms !== "all" || 
     selectedBathrooms !== "all" ||
     priceRange[0] !== minPrice ||
@@ -216,11 +238,17 @@ export default function Dashboard() {
     sqftRange[1] !== maxSqft;
 
   const clearFilters = () => {
+    setActiveStatusFilter(null);
     setSelectedBuilding("all");
     setSelectedBedrooms("all");
     setSelectedBathrooms("all");
     setPriceRange([minPrice, maxPrice]);
     setSqftRange([minSqft, maxSqft]);
+  };
+
+  const handleStatusFilterClick = (status: string) => {
+    // Toggle: if clicking the active filter, clear it; otherwise set it
+    setActiveStatusFilter(activeStatusFilter === status ? null : status);
   };
 
   return (
@@ -400,11 +428,36 @@ export default function Dashboard() {
               </>
             ) : stats ? (
               <>
-                <StatCard title="Total Units" value={stats.total} />
-                <StatCard title="Available" value={stats.available} />
-                <StatCard title="On Hold" value={stats.onHold} />
-                <StatCard title="Contract" value={stats.contract} />
-                <StatCard title="Sold" value={stats.sold} />
+                <StatCard 
+                  title="Total Units" 
+                  value={stats.total}
+                  onClick={() => setActiveStatusFilter(null)}
+                  isActive={activeStatusFilter === null}
+                />
+                <StatCard 
+                  title="Available" 
+                  value={stats.available}
+                  onClick={() => handleStatusFilterClick("available")}
+                  isActive={activeStatusFilter === "available"}
+                />
+                <StatCard 
+                  title="On Hold" 
+                  value={stats.onHold}
+                  onClick={() => handleStatusFilterClick("on_hold")}
+                  isActive={activeStatusFilter === "on_hold"}
+                />
+                <StatCard 
+                  title="Contract" 
+                  value={stats.contract}
+                  onClick={() => handleStatusFilterClick("contract")}
+                  isActive={activeStatusFilter === "contract"}
+                />
+                <StatCard 
+                  title="Sold" 
+                  value={stats.sold}
+                  onClick={() => handleStatusFilterClick("sold")}
+                  isActive={activeStatusFilter === "sold"}
+                />
                 <StatCard title="Total Value" value={formatCurrency(stats.totalValue)} />
               </>
             ) : null}

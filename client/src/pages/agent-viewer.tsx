@@ -28,11 +28,11 @@ export default function AgentViewer() {
 
   console.log(`[${actionId}] Agent Viewer initialized - Agent: ${agentName} (${agentId}), Project: ${projectName}`);
 
-  // Fetch units specific to this agent (from their deals)
+  // Fetch units specific to this agent and project
   const { data: units = [], isLoading } = useQuery<UnitWithDetails[]>({
-    queryKey: ["/api/agents", agentId, "units"],
+    queryKey: ["/api/agents", agentId, "units", projectId],
     queryFn: async () => {
-      const response = await fetch(`/api/agents/${agentId}/units`);
+      const response = await fetch(`/api/agents/${agentId}/units?projectId=${projectId}`);
       if (!response.ok) throw new Error('Failed to fetch agent units');
       return response.json();
     },
@@ -42,10 +42,10 @@ export default function AgentViewer() {
   useEffect(() => {
     if (unitUpdates.size > 0) {
       console.log(`[${actionId}] Received ${unitUpdates.size} realtime unit updates - invalidating cache`);
-      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
       clearUnitUpdates();
     }
-  }, [unitUpdates, actionId, agentId, clearUnitUpdates]);
+  }, [unitUpdates, actionId, agentId, projectId, clearUnitUpdates]);
 
   // Get selected unit object
   const selectedUnit = useMemo(() => {

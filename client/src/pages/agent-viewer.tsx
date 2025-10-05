@@ -132,8 +132,8 @@ export default function AgentViewer() {
       }
       floors.get(unit.floor)!.push(unit);
     });
-    // Sort floors descending (penthouse first)
-    return new Map([...floors.entries()].sort((a, b) => b[0] - a[0]));
+    // Sort floors descending (penthouse first) and return as array
+    return Array.from(floors.entries()).sort((a, b) => b[0] - a[0]);
   }, [units]);
 
   if (isLoading) {
@@ -186,13 +186,13 @@ export default function AgentViewer() {
             
             {/* Floor Grid */}
             <div className="space-y-4">
-              {Array.from(unitsByFloor.entries()).map(([floor, floorUnits]) => (
+              {unitsByFloor.map(([floor, floorUnits]) => (
                 <div key={floor} className="space-y-2">
                   <div className="text-sm font-bold uppercase text-muted-foreground">
                     Floor {floor}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {floorUnits.map(unit => (
+                    {floorUnits.map((unit) => (
                       <button
                         key={unit.id}
                         data-testid={`map-block-${unit.unitNumber}`}

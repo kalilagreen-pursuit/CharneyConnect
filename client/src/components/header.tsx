@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Building2, Users, UserCog } from "lucide-react";
+import { Building2, Users, UserCog, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +8,7 @@ export function Header() {
 
   const navItems = [
     { path: "/", label: "Unit Map", icon: Building2, testId: "link-dashboard" },
+    { path: "/manager", label: "Manager", icon: LayoutDashboard, testId: "link-manager" },
     { path: "/leads", label: "Leads", icon: Users, testId: "link-leads" },
     { path: "/agent/select", label: "Agent", icon: UserCog, testId: "link-agent" },
   ];

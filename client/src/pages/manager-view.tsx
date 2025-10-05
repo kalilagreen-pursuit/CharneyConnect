@@ -68,9 +68,9 @@ export default function ManagerView() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background">
       {/* Header */}
-      <div className="border-b bg-card">
+      <div className="flex-shrink-0 border-b bg-card">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -101,21 +101,21 @@ export default function ManagerView() {
       </div>
 
       {/* Kanban Board */}
-      <div className="p-6">
+      <div className="flex-1 overflow-auto p-6">
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">
             Loading pipeline...
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-full">
             {(Object.keys(statusConfig) as LeadStatus[]).map((status) => {
               const config = statusConfig[status];
               const columnUnits = groupedUnits[status];
 
               return (
-                <div key={status} className="flex flex-col gap-4">
+                <div key={status} className="flex flex-col gap-4 min-h-0">
                   {/* Column Header */}
-                  <Card className={`${config.bgColor} border-2`}>
+                  <Card className={`${config.bgColor} border-2 flex-shrink-0`}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <h3 className={`font-black uppercase tracking-tight ${config.color}`}>
@@ -133,7 +133,7 @@ export default function ManagerView() {
                   </Card>
 
                   {/* Cards */}
-                  <div className="space-y-3 flex-1" data-testid={`column-${status}`}>
+                  <div className="space-y-3 overflow-auto flex-1" data-testid={`column-${status}`}>
                     {columnUnits.length === 0 ? (
                       <Card className="border-dashed">
                         <CardContent className="py-8 text-center text-sm text-muted-foreground">

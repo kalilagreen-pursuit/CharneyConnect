@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
-import { InteractiveMap } from "@/components/InteractiveMap";
+import FloorplanViewer3D from "@/components/FloorplanViewer3D";
 import { UnitWithDetails } from "@shared/schema";
 import { agentContextStore } from "@/lib/localStores";
 import { useRealtime } from "@/contexts/RealtimeContext";
@@ -61,6 +61,14 @@ export default function AgentViewer() {
     const cardElement = document.querySelector(`[data-unit-id="${unitId}"]`);
     if (cardElement) {
       cardElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
+
+  // Handle unit click from 3D viewer (receives unit number)
+  const handleUnitClickFrom3D = (unitNumber: string) => {
+    const unit = units.find(u => u.unitNumber === unitNumber);
+    if (unit) {
+      handleUnitSelect(unit.id);
     }
   };
 
@@ -160,19 +168,13 @@ export default function AgentViewer() {
 
       {/* Split View Container */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Half: Unit Map */}
-        <div className="flex-shrink-0 h-1/2 border-b overflow-auto bg-cream/5" data-testid="container-unit-map">
-          <div className="p-6">
-            <h2 className="text-lg font-black uppercase tracking-tight mb-4">
-              UNIT MAP
-            </h2>
-            
-            <InteractiveMap
-              unitsData={units}
-              selectedUnitId={selectedUnitId}
-              setSelectedUnitId={handleUnitSelect}
-            />
-          </div>
+        {/* Top Half: 3D Building Viewer */}
+        <div className="flex-shrink-0 h-1/2 border-b overflow-hidden relative" data-testid="container-unit-map">
+          <FloorplanViewer3D
+            projectId={projectId}
+            unitNumber={selectedUnit?.unitNumber}
+            onUnitClick={handleUnitClickFrom3D}
+          />
         </div>
 
         {/* Bottom Half: Unit Cards */}

@@ -1,0 +1,28 @@
+🎯 Replit Implementation Prompt: Charney CRM Workflow Buildout
+This prompt guides the implementation of the core Agent and Manager workflows, utilizing the existing Supabase leads table and the specified front-end/local data storage architecture.
+
+🛠️ Step 1: Agent Workflow Implementation (MVP)
+Focus on building the mobile-first views and the required client-side logic. The key is the smooth, real-time interaction.
+
+Feature Group	Implementation Tasks	Data Sources (Supabase/Local)
+Login & Context (Steps 1, 2)	1. Implement a static "Select Agent" list (no auth required). 2. Create the "Select Property" screen using a static list of projects/buildings. 3. Query Supabase to display Available / Reserved / Sold counts for units within the selected project.	Supabase: projects (mocked static list), units (for counts).
+3D & Unit View (Steps 3, 4)	1. Implement the WebGL placeholder (client-side initialization) to display unit status by color. 2. Implement the Unit Sheet Drawer to show unit data upon tap. 3. Ensure the unit data fetch uses the join specified: units JOIN floorplans.	Supabase: units, floorplans.
+Lead Capture & Activity (Steps 5, 6, 7)	1. Build the Prospect Quick-Add Form with first name, last name, contact method, budget, and a consent toggle (required). 2. Implement the "Log Showing" button on the Unit Sheet. 3. Implement the Next Best Action (NBA) chip using simple rule-based logic (e.g., if no interaction logged in 1hr, suggest "Send follow-up plan").	Local Stores: prospects, visits, interactions.
+Automation & Compliance (Steps 8, 9, 10)	1. Implement the Quiet Hours logic (8 PM - 9 AM) for scheduling follow-ups. 2. Implement a Tour Gate where the "Schedule Tour" button is disabled until an agreement stub is present in the local store. 3. Persist the Unit Matrix filter state in memory for quick navigation.	Local Stores: followups, agreements.
+
+Export to Sheets
+🖥️ Step 2: Manager Workflow Implementation (MOC)
+Focus on building the dashboard views using local data aggregation and flags/risk checks.
+
+Feature Group	Implementation Tasks	Data Sources (Supabase/Local)
+Dashboard Snapshot (Step 1, 2)	1. Build the Manager Dashboard with a project selector. 2. Display Status Tiles (unit counts from Supabase). 3. Implement the Sparkline chart by aggregating daily visits from the local store (proxy for velocity).	Supabase: projects, units. Local Stores: visits.
+Pipeline & Risk (Steps 3, 4)	1. Build the SLA Board to show overdue follow-ups (due_at < now). 2. Implement the Holds Table showing all locally stored holds. 3. Implement Risk Flags by calculating stale holds (>24h), expiring holds (<2h), and comparing mock quotes vs. current unit price.	Local Stores: followups, prospects, visits, holds. Supabase: units (for current price check).
+Strategy & Compliance (Steps 5, 6, 7)	1. Implement the Top-5 Brokers list by aggregating local prospects (where type='broker_client') and visits from the last 30 days. 2. Create the Global "MLS-Safe" Toggle. When ON, all price/comp-related wording in previews/exports must be hidden or replaced with safe text. 3. Implement one-tap tasks to show how the loop is closed (e.g., a button that logs a local task entry).	Local Stores: prospects, visits, holds, task (new local store).
+
+Export to Sheets
+💡 Cross-Cutting Technical Notes
+Performance is Critical: Adhere strictly to the performance budgets (e.g., primary interactions ≤150ms, 3D at 60fps).
+
+Data Strategy: Read inventory from Supabase. All writes (prospects, visits, holds, etc.) are to be handled in local stores for this MVP.
+
+Observability: Implement simple console logs with action IDs for every major workflow step to easily trace the demo's success during the presentation.

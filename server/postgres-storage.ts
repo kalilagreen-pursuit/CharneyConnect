@@ -44,6 +44,22 @@ export class PostgresStorage implements IStorage {
     return this.mapToUnitWithDetails(result[0]);
   }
 
+  async getUnitsByAgentId(agentId: string): Promise<UnitWithDetails[]> {
+    const result = await db
+      .select({
+        unit: units,
+        floorPlan: floorPlans,
+        project: projects,
+      })
+      .from(deals)
+      .innerJoin(units, eq(deals.unitId, units.id))
+      .leftJoin(floorPlans, eq(units.floorPlanId, floorPlans.id))
+      .leftJoin(projects, eq(units.projectId, projects.id))
+      .where(eq(deals.agentId, agentId));
+
+    return result.map(row => this.mapToUnitWithDetails(row));
+  }
+
   async createUnit(insertUnit: any): Promise<UnitWithDetails> {
     // This would require creating a unit with projectId and floorPlanId
     // Not implemented as we're using existing data

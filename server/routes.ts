@@ -55,6 +55,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/agents/:agentId/units", async (req, res) => {
+    try {
+      const units = await storage.getUnitsByAgentId(req.params.agentId);
+      res.json(units);
+    } catch (error) {
+      console.error("Error fetching agent units:", error);
+      res.status(500).json({ error: "Failed to fetch agent units" });
+    }
+  });
+
   app.put("/api/units/:id/status", async (req, res) => {
     try {
       const validation = updateStatusSchema.safeParse(req.body);

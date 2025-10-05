@@ -287,4 +287,23 @@ export class PostgresStorage implements IStorage {
     
     return Math.min(baseScore + activityBonus, 100);
   }
+  
+  // Projects
+  async getProjectCounts() {
+    const projectsData = await db.select().from(projects);
+    const unitsData = await this.getAllUnits();
+    
+    return projectsData.map(project => {
+      const projectUnits = unitsData.filter(u => u.projectId === project.id);
+      return {
+        id: parseInt(project.id) || 0,
+        name: project.name,
+        address: project.address || `${project.name} Address`,
+        totalUnits: projectUnits.length,
+        available: projectUnits.filter(u => u.status === 'available').length,
+        reserved: projectUnits.filter(u => u.status === 'on_hold' || u.status === 'contract').length,
+        sold: projectUnits.filter(u => u.status === 'sold').length,
+      };
+    });
+  }
 }

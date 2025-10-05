@@ -38,6 +38,17 @@ export interface IStorage {
   // Activities
   getActivitiesByLeadId(leadId: string): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
+  
+  // Projects
+  getProjectCounts(): Promise<Array<{
+    id: number;
+    name: string;
+    address: string;
+    totalUnits: number;
+    available: number;
+    reserved: number;
+    sold: number;
+  }>>;
 }
 
 export class MemStorage implements IStorage {
@@ -296,6 +307,40 @@ export class MemStorage implements IStorage {
     const activity: Activity = { ...insertActivity, id, createdAt: new Date() };
     this.activities.set(id, activity);
     return activity;
+  }
+  
+  // Projects
+  async getProjectCounts() {
+    const units = Array.from(this.units.values());
+    const projectMap = new Map<string, {
+      id: number;
+      name: string;
+      address: string;
+      units: UnitWithDetails[];
+    }>();
+
+    units.forEach(unit => {
+      const projectKey = unit.building;
+      if (!projectMap.has(projectKey)) {
+        projectMap.set(projectKey, {
+          id: parseInt(unit.projectId) || 0,
+          name: unit.building,
+          address: `${unit.building} Address`,
+          units: []
+        });
+      }
+      projectMap.get(projectKey)!.units.push(unit);
+    });
+
+    return Array.from(projectMap.values()).map(project => ({
+      id: project.id,
+      name: project.name,
+      address: project.address,
+      totalUnits: project.units.length,
+      available: project.units.filter(u => u.status === 'available').length,
+      reserved: project.units.filter(u => u.status === 'on_hold' || u.status === 'contract').length,
+      sold: project.units.filter(u => u.status === 'sold').length,
+    }));
   }
 }
 

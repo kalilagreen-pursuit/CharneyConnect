@@ -7,6 +7,8 @@ import { Header } from "@/components/header";
 import { useWebSocket } from "@/hooks/use-websocket";
 import Dashboard from "@/pages/dashboard";
 import Leads from "@/pages/leads";
+import AgentSelect from "@/pages/agent-select";
+import ProjectSelect from "@/pages/project-select";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -14,6 +16,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/leads" component={Leads} />
+      <Route path="/agent/select" component={AgentSelect} />
+      <Route path="/agent/project-select" component={ProjectSelect} />
       <Route component={NotFound} />
     </Switch>
   );

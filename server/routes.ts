@@ -96,6 +96,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Projects endpoints
+  app.get("/api/projects/counts", async (req, res) => {
+    try {
+      const projectCounts = await storage.getProjectCounts();
+      res.json(projectCounts);
+    } catch (error) {
+      console.error("Error fetching project counts:", error);
+      res.status(500).json({ error: "Failed to fetch project counts" });
+    }
+  });
+
   // Leads endpoints
   app.get("/api/leads", async (req, res) => {
     try {

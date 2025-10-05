@@ -42,7 +42,7 @@ export interface IStorage {
   
   // Projects
   getProjectCounts(): Promise<Array<{
-    id: number;
+    id: string;
     name: string;
     address: string;
     totalUnits: number;
@@ -343,7 +343,7 @@ export class MemStorage implements IStorage {
     });
 
     return Array.from(projectMap.values()).map(project => ({
-      id: project.id,
+      id: project.id.toString(),
       name: project.name,
       address: project.address,
       totalUnits: project.units.length,

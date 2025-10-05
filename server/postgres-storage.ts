@@ -316,7 +316,7 @@ export class PostgresStorage implements IStorage {
     return projectsData.map(project => {
       const projectUnits = unitsData.filter(u => u.projectId === project.id);
       return {
-        id: parseInt(project.id) || 0,
+        id: project.id,
         name: project.name,
         address: project.address || `${project.name} Address`,
         totalUnits: projectUnits.length,

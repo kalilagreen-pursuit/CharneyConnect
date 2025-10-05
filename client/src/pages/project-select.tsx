@@ -7,7 +7,7 @@ import { Building2, ArrowLeft } from 'lucide-react';
 import { agentContextStore } from '@/lib/localStores';
 
 interface ProjectWithCounts {
-  id: number;
+  id: string;
   name: string;
   address: string;
   available: number;
@@ -24,8 +24,8 @@ export default function ProjectSelect() {
     queryKey: ['/api/projects/counts'],
   });
 
-  const handleSelectProject = (projectId: number, projectName: string) => {
-    agentContextStore.setProject(projectId.toString(), projectName);
+  const handleSelectProject = (projectId: string, projectName: string) => {
+    agentContextStore.setProject(projectId, projectName);
     console.log('[ProjectSelect] Project selected', { projectId, projectName, actionId: crypto.randomUUID() });
     
     setTimeout(() => {

@@ -78,6 +78,7 @@ export const deals = pgTable("Deals", {
   unitId: uuid("unit_id").notNull(),
   buyerContactId: uuid("buyer_contact_id").notNull(),
   brokerContactId: uuid("broker_contact_id"),
+  agentId: text("agent_id").notNull(),
   dealStage: text("deal_stage").notNull(),
   salePrice: numeric("sale_price"),
   category: text("category"),

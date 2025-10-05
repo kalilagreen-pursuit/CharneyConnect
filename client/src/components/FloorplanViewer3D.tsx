@@ -229,7 +229,7 @@ export default function FloorplanViewer3D({
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/units/${selectedUnit.id}`, {
+      const response = await fetch(`/api/units/${selectedUnit.id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: selectedUnit.status }),

@@ -5,7 +5,7 @@ import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Bed, Bath, Maximize2, Eye } from "lucide-react";
+import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
 import { InteractiveMap } from "@/components/InteractiveMap";
 import { UnitWithDetails } from "@shared/schema";
@@ -141,8 +141,18 @@ export default function AgentViewer() {
                 </p>
               </div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              {units.length} Units
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-muted-foreground">
+                {units.length} Units
+              </div>
+              <Button
+                variant="default"
+                onClick={() => setLocation("/")}
+                data-testid="button-view-all-units"
+              >
+                <LayoutGrid className="mr-2 h-4 w-4" />
+                VIEW ALL UNITS
+              </Button>
             </div>
           </div>
         </div>

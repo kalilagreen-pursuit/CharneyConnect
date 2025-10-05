@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "./db";
 import { 
   units, floorPlans, projects, contacts, deals, activities, leads,
@@ -44,7 +44,11 @@ export class PostgresStorage implements IStorage {
     return this.mapToUnitWithDetails(result[0]);
   }
 
-  async getUnitsByAgentId(agentId: string): Promise<UnitWithDetails[]> {
+  async getUnitsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDetails[]> {
+    const whereConditions = projectId
+      ? and(eq(deals.agentId, agentId), eq(units.projectId, projectId))
+      : eq(deals.agentId, agentId);
+
     const result = await db
       .select({
         unit: units,
@@ -55,7 +59,7 @@ export class PostgresStorage implements IStorage {
       .innerJoin(units, eq(deals.unitId, units.id))
       .leftJoin(floorPlans, eq(units.floorPlanId, floorPlans.id))
       .leftJoin(projects, eq(units.projectId, projects.id))
-      .where(eq(deals.agentId, agentId));
+      .where(whereConditions);
 
     return result.map(row => this.mapToUnitWithDetails(row));
   }

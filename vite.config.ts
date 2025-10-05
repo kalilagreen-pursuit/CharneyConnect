@@ -36,5 +36,9 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    allowedHosts: [
+      // This will allow any hostname ending in .replit.dev
+      ".replit.dev",
+    ],
   },
 });

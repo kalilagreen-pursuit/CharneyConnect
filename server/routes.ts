@@ -2,11 +2,16 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { unitStatuses, type UnitUpdateRequest, insertLeadSchema } from "@shared/schema";
+import {
+  unitStatuses,
+  type UnitUpdateRequest,
+  insertLeadSchema,
+} from "@shared/schema";
 import { z } from "zod";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import ragRoutes from "../src/server/routes/rag.ts"; // 1. IMPORT YOUR NEW RAG ROUTER
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,8 +62,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error.message });
       }
 
-      const updatedUnit = await storage.updateUnitStatus(req.params.id, validation.data.status);
-      
+      const updatedUnit = await storage.updateUnitStatus(
+        req.params.id,
+        validation.data.status,
+      );
+
       if (!updatedUnit) {
         return res.status(404).json({ error: "Unit not found" });
       }
@@ -80,8 +88,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error.message });
       }
 
-      const updatedUnit = await storage.updateUnitPrice(req.params.id, validation.data.price);
-      
+      const updatedUnit = await storage.updateUnitPrice(
+        req.params.id,
+        validation.data.price,
+      );
+
       if (!updatedUnit) {
         return res.status(404).json({ error: "Unit not found" });
       }
@@ -139,9 +150,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const newLead = await storage.createLead(validation.data);
-      
+
       // Broadcast update to all WebSocket clients
-      broadcastLeadUpdate(newLead, 'created');
+      broadcastLeadUpdate(newLead, "created");
 
       res.status(201).json(newLead);
     } catch (error) {
@@ -157,14 +168,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error.message });
       }
 
-      const updatedLead = await storage.updateLead(req.params.id, validation.data);
-      
+      const updatedLead = await storage.updateLead(
+        req.params.id,
+        validation.data,
+      );
+
       if (!updatedLead) {
         return res.status(404).json({ error: "Lead not found" });
       }
 
       // Broadcast update to all WebSocket clients
-      broadcastLeadUpdate(updatedLead, 'updated');
+      broadcastLeadUpdate(updatedLead, "updated");
 
       res.json(updatedLead);
     } catch (error) {
@@ -173,36 +187,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.use("/api", ragRoutes);
+
   const httpServer = createServer(app);
 
   // WebSocket server setup
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
 
-  wss.on('connection', (ws: WebSocket) => {
-    console.log('WebSocket client connected');
+  wss.on("connection", (ws: WebSocket) => {
+    console.log("WebSocket client connected");
 
-    ws.on('message', (message: string) => {
-      console.log('Received message:', message.toString());
+    ws.on("message", (message: string) => {
+      console.log("Received message:", message.toString());
     });
 
-    ws.on('close', () => {
-      console.log('WebSocket client disconnected');
+    ws.on("close", () => {
+      console.log("WebSocket client disconnected");
     });
 
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
+    ws.on("error", (error) => {
+      console.error("WebSocket error:", error);
     });
 
     // Send initial connection confirmation
     if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'connected', message: 'WebSocket connected successfully' }));
+      ws.send(
+        JSON.stringify({
+          type: "connected",
+          message: "WebSocket connected successfully",
+        }),
+      );
     }
   });
 
   // Function to broadcast unit updates to all connected clients
   function broadcastUnitUpdate(unit: any) {
     const message = JSON.stringify({
-      type: 'unit_update',
+      type: "unit_update",
       data: unit,
     });
 
@@ -214,9 +235,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Function to broadcast lead updates to all connected clients
-  function broadcastLeadUpdate(lead: any, action: 'created' | 'updated' | 'deleted') {
+  function broadcastLeadUpdate(
+    lead: any,
+    action: "created" | "updated" | "deleted",
+  ) {
     const message = JSON.stringify({
-      type: 'lead_update',
+      type: "lead_update",
       action,
       data: lead,
     });

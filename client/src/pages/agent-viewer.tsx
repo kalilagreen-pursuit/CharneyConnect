@@ -22,29 +22,30 @@ export default function AgentViewer() {
   
   // Get project context from agentContextStore
   const agentName = agentContextStore.getAgentName() || 'Agent';
+  const agentId = agentContextStore.getAgentId() || 'agent-001';
   const projectName = agentContextStore.getProjectName() || 'Project';
   const projectId = agentContextStore.getProjectId() || '1';
 
-  console.log(`[${actionId}] Agent Viewer initialized - Agent: ${agentName}, Project: ${projectName}`);
+  console.log(`[${actionId}] Agent Viewer initialized - Agent: ${agentName} (${agentId}), Project: ${projectName}`);
 
-  // Fetch all units for the current project
-  const { data: allUnits, isLoading } = useQuery<UnitWithDetails[]>({
-    queryKey: ["/api/units"],
+  // Fetch units specific to this agent (from their deals)
+  const { data: units = [], isLoading } = useQuery<UnitWithDetails[]>({
+    queryKey: ["/api/agents", agentId, "units"],
+    queryFn: async () => {
+      const response = await fetch(`/api/agents/${agentId}/units`);
+      if (!response.ok) throw new Error('Failed to fetch agent units');
+      return response.json();
+    },
   });
-
-  // Filter units by current project
-  const units = useMemo(() => {
-    return allUnits?.filter(u => u.projectId === projectId) || [];
-  }, [allUnits, projectId]);
 
   // Listen for realtime updates and invalidate cache
   useEffect(() => {
     if (unitUpdates.size > 0) {
       console.log(`[${actionId}] Received ${unitUpdates.size} realtime unit updates - invalidating cache`);
-      queryClient.invalidateQueries({ queryKey: ["/api/units"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units"] });
       clearUnitUpdates();
     }
-  }, [unitUpdates, actionId, clearUnitUpdates]);
+  }, [unitUpdates, actionId, agentId, clearUnitUpdates]);
 
   // Get selected unit object
   const selectedUnit = useMemo(() => {

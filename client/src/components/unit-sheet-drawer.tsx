@@ -3,12 +3,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Building2, Bed, Bath, Maximize, Home, UserPlus, Calendar, Sparkles, Eye } from "lucide-react";
+import { Building2, Bed, Bath, Maximize, Home, UserPlus, Calendar, Sparkles, Eye, Lock } from "lucide-react";
 import { UnitWithDetails, UnitStatus } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { LogShowingForm } from "@/components/log-showing-form";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
   available: { 
@@ -45,6 +47,8 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   const [actionId] = useState(() => `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const [showProspectForm, setShowProspectForm] = useState(false);
   const [showLogShowingForm, setShowLogShowingForm] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
+  const { toast } = useToast();
   
   if (!unit) return null;
   
@@ -83,6 +87,37 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   const handleLogShowing = () => {
     console.log(`[${actionId}] Opening Log Showing form for Unit ${unit.unitNumber}`);
     setShowLogShowingForm(true);
+  };
+
+  const handleHoldUnit = async () => {
+    console.log(`[${actionId}] Placing hold on Unit ${unit.unitNumber}`);
+    setIsHolding(true);
+
+    try {
+      await apiRequest(`/api/units/${unit.id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'on_hold' }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      toast({
+        title: "Unit Held",
+        description: `Unit ${unit.unitNumber} has been placed on hold.`,
+        duration: 3000,
+      });
+
+      console.log(`[${actionId}] Unit ${unit.unitNumber} status updated to on_hold`);
+    } catch (error) {
+      console.error(`[${actionId}] Error holding unit:`, error);
+      toast({
+        title: "Error",
+        description: "Failed to hold unit. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setIsHolding(false);
+    }
   };
 
   return (
@@ -229,6 +264,20 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
 
           {/* Action Buttons */}
           <div className="space-y-3">
+            {unit.status === 'available' && (
+              <Button
+                variant="default"
+                size="lg"
+                className="w-full gap-2 min-h-11 bg-status-on-hold hover:bg-status-on-hold/90 text-gray-900 border-2 border-status-on-hold"
+                onClick={handleHoldUnit}
+                disabled={isHolding}
+                data-testid="button-hold-unit"
+              >
+                <Lock className="h-4 w-4" />
+                {isHolding ? 'Holding Unit...' : 'Hold Unit'}
+              </Button>
+            )}
+            
             <Button
               variant="default"
               size="lg"

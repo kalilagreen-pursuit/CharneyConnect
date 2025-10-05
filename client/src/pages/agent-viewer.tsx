@@ -1,18 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, queryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import FloorplanViewer3D from "@/components/FloorplanViewer3D";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
 import { UnitWithDetails } from "@shared/schema";
 import { agentContextStore } from "@/lib/localStores";
+import { useRealtime } from "@/contexts/RealtimeContext";
 
 export default function AgentViewer() {
   const [, setLocation] = useLocation();
   const [selectedUnit, setSelectedUnit] = useState<UnitWithDetails | null>(null);
   const [showUnitSheet, setShowUnitSheet] = useState(false);
   const [actionId] = useState(() => `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const { unitUpdates } = useRealtime();
   
   // Get project context from agentContextStore (set by project-select page)
   const agentName = agentContextStore.getAgentName() || 'Agent';
@@ -25,6 +27,14 @@ export default function AgentViewer() {
   const { data: units } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/units"],
   });
+
+  // Listen for realtime updates and invalidate cache
+  useEffect(() => {
+    if (unitUpdates.size > 0) {
+      console.log(`[${actionId}] Received ${unitUpdates.size} realtime unit updates - invalidating cache`);
+      queryClient.invalidateQueries({ queryKey: ["/api/units"] });
+    }
+  }, [unitUpdates, actionId]);
 
   // Handle unit selection from 3D viewer
   const handleUnitClick = (unitNumber: string) => {

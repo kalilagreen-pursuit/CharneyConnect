@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Bed, Bath, Maximize2, Eye } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
+import { InteractiveMap } from "@/components/InteractiveMap";
 import { UnitWithDetails } from "@shared/schema";
 import { agentContextStore } from "@/lib/localStores";
 import { useRealtime } from "@/contexts/RealtimeContext";
@@ -78,22 +79,6 @@ export default function AgentViewer() {
     setLocation("/agent/project-select");
   };
 
-  // Get status color
-  const getStatusColor = (status: string): string => {
-    switch (status.toLowerCase()) {
-      case 'available':
-        return 'bg-green-500 hover:bg-green-600';
-      case 'on_hold':
-        return 'bg-amber-500 hover:bg-amber-600';
-      case 'contract':
-        return 'bg-blue-500 hover:bg-blue-600';
-      case 'sold':
-        return 'bg-red-500 hover:bg-red-600';
-      default:
-        return 'bg-gray-500 hover:bg-gray-600';
-    }
-  };
-
   const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status.toLowerCase()) {
       case 'available':
@@ -122,19 +107,6 @@ export default function AgentViewer() {
       maximumFractionDigits: 0,
     }).format(numPrice);
   };
-
-  // Organize units by floor for map display
-  const unitsByFloor = useMemo(() => {
-    const floors = new Map<number, UnitWithDetails[]>();
-    units.forEach(unit => {
-      if (!floors.has(unit.floor)) {
-        floors.set(unit.floor, []);
-      }
-      floors.get(unit.floor)!.push(unit);
-    });
-    // Sort floors descending (penthouse first) and return as array
-    return Array.from(floors.entries()).sort((a, b) => b[0] - a[0]);
-  }, [units]);
 
   if (isLoading) {
     return (
@@ -184,35 +156,11 @@ export default function AgentViewer() {
               UNIT MAP
             </h2>
             
-            {/* Floor Grid */}
-            <div className="space-y-4">
-              {unitsByFloor.map(([floor, floorUnits]) => (
-                <div key={floor} className="space-y-2">
-                  <div className="text-sm font-bold uppercase text-muted-foreground">
-                    Floor {floor}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {floorUnits.map((unit) => (
-                      <button
-                        key={unit.id}
-                        data-testid={`map-block-${unit.unitNumber}`}
-                        onClick={() => handleUnitSelect(unit.id)}
-                        className={cn(
-                          "relative w-20 h-20 rounded-md transition-all duration-200",
-                          "flex flex-col items-center justify-center",
-                          "text-white font-bold text-sm",
-                          getStatusColor(unit.status),
-                          selectedUnitId === unit.id && "ring-4 ring-primary ring-offset-2 scale-105"
-                        )}
-                      >
-                        <span className="text-xs opacity-90">{unit.building}</span>
-                        <span>{unit.unitNumber}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <InteractiveMap
+              unitsData={units}
+              selectedUnitId={selectedUnitId}
+              setSelectedUnitId={handleUnitSelect}
+            />
           </div>
         </div>
 

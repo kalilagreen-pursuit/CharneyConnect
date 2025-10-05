@@ -41,132 +41,116 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private units: Map<string, Unit>;
+  private units: Map<string, UnitWithDetails>;
   private contacts: Map<string, Contact>;
-  private brokers: Map<string, Broker>;
   private leads: Map<string, Lead>;
+  private dealLeads: Map<string, DealLead>;
   private activities: Map<string, Activity>;
 
   constructor() {
     this.units = new Map();
     this.contacts = new Map();
-    this.brokers = new Map();
     this.leads = new Map();
+    this.dealLeads = new Map();
     this.activities = new Map();
     this.seedData();
   }
 
   private seedData() {
-    // Seed Units
-    const unitsData: InsertUnit[] = [
-      { unitNumber: "101", floor: 1, bedrooms: 1, bathrooms: 1, squareFeet: 650, price: 425000, status: "available", building: "Tower A" },
-      { unitNumber: "102", floor: 1, bedrooms: 1, bathrooms: 1, squareFeet: 680, price: 445000, status: "available", building: "Tower A" },
-      { unitNumber: "201", floor: 2, bedrooms: 2, bathrooms: 2, squareFeet: 950, price: 625000, status: "on_hold", building: "Tower A" },
-      { unitNumber: "202", floor: 2, bedrooms: 2, bathrooms: 2, squareFeet: 980, price: 645000, status: "contract", building: "Tower A" },
-      { unitNumber: "301", floor: 3, bedrooms: 2, bathrooms: 2, squareFeet: 1050, price: 695000, status: "available", building: "Tower A" },
-      { unitNumber: "302", floor: 3, bedrooms: 2, bathrooms: 2, squareFeet: 1080, price: 715000, status: "sold", building: "Tower A" },
-      { unitNumber: "401", floor: 4, bedrooms: 3, bathrooms: 2.5, squareFeet: 1450, price: 895000, status: "available", building: "Tower B" },
-      { unitNumber: "402", floor: 4, bedrooms: 3, bathrooms: 2.5, squareFeet: 1480, price: 915000, status: "on_hold", building: "Tower B" },
-      { unitNumber: "501", floor: 5, bedrooms: 3, bathrooms: 3, squareFeet: 1650, price: 1025000, status: "contract", building: "Tower B" },
-      { unitNumber: "502", floor: 5, bedrooms: 3, bathrooms: 3, squareFeet: 1680, price: 1045000, status: "available", building: "Tower B" },
-      { unitNumber: "601", floor: 6, bedrooms: 3, bathrooms: 3, squareFeet: 1750, price: 1125000, status: "sold", building: "Tower B" },
-      { unitNumber: "PH1", floor: 7, bedrooms: 4, bathrooms: 4, squareFeet: 2500, price: 1750000, status: "available", building: "Tower B" },
+    // Seed Units with full UnitWithDetails structure
+    const unitsData: UnitWithDetails[] = [
+      { id: randomUUID(), unitNumber: "101", floor: 1, bedrooms: 1, bathrooms: 1, squareFeet: 650, price: "425000", status: "available", building: "Tower A", projectId: "1", floorPlanId: "1", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "102", floor: 1, bedrooms: 1, bathrooms: 1, squareFeet: 680, price: "445000", status: "available", building: "Tower A", projectId: "1", floorPlanId: "1", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "201", floor: 2, bedrooms: 2, bathrooms: 2, squareFeet: 950, price: "625000", status: "on_hold", building: "Tower A", projectId: "1", floorPlanId: "2", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "202", floor: 2, bedrooms: 2, bathrooms: 2, squareFeet: 980, price: "645000", status: "contract", building: "Tower A", projectId: "1", floorPlanId: "2", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "301", floor: 3, bedrooms: 2, bathrooms: 2, squareFeet: 1050, price: "695000", status: "available", building: "Tower A", projectId: "1", floorPlanId: "2", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "302", floor: 3, bedrooms: 2, bathrooms: 2, squareFeet: 1080, price: "715000", status: "sold", building: "Tower A", projectId: "1", floorPlanId: "2", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "401", floor: 4, bedrooms: 3, bathrooms: 2.5, squareFeet: 1450, price: "895000", status: "available", building: "Tower B", projectId: "2", floorPlanId: "3", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "402", floor: 4, bedrooms: 3, bathrooms: 2.5, squareFeet: 1480, price: "915000", status: "on_hold", building: "Tower B", projectId: "2", floorPlanId: "3", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "501", floor: 5, bedrooms: 3, bathrooms: 3, squareFeet: 1650, price: "1025000", status: "contract", building: "Tower B", projectId: "2", floorPlanId: "4", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "502", floor: 5, bedrooms: 3, bathrooms: 3, squareFeet: 1680, price: "1045000", status: "available", building: "Tower B", projectId: "2", floorPlanId: "4", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "601", floor: 6, bedrooms: 3, bathrooms: 3, squareFeet: 1750, price: "1125000", status: "sold", building: "Tower B", projectId: "2", floorPlanId: "4", notes: null, createdAt: new Date() },
+      { id: randomUUID(), unitNumber: "PH1", floor: 7, bedrooms: 4, bathrooms: 4, squareFeet: 2500, price: "1750000", status: "available", building: "Tower B", projectId: "2", floorPlanId: "5", notes: null, createdAt: new Date() },
     ];
 
     unitsData.forEach(unit => {
-      const id = randomUUID();
-      this.units.set(id, { ...unit, id } as Unit);
+      this.units.set(unit.id, unit);
     });
 
     // Seed Contacts
     const contactsData: InsertContact[] = [
-      { firstName: "Sarah", lastName: "Chen", email: "sarah.chen@email.com", phone: "(555) 123-4567", type: "buyer" },
-      { firstName: "Michael", lastName: "Rodriguez", email: "m.rodriguez@email.com", phone: "(555) 234-5678", type: "buyer" },
-      { firstName: "Emily", lastName: "Thompson", email: "emily.t@email.com", phone: "(555) 345-6789", type: "buyer" },
-      { firstName: "David", lastName: "Kim", email: "david.kim@email.com", phone: "(555) 456-7890", type: "buyer" },
-      { firstName: "Jessica", lastName: "Martinez", email: "j.martinez@email.com", phone: "(555) 567-8901", type: "buyer" },
+      { firstName: "Sarah", lastName: "Chen", email: "sarah.chen@email.com", phone: "(555) 123-4567", contactType: "buyer" },
+      { firstName: "Michael", lastName: "Rodriguez", email: "m.rodriguez@email.com", phone: "(555) 234-5678", contactType: "buyer" },
+      { firstName: "Emily", lastName: "Thompson", email: "emily.t@email.com", phone: "(555) 345-6789", contactType: "buyer" },
+      { firstName: "David", lastName: "Kim", email: "david.kim@email.com", phone: "(555) 456-7890", contactType: "buyer" },
+      { firstName: "Jessica", lastName: "Martinez", email: "j.martinez@email.com", phone: "(555) 567-8901", contactType: "buyer" },
+      { firstName: "Robert", lastName: "Williams", email: "r.williams@realty.com", phone: "(555) 111-2222", contactType: "broker" },
+      { firstName: "Amanda", lastName: "Johnson", email: "a.johnson@realty.com", phone: "(555) 222-3333", contactType: "broker" },
+      { firstName: "James", lastName: "Brown", email: "j.brown@realty.com", phone: "(555) 333-4444", contactType: "broker" },
     ];
 
     contactsData.forEach(contact => {
       const id = randomUUID();
-      this.contacts.set(id, { ...contact, id });
+      const contactWithDefaults: Contact = { 
+        ...contact, 
+        id, 
+        createdAt: new Date(),
+        consentGivenAt: null
+      };
+      this.contacts.set(id, contactWithDefaults);
     });
 
-    // Seed Brokers
-    const brokersData: InsertBroker[] = [
-      { firstName: "Robert", lastName: "Williams", email: "r.williams@realty.com", phone: "(555) 111-2222", company: "Premium Realty Group", license: "BR123456" },
-      { firstName: "Amanda", lastName: "Johnson", email: "a.johnson@realty.com", phone: "(555) 222-3333", company: "Luxury Properties Inc", license: "BR234567" },
-      { firstName: "James", lastName: "Brown", email: "j.brown@realty.com", phone: "(555) 333-4444", company: "Elite Real Estate", license: "BR345678" },
-    ];
-
-    brokersData.forEach(broker => {
-      const id = randomUUID();
-      this.brokers.set(id, { ...broker, id });
-    });
-
-    // Seed Leads
-    const contactIds = Array.from(this.contacts.keys());
-    const brokerIds = Array.from(this.brokers.keys());
-    const unitIds = Array.from(this.units.keys());
-
+    // Seed Leads (public.leads table format)
     const leadsData: InsertLead[] = [
-      { contactId: contactIds[0], brokerId: brokerIds[0], unitId: unitIds[2], status: "qualified", score: 85, notes: "Very interested in 2BR with city view" },
-      { contactId: contactIds[1], brokerId: brokerIds[1], unitId: unitIds[3], status: "negotiating", score: 90, notes: "Ready to make an offer" },
-      { contactId: contactIds[2], brokerId: brokerIds[0], unitId: unitIds[7], status: "contacted", score: 65, notes: "First-time buyer, needs financing info" },
-      { contactId: contactIds[3], brokerId: brokerIds[2], unitId: unitIds[11], status: "qualified", score: 95, notes: "Looking for penthouse, cash buyer" },
-      { contactId: contactIds[4], brokerId: brokerIds[1], unitId: unitIds[4], status: "new", score: 50, notes: "Requested virtual tour" },
+      { name: "Sarah Chen", email: "sarah.chen@email.com", status: "qualified", value: 625000, phone: "(555) 123-4567" },
+      { name: "Michael Rodriguez", email: "m.rodriguez@email.com", status: "negotiating", value: 645000, phone: "(555) 234-5678" },
+      { name: "Emily Thompson", email: "emily.t@email.com", status: "contacted", value: 895000, phone: "(555) 345-6789" },
+      { name: "David Kim", email: "david.kim@email.com", status: "qualified", value: 1750000, phone: "(555) 456-7890" },
+      { name: "Jessica Martinez", email: "j.martinez@email.com", status: "new", value: 695000, phone: "(555) 567-8901" },
     ];
 
     leadsData.forEach(lead => {
       const id = randomUUID();
       const leadWithDefaults: Lead = { 
         ...lead, 
-        id, 
-        createdAt: new Date(),
-        brokerId: lead.brokerId ?? null,
-        unitId: lead.unitId ?? null,
-        score: lead.score ?? 0,
-        notes: lead.notes ?? null
+        id,
+        value: lead.value ?? null,
+        phone: lead.phone ?? null,
+        company: lead.company ?? null,
+        address: lead.address ?? null
       };
       this.leads.set(id, leadWithDefaults);
     });
 
-    // Seed Activities
-    const leadIds = Array.from(this.leads.keys());
-    const activitiesData: InsertActivity[] = [
-      { leadId: leadIds[0], type: "call", description: "Initial phone consultation - discussed budget and preferences" },
-      { leadId: leadIds[0], type: "email", description: "Sent property brochure and floor plans" },
-      { leadId: leadIds[0], type: "viewing", description: "Scheduled in-person viewing for this weekend" },
-      { leadId: leadIds[1], type: "meeting", description: "Met at property - very positive feedback" },
-      { leadId: leadIds[1], type: "note", description: "Client is preparing offer documentation" },
-      { leadId: leadIds[2], type: "call", description: "Discussed financing options with mortgage specialist" },
-      { leadId: leadIds[3], type: "viewing", description: "Private penthouse showing conducted" },
-      { leadId: leadIds[3], type: "note", description: "Client impressed with views and amenities" },
-    ];
-
-    activitiesData.forEach(activity => {
-      const id = randomUUID();
-      this.activities.set(id, { ...activity, id, createdAt: new Date() });
-    });
+    // Seed Activities (using deal IDs - for legacy support, we'll skip this for now)
+    // Activities are linked to deals, not public.leads
   }
 
   // Units
-  async getAllUnits(): Promise<Unit[]> {
+  async getAllUnits(): Promise<UnitWithDetails[]> {
     return Array.from(this.units.values());
   }
 
-  async getUnitById(id: string): Promise<Unit | undefined> {
+  async getUnitById(id: string): Promise<UnitWithDetails | undefined> {
     return this.units.get(id);
   }
 
-  async createUnit(insertUnit: InsertUnit): Promise<Unit> {
+  async createUnit(insertUnit: InsertUnit): Promise<UnitWithDetails> {
     const id = randomUUID();
-    const unit: Unit = { ...insertUnit, id } as Unit;
+    const unit: UnitWithDetails = { 
+      ...insertUnit, 
+      id,
+      bedrooms: 0,
+      bathrooms: 0,
+      squareFeet: 0,
+      building: "Unknown",
+      createdAt: new Date()
+    } as UnitWithDetails;
     this.units.set(id, unit);
     return unit;
   }
 
-  async updateUnitStatus(id: string, status: UnitStatus): Promise<Unit | undefined> {
+  async updateUnitStatus(id: string, status: UnitStatus): Promise<UnitWithDetails | undefined> {
     const unit = this.units.get(id);
     if (!unit) return undefined;
     
@@ -175,11 +159,11 @@ export class MemStorage implements IStorage {
     return updatedUnit;
   }
 
-  async updateUnitPrice(id: string, price: number): Promise<Unit | undefined> {
+  async updateUnitPrice(id: string, price: number): Promise<UnitWithDetails | undefined> {
     const unit = this.units.get(id);
     if (!unit) return undefined;
     
-    const updatedUnit = { ...unit, price };
+    const updatedUnit = { ...unit, price: price.toString() };
     this.units.set(id, updatedUnit);
     return updatedUnit;
   }
@@ -195,77 +179,115 @@ export class MemStorage implements IStorage {
 
   async createContact(insertContact: InsertContact): Promise<Contact> {
     const id = randomUUID();
-    const contact: Contact = { ...insertContact, id };
+    const contact: Contact = { 
+      ...insertContact, 
+      id, 
+      createdAt: new Date(),
+      consentGivenAt: insertContact.consentGivenAt ?? null
+    };
     this.contacts.set(id, contact);
     return contact;
   }
 
-  // Brokers
-  async getAllBrokers(): Promise<Broker[]> {
-    return Array.from(this.brokers.values());
+  // Brokers (using contacts table)
+  async getAllBrokers(): Promise<Contact[]> {
+    return Array.from(this.contacts.values()).filter(c => c.contactType === 'broker');
   }
 
-  async getBrokerById(id: string): Promise<Broker | undefined> {
-    return this.brokers.get(id);
+  async getBrokerById(id: string): Promise<Contact | undefined> {
+    const contact = this.contacts.get(id);
+    return contact?.contactType === 'broker' ? contact : undefined;
   }
 
-  async createBroker(insertBroker: InsertBroker): Promise<Broker> {
+  async createBroker(insertBroker: any): Promise<Contact> {
     const id = randomUUID();
-    const broker: Broker = { ...insertBroker, id };
-    this.brokers.set(id, broker);
-    return broker;
+    const contact: Contact = { 
+      ...insertBroker,
+      id,
+      contactType: 'broker',
+      createdAt: new Date(),
+      consentGivenAt: null
+    };
+    this.contacts.set(id, contact);
+    return contact;
   }
 
-  // Leads
-  async getAllLeads(): Promise<LeadWithDetails[]> {
-    const leads = Array.from(this.leads.values());
-    return Promise.all(leads.map(lead => this.enrichLead(lead)));
+  // Leads (public.leads table)
+  async getAllLeads(): Promise<Lead[]> {
+    return Array.from(this.leads.values());
   }
 
-  async getLeadById(id: string): Promise<LeadWithDetails | undefined> {
-    const lead = this.leads.get(id);
-    if (!lead) return undefined;
-    return this.enrichLead(lead);
+  async getLeadById(id: string): Promise<Lead | undefined> {
+    return this.leads.get(id);
   }
 
   async createLead(insertLead: InsertLead): Promise<Lead> {
     const id = randomUUID();
     const lead: Lead = { 
       ...insertLead, 
-      id, 
-      createdAt: new Date(),
-      brokerId: insertLead.brokerId ?? null,
-      unitId: insertLead.unitId ?? null,
-      score: insertLead.score ?? 0,
-      notes: insertLead.notes ?? null
+      id,
+      value: insertLead.value ?? null,
+      phone: insertLead.phone ?? null,
+      company: insertLead.company ?? null,
+      address: insertLead.address ?? null
     };
     this.leads.set(id, lead);
     return lead;
   }
 
-  private async enrichLead(lead: Lead): Promise<LeadWithDetails> {
-    const contact = await this.getContactById(lead.contactId);
-    const broker = lead.brokerId ? await this.getBrokerById(lead.brokerId) : undefined;
-    const unit = lead.unitId ? await this.getUnitById(lead.unitId) : undefined;
-    const activities = await this.getActivitiesByLeadId(lead.id);
+  async updateLead(id: string, updateData: Partial<InsertLead>): Promise<Lead | undefined> {
+    const lead = this.leads.get(id);
+    if (!lead) return undefined;
+    
+    const updatedLead = { ...lead, ...updateData };
+    this.leads.set(id, updatedLead);
+    return updatedLead;
+  }
 
-    if (!contact) {
-      throw new Error(`Contact not found for lead ${lead.id}`);
-    }
+  // Deal-based leads (legacy)
+  async getAllDealLeads(): Promise<LeadWithDetails[]> {
+    return Array.from(this.dealLeads.values()).map(deal => ({
+      ...deal,
+      activities: []
+    }));
+  }
 
+  async getDealLeadById(id: string): Promise<LeadWithDetails | undefined> {
+    const deal = this.dealLeads.get(id);
+    if (!deal) return undefined;
     return {
-      ...lead,
-      contact,
-      broker,
-      unit,
-      activities,
+      ...deal,
+      activities: []
     };
+  }
+
+  async createDealLead(insertDeal: InsertDeal): Promise<DealLead> {
+    const id = randomUUID();
+    const contact = await this.getContactById(insertDeal.buyerContactId);
+    if (!contact) throw new Error("Contact not found");
+    
+    const deal: DealLead = { 
+      id,
+      createdAt: new Date(),
+      unitId: insertDeal.unitId,
+      buyerContactId: insertDeal.buyerContactId,
+      brokerContactId: insertDeal.brokerContactId ?? null,
+      dealStage: insertDeal.dealStage,
+      salePrice: insertDeal.salePrice ?? null,
+      category: insertDeal.category ?? null,
+      contact,
+      activities: [],
+      status: insertDeal.dealStage,
+      score: 0
+    };
+    this.dealLeads.set(id, deal);
+    return deal;
   }
 
   // Activities
   async getActivitiesByLeadId(leadId: string): Promise<Activity[]> {
     return Array.from(this.activities.values()).filter(
-      activity => activity.leadId === leadId
+      activity => activity.dealId === leadId
     );
   }
 

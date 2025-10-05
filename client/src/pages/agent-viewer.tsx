@@ -13,6 +13,12 @@ import { agentContextStore } from "@/lib/localStores";
 import { useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
 
+const PROJECTS = [
+  { id: "2320eeb4-596b-437d-b4cb-830bdb3c3b01", name: "THE JACKSON" },
+  { id: "f3ae960d-a0a9-4449-82fe-ffab7b01f3fa", name: "THE DIME" },
+  { id: "6f9a358c-0fc6-41bd-bd5e-6234b68295cb", name: "GOWANUS" },
+];
+
 export default function AgentViewer() {
   const [, setLocation] = useLocation();
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
@@ -23,8 +29,10 @@ export default function AgentViewer() {
   // Get project context from agentContextStore
   const agentName = agentContextStore.getAgentName() || 'Agent';
   const agentId = agentContextStore.getAgentId() || 'agent-001';
-  const projectName = agentContextStore.getProjectName() || 'Project';
-  const projectId = agentContextStore.getProjectId() || '1';
+  const [currentProjectId, setCurrentProjectId] = useState(() => agentContextStore.getProjectId() || PROJECTS[0].id);
+  const currentProject = PROJECTS.find(p => p.id === currentProjectId) || PROJECTS[0];
+  const projectName = currentProject.name;
+  const projectId = currentProjectId;
 
   console.log(`[${actionId}] Agent Viewer initialized - Agent: ${agentName} (${agentId}), Project: ${projectName}`);
 
@@ -86,6 +94,17 @@ export default function AgentViewer() {
   const handleBack = () => {
     console.log(`[${actionId}] Navigating back to project selection`);
     setLocation("/agent/project-select");
+  };
+
+  const handleProjectChange = (newProjectId: string) => {
+    const project = PROJECTS.find(p => p.id === newProjectId);
+    if (project) {
+      console.log(`[${actionId}] Switching to project: ${project.name}`);
+      setCurrentProjectId(newProjectId);
+      agentContextStore.setProject(newProjectId, project.name);
+      setSelectedUnitId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", newProjectId] });
+    }
   };
 
   const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -169,12 +188,31 @@ export default function AgentViewer() {
       {/* Split View Container */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Half: 3D Building Viewer */}
-        <div className="flex-shrink-0 h-1/2 border-b overflow-hidden relative" data-testid="container-unit-map">
-          <FloorplanViewer3D
-            projectId={projectId}
-            unitNumber={selectedUnit?.unitNumber}
-            onUnitClick={handleUnitClickFrom3D}
-          />
+        <div className="flex-shrink-0 h-1/2 border-b overflow-hidden relative flex flex-col" data-testid="container-unit-map">
+          {/* Project Selector Tabs */}
+          <div className="flex-shrink-0 flex items-center justify-center gap-3 p-4 bg-[#f6f1eb] border-b">
+            {PROJECTS.map((project) => (
+              <Button
+                key={project.id}
+                data-testid={`button-project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
+                variant={currentProjectId === project.id ? "default" : "outline"}
+                onClick={() => handleProjectChange(project.id)}
+                className="font-black uppercase tracking-tight"
+              >
+                {project.name}
+              </Button>
+            ))}
+          </div>
+          
+          {/* 3D Viewer */}
+          <div className="flex-1 overflow-hidden relative">
+            <FloorplanViewer3D
+              projectId={projectId}
+              unitNumber={selectedUnit?.unitNumber}
+              onUnitClick={handleUnitClickFrom3D}
+              embedded={true}
+            />
+          </div>
         </div>
 
         {/* Bottom Half: Unit Cards */}

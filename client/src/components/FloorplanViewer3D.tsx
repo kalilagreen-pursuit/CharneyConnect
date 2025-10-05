@@ -28,6 +28,8 @@ interface FloorplanViewer3DProps {
   unitNumber?: string;
   onClose?: () => void;
   onUnitClick?: (unitNumber: string) => void;
+  embedded?: boolean;
+  onProjectChange?: (projectId: string) => void;
 }
 
 const PROJECTS: Project[] = [
@@ -60,6 +62,8 @@ export default function FloorplanViewer3D({
   unitNumber,
   onClose,
   onUnitClick,
+  embedded = false,
+  onProjectChange,
 }: FloorplanViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -432,7 +436,7 @@ export default function FloorplanViewer3D({
   }, [isMounted, currentProject, loadProject, handleCanvasInteraction]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#f6f1eb]">
+    <div className={embedded ? "relative w-full h-full bg-[#f6f1eb]" : "fixed inset-0 z-50 bg-[#f6f1eb]"}>
       {webglError && (
         <div className="absolute inset-0 flex items-center justify-center z-[100]">
           <div className="bg-card p-8 rounded-lg shadow-lg max-w-md text-center">
@@ -455,35 +459,38 @@ export default function FloorplanViewer3D({
           </div>
         </div>
       )}
-      <div className="absolute top-5 right-5 z-[100] flex gap-3">
-        {PROJECTS.map((project) => (
-          <Button
-            key={project.id}
-            data-testid={`button-project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
-            variant={currentProject.id === project.id ? "default" : "outline"}
-            onClick={() => {
-              setCurrentProject(project);
-              loadProject(project);
-            }}
-            className="font-black uppercase tracking-tight"
-          >
-            {project.name.toUpperCase()}
-          </Button>
-        ))}
-        {onClose && (
-          <Button
-            data-testid="button-close-3d-viewer"
-            variant="outline"
-            size="icon"
-            onClick={onClose}
-            className="font-black"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        )}
-      </div>
+      
+      {!embedded && (
+        <div className="absolute top-5 right-5 z-[100] flex gap-3">
+          {PROJECTS.map((project) => (
+            <Button
+              key={project.id}
+              data-testid={`button-project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
+              variant={currentProject.id === project.id ? "default" : "outline"}
+              onClick={() => {
+                setCurrentProject(project);
+                loadProject(project);
+              }}
+              className="font-black uppercase tracking-tight"
+            >
+              {project.name.toUpperCase()}
+            </Button>
+          ))}
+          {onClose && (
+            <Button
+              data-testid="button-close-3d-viewer"
+              variant="outline"
+              size="icon"
+              onClick={onClose}
+              className="font-black"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
+      )}
 
-      {showPanel && selectedUnit && (
+      {!embedded && showPanel && selectedUnit && (
         <div
           id="unit-details-panel"
           className="absolute top-5 left-5 bg-card p-6 rounded-lg shadow-lg w-80 z-[100]"
@@ -568,7 +575,7 @@ export default function FloorplanViewer3D({
         </div>
       )}
 
-      <div className="absolute bottom-6 right-6 w-72 h-72 pointer-events-none z-[100]">
+      <div className="absolute bottom-6 right-6 w-36 h-36 pointer-events-none z-[100]">
         <img
           ref={compassImgRef}
           src="/compass.png"

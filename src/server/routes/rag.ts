@@ -18,7 +18,9 @@ const embeddingModel = genAI.getGenerativeModel({
   model: "text-embedding-004",
 });
 // The only change is on the line below:
-const generativeModel = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+const generativeModel = genAI.getGenerativeModel({
+  model: "models/gemini-2.5-flash",
+});
 
 // --- REUSABLE RETRIEVAL FUNCTION ---
 async function findMatchingDocuments(query: string) {
@@ -55,12 +57,10 @@ router.post("/rag/ask", async (req, res) => {
 
     if (!documents || documents.length === 0) {
       console.log("No relevant documents found.");
-      return res
-        .status(200)
-        .json({
-          answer:
-            "I'm sorry, I don't have enough information to answer that question.",
-        });
+      return res.status(200).json({
+        answer:
+          "I'm sorry, I don't have enough information to answer that question.",
+      });
     }
 
     const context = documents.map((doc) => doc.content).join("\n\n");

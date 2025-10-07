@@ -66,6 +66,7 @@ export interface IStorage {
   getLeadEngagementByLeadId(leadId: string): Promise<LeadEngagement[]>;
   createLeadEngagement(engagement: InsertLeadEngagement): Promise<LeadEngagement>;
   calculateLeadScore(leadId: string): Promise<number>;
+  detectEngagementSpike(leadId: string): Promise<boolean>;
   
   // Unit Matching
   getMatchingUnitsForLead(leadId: string): Promise<UnitWithDetails[]>;
@@ -158,6 +159,7 @@ export class MemStorage implements IStorage {
         timeFrameToBuy: null,
         leadScore: 0,
         pipelineStage: 'new',
+        agentId: null,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -292,6 +294,7 @@ export class MemStorage implements IStorage {
       timeFrameToBuy: insertLead.timeFrameToBuy ?? null,
       leadScore: insertLead.leadScore ?? 0,
       pipelineStage: insertLead.pipelineStage ?? 'new',
+      agentId: insertLead.agentId ?? null,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -454,6 +457,10 @@ export class MemStorage implements IStorage {
   
   async calculateLeadScore(leadId: string): Promise<number> {
     return 0;
+  }
+
+  async detectEngagementSpike(leadId: string): Promise<boolean> {
+    return false;
   }
   
   // Unit Matching

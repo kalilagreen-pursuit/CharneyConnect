@@ -480,6 +480,21 @@ export class PostgresStorage implements IStorage {
     
     return newScore;
   }
+
+  async detectEngagementSpike(leadId: string): Promise<boolean> {
+    const engagements = await this.getLeadEngagementByLeadId(leadId);
+    
+    if (engagements.length < 3) return false;
+    
+    const now = new Date();
+    const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    const recentEngagements = engagements.filter(e => 
+      e.createdAt >= last24Hours
+    );
+    
+    return recentEngagements.length >= 3;
+  }
   
   // Unit Matching
   async getMatchingUnitsForLead(leadId: string): Promise<UnitWithDetails[]> {

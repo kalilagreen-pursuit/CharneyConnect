@@ -254,11 +254,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const oldStage = existingLead.pipelineStage || "";
-      const { agentId, ...leadUpdates } = validation.data;
+      const { agentId, targetPriceMin, targetPriceMax, ...otherUpdates } = validation.data;
 
       const updatedLead = await storage.updateLead(
         req.params.id,
-        { ...leadUpdates, agentId },
+        { 
+          ...otherUpdates, 
+          agentId,
+          targetPriceMin: targetPriceMin?.toString(),
+          targetPriceMax: targetPriceMax?.toString(),
+        },
       );
 
       if (!updatedLead) {
@@ -373,7 +378,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error.message });
       }
 
-      const task = await storage.createTask(validation.data);
+      const { assignedAgentId, leadId, dueDate, ...rest } = validation.data;
+      
+      if (!leadId) {
+        return res.status(400).json({ error: "leadId is required" });
+      }
+
+      const task = await storage.createTask({
+        agentId: assignedAgentId,
+        leadId,
+        title: rest.title,
+        description: rest.description,
+        priority: rest.priority,
+        status: rest.status,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+      });
       res.status(201).json(task);
     } catch (error) {
       console.error("Error creating task:", error);
@@ -393,7 +412,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error.message });
       }
 
-      const task = await storage.updateTask(req.params.id, validation.data);
+      const { completedAt, ...rest } = validation.data;
+      const task = await storage.updateTask(req.params.id, {
+        ...rest,
+        completedAt: completedAt ? new Date(completedAt) : undefined,
+      });
       
       if (!task) {
         return res.status(404).json({ error: "Task not found" });

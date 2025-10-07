@@ -66,17 +66,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/agents/:agentId/active-deals", async (req, res) => {
-    try {
-      const projectId = req.query.projectId as string | undefined;
-      const deals = await storage.getActiveDeals(req.params.agentId, projectId);
-      res.json(deals);
-    } catch (error) {
-      console.error("Error fetching agent active deals:", error);
-      res.status(500).json({ error: "Failed to fetch agent active deals" });
-    }
-  });
-
   app.put("/api/units/:id/status", async (req, res) => {
     try {
       const validation = updateStatusSchema.safeParse(req.body);

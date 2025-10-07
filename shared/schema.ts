@@ -76,8 +76,7 @@ export type Contact = typeof contacts.$inferSelect;
 export const deals = pgTable("Deals", {
   id: uuid("id").primaryKey().defaultRandom(),
   unitId: uuid("unit_id").notNull(),
-  buyerContactId: uuid("buyer_contact_id"), // Made nullable to support lead-based deals
-  leadId: uuid("lead_id"), // Link to leads table for new workflow
+  buyerContactId: uuid("buyer_contact_id").notNull(),
   brokerContactId: uuid("broker_contact_id"),
   agentId: text("agent_id").notNull(),
   dealStage: text("deal_stage").notNull(),
@@ -111,12 +110,6 @@ export type DealLead = Deal & {
 };
 
 export type LeadWithDetails = DealLead;
-
-// Active Deal type for agent pipeline view (combines Deal, Lead, and Unit data)
-export type ActiveDeal = Deal & {
-  lead?: Lead;
-  unit?: UnitWithDetails;
-};
 
 export type UnitUpdateRequest = {
   status?: string;
@@ -152,7 +145,6 @@ export const leads = pgTable("leads", {
   timeFrameToBuy: text("time_frame_to_buy"),
   leadScore: integer("lead_score").notNull().default(0),
   pipelineStage: text("pipeline_stage").notNull().default('new'),
-  agentId: text("agent_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

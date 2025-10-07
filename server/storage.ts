@@ -4,8 +4,7 @@ import {
   type Lead, type InsertLead, type DealLead, type InsertDeal, type LeadWithDetails,
   type Activity, type InsertActivity,
   type Task, type InsertTask, type TaskWithLead,
-  type LeadEngagement, type InsertLeadEngagement, type LeadWithEngagement,
-  type ActiveDeal
+  type LeadEngagement, type InsertLeadEngagement, type LeadWithEngagement
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -14,7 +13,6 @@ export interface IStorage {
   getAllUnits(): Promise<UnitWithDetails[]>;
   getUnitById(id: string): Promise<UnitWithDetails | undefined>;
   getUnitsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDetails[]>;
-  getActiveDeals(agentId: string, projectId?: string): Promise<ActiveDeal[]>;
   createUnit(unit: InsertUnit): Promise<UnitWithDetails>;
   updateUnitStatus(id: string, status: UnitStatus): Promise<UnitWithDetails | undefined>;
   updateUnitPrice(id: string, price: number): Promise<UnitWithDetails | undefined>;
@@ -182,11 +180,6 @@ export class MemStorage implements IStorage {
       return allUnits.filter(unit => unit.projectId === projectId);
     }
     return allUnits;
-  }
-
-  async getActiveDeals(agentId: string, projectId?: string): Promise<ActiveDeal[]> {
-    // MemStorage stub - returns empty array as deals are not supported in memory
-    return [];
   }
 
   async createUnit(insertUnit: InsertUnit): Promise<UnitWithDetails> {

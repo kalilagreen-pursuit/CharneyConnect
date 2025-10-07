@@ -8,8 +8,7 @@ import {
   type Activity, type InsertActivity,
   type Lead, type InsertLead, type LeadWithDetails,
   type Task, type InsertTask,
-  type LeadEngagement, type InsertLeadEngagement,
-  type ActiveDeal
+  type LeadEngagement, type InsertLeadEngagement
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -65,37 +64,6 @@ export class PostgresStorage implements IStorage {
       .where(whereConditions);
 
     return result.map(row => this.mapToUnitWithDetails(row));
-  }
-
-  async getActiveDeals(agentId: string, projectId?: string): Promise<ActiveDeal[]> {
-    const whereConditions = projectId
-      ? and(eq(deals.agentId, agentId), eq(units.projectId, projectId))
-      : eq(deals.agentId, agentId);
-
-    const result = await db
-      .select({
-        deal: deals,
-        lead: leads,
-        unit: units,
-        floorPlan: floorPlans,
-        project: projects,
-      })
-      .from(deals)
-      .leftJoin(leads, eq(deals.leadId, leads.id))
-      .innerJoin(units, eq(deals.unitId, units.id))
-      .leftJoin(floorPlans, eq(units.floorPlanId, floorPlans.id))
-      .leftJoin(projects, eq(units.projectId, projects.id))
-      .where(whereConditions);
-
-    return result.map(row => ({
-      ...row.deal,
-      lead: row.lead || undefined,
-      unit: row.unit ? this.mapToUnitWithDetails({
-        unit: row.unit,
-        floorPlan: row.floorPlan,
-        project: row.project,
-      }) : undefined,
-    }));
   }
 
   async createUnit(insertUnit: any): Promise<UnitWithDetails> {

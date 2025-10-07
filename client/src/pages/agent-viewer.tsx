@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
-import FloorplanViewer3D from "@/components/FloorplanViewer3D";
 import { UnitWithDetails } from "@shared/schema";
 import { agentContextStore } from "@/lib/localStores";
 import { useRealtime } from "@/contexts/RealtimeContext";
@@ -60,24 +59,10 @@ export default function AgentViewer() {
     return units.find(u => u.id === selectedUnitId) || null;
   }, [units, selectedUnitId]);
 
-  // Handle unit selection from map or card
+  // Handle unit selection from card
   const handleUnitSelect = (unitId: string) => {
     console.log(`[${actionId}] Unit selected: ${unitId}`);
     setSelectedUnitId(unitId);
-    
-    // Scroll to unit card in bottom panel
-    const cardElement = document.querySelector(`[data-unit-id="${unitId}"]`);
-    if (cardElement) {
-      cardElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  };
-
-  // Handle unit click from 3D viewer (receives unit number)
-  const handleUnitClickFrom3D = (unitNumber: string) => {
-    const unit = units.find(u => u.unitNumber === unitNumber);
-    if (unit) {
-      handleUnitSelect(unit.id);
-    }
   };
 
   // Handle view details
@@ -185,37 +170,24 @@ export default function AgentViewer() {
         </div>
       </div>
 
-      {/* Split View Container */}
+      {/* Main Content: Unit Cards */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Half: 3D Building Viewer */}
-        <div className="flex-shrink-0 h-1/2 border-b overflow-hidden relative flex flex-col" data-testid="container-unit-map">
-          {/* Project Selector Tabs */}
-          <div className="flex-shrink-0 flex items-center justify-center gap-3 p-4 bg-[#f6f1eb] border-b">
-            {PROJECTS.map((project) => (
-              <Button
-                key={project.id}
-                data-testid={`button-project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
-                variant={currentProjectId === project.id ? "default" : "outline"}
-                onClick={() => handleProjectChange(project.id)}
-                className="font-black uppercase tracking-tight"
-              >
-                {project.name}
-              </Button>
-            ))}
-          </div>
-          
-          {/* 3D Viewer */}
-          <div className="flex-1 overflow-hidden relative">
-            <FloorplanViewer3D
-              projectId={projectId}
-              unitNumber={selectedUnit?.unitNumber}
-              onUnitClick={handleUnitClickFrom3D}
-              embedded={true}
-            />
-          </div>
+        {/* Project Selector Tabs */}
+        <div className="flex-shrink-0 flex items-center justify-center gap-3 p-4 bg-[#f6f1eb] border-b">
+          {PROJECTS.map((project) => (
+            <Button
+              key={project.id}
+              data-testid={`button-project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
+              variant={currentProjectId === project.id ? "default" : "outline"}
+              onClick={() => handleProjectChange(project.id)}
+              className="font-black uppercase tracking-tight"
+            >
+              {project.name}
+            </Button>
+          ))}
         </div>
 
-        {/* Bottom Half: Unit Cards */}
+        {/* Unit Cards Grid */}
         <div className="flex-1 overflow-auto bg-background" data-testid="container-unit-cards">
           <div className="p-6">
             <h2 className="text-lg font-black uppercase tracking-tight mb-4">

@@ -39,14 +39,14 @@ function UnitCard({ unit, onViewIn3D }: { unit: UnitWithDetails; onViewIn3D?: (p
   
   return (
     <Card 
-      className="hover-elevate active-elevate-2 transition-all duration-200" 
+      className="hover-elevate active-elevate-2 transition-all duration-200 cursor-pointer" 
       data-testid={`card-unit-${unit.id}`}
+      onClick={() => onViewIn3D?.(unit.project?.id || '', unit.unitNumber)}
     >
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
         <CardTitle 
-          className="text-lg font-black uppercase tracking-tight cursor-pointer hover:text-primary transition-colors" 
+          className="text-lg font-black uppercase tracking-tight" 
           data-testid={`text-unit-number-${unit.id}`}
-          onClick={() => onViewIn3D?.(unit.project?.id || '', unit.unitNumber)}
         >
           Unit {unit.unitNumber}
         </CardTitle>

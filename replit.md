@@ -28,8 +28,8 @@ The application consists of a React (TypeScript) frontend using Vite, Wouter for
   - Task Automation: Auto-creates follow-up tasks on qualification and engagement spikes
   - Lead Scoring: Engagement tracking with score calculation and spike detection
 - **Manager View**: Real-time Kanban board with 4 columns (Available, On Hold, Contract, Sold). Units are grouped by status and update automatically via Supabase Realtime without page refresh. Shows count badges and unit details including price, bedrooms, bathrooms, and square footage.
-- **Agent View**: 3D building viewer with interactive unit selection and "Hold Unit" button. Status changes write directly to Supabase and trigger real-time updates across all views.
-- **3D Building Viewer**: Interactive 3D visualization using three.js with unit highlighting, touch controls (tap, drag, pinch), and Charney brand styling.
+- **Agent View**: 3D building viewer with interactive unit selection, "Hold Unit" button, and Quick-Add Prospect feature. Agents can add prospects directly from the 3D unit details modal with automatic unit and agent linking. Status changes write directly to Supabase and trigger real-time updates across all views.
+- **3D Building Viewer**: Interactive 3D visualization using three.js with unit highlighting, touch controls (tap, drag, pinch), and Charney brand styling. Unit details modal includes "Add Prospect" button that opens ProspectQuickAddForm with pre-populated unit and agent context.
 - **iPad Optimization**: Large touch targets (min 44x44px), responsive layouts, and clean professional design.
 
 ### Design System - Charney Brand

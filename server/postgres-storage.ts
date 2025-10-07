@@ -145,7 +145,10 @@ export class PostgresStorage implements IStorage {
   }
 
   async updateLead(id: string, updateData: Partial<InsertLead>): Promise<Lead | undefined> {
-    const result = await db.update(leads).set(updateData).where(eq(leads.id, id)).returning();
+    const result = await db.update(leads).set({
+      ...updateData,
+      updatedAt: new Date()
+    }).where(eq(leads.id, id)).returning();
     return result[0];
   }
 
@@ -379,9 +382,20 @@ export class PostgresStorage implements IStorage {
     if (!lead) return 0;
     
     const engagements = await this.getLeadEngagementByLeadId(leadId);
-    const totalScore = engagements.reduce((sum, e) => sum + e.scoreImpact, 0);
     
-    return Math.max(0, Math.min(lead.leadScore + totalScore, 100));
+    if (engagements.length === 0) {
+      return lead.leadScore;
+    }
+    
+    const totalScore = engagements.reduce((sum, e) => sum + e.scoreImpact, 0);
+    const newScore = Math.max(0, Math.min(totalScore, 100));
+    
+    await db.update(leads).set({
+      leadScore: newScore,
+      updatedAt: new Date()
+    }).where(eq(leads.id, leadId));
+    
+    return newScore;
   }
   
   // Unit Matching
@@ -398,6 +412,8 @@ export class PostgresStorage implements IStorage {
         const price = parseFloat(unit.price);
         const minPrice = parseFloat(lead.targetPriceMin);
         const maxPrice = parseFloat(lead.targetPriceMax);
+        
+        if (isNaN(price) || isNaN(minPrice) || isNaN(maxPrice)) return false;
         if (price < minPrice || price > maxPrice) return false;
       }
       

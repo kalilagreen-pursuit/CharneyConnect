@@ -294,7 +294,7 @@ export class MemStorage implements IStorage {
     const lead = this.leads.get(id);
     if (!lead) return undefined;
     
-    const updatedLead = { ...lead, ...updateData };
+    const updatedLead = { ...lead, ...updateData, updatedAt: new Date() };
     this.leads.set(id, updatedLead);
     return updatedLead;
   }
@@ -461,6 +461,8 @@ export class MemStorage implements IStorage {
         const price = parseFloat(unit.price);
         const minPrice = parseFloat(lead.targetPriceMin);
         const maxPrice = parseFloat(lead.targetPriceMax);
+        
+        if (isNaN(price) || isNaN(minPrice) || isNaN(maxPrice)) return false;
         if (price < minPrice || price > maxPrice) return false;
       }
       

@@ -125,6 +125,10 @@ export type UnitWithDealContext = UnitWithDetails & {
   leadPhone?: string;
   brokerName?: string;
   brokerEmail?: string;
+  leadScore?: number;
+  hasOverdueTasks: boolean;
+  isHotLead: boolean;
+  isStaleLead: boolean;
 };
 
 // Insert schemas

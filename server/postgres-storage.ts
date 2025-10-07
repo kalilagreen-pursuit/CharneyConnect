@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, lt, sql } from "drizzle-orm";
 import { db } from "./db";
 import { 
   units, floorPlans, projects, contacts, deals, activities, leads, tasks, leadEngagement,
@@ -78,20 +78,59 @@ export class PostgresStorage implements IStorage {
         project: projects,
         deal: deals,
         buyerContact: contacts,
+        lead: leads,
       })
       .from(deals)
       .innerJoin(units, eq(deals.unitId, units.id))
       .leftJoin(floorPlans, eq(units.floorPlanId, floorPlans.id))
       .leftJoin(projects, eq(units.projectId, projects.id))
       .innerJoin(contacts, eq(deals.buyerContactId, contacts.id))
+      .leftJoin(leads, eq(contacts.email, leads.email))
       .where(whereConditions);
 
-    return result.map(row => {
+    const unitsWithContext = await Promise.all(result.map(async (row) => {
       const unitWithDetails = this.mapToUnitWithDetails({
         unit: row.unit,
         floorPlan: row.floorPlan,
         project: row.project,
       });
+
+      const leadId = row.lead?.id;
+      let hasOverdueTasks = false;
+      let isHotLead = false;
+      let isStaleLead = false;
+      const leadScore = row.lead?.leadScore || 0;
+
+      if (leadId) {
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        const overdueTasks = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(tasks)
+          .where(
+            and(
+              eq(tasks.leadId, leadId),
+              lt(tasks.dueDate, now),
+              eq(tasks.status, 'pending')
+            )
+          );
+
+        hasOverdueTasks = Number(overdueTasks[0]?.count || 0) > 0;
+
+        const recentActivity = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(leadEngagement)
+          .where(
+            and(
+              eq(leadEngagement.leadId, leadId),
+              sql`${leadEngagement.createdAt} >= ${sevenDaysAgo}`
+            )
+          );
+
+        isStaleLead = Number(recentActivity[0]?.count || 0) === 0;
+        isHotLead = leadScore > 75;
+      }
 
       return {
         ...unitWithDetails,
@@ -100,8 +139,14 @@ export class PostgresStorage implements IStorage {
         leadName: `${row.buyerContact.firstName} ${row.buyerContact.lastName}`,
         leadEmail: row.buyerContact.email,
         leadPhone: row.buyerContact.phone,
+        leadScore,
+        hasOverdueTasks,
+        isHotLead,
+        isStaleLead,
       };
-    });
+    }));
+
+    return unitsWithContext;
   }
 
   async createUnit(insertUnit: any): Promise<UnitWithDetails> {

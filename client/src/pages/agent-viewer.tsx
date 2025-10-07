@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit } from "lucide-react";
+import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit, AlertCircle, Zap, Clock } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
 import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
 import { UnitWithDetails, UnitWithDealContext, Lead } from "@shared/schema";
@@ -501,9 +501,31 @@ export default function AgentViewer() {
                               <div className="text-xs text-muted-foreground uppercase">
                                 {unit.building}
                               </div>
-                              <h3 className="text-xl font-black uppercase tracking-tight">
-                                Unit {unit.unitNumber}
-                              </h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-xl font-black uppercase tracking-tight">
+                                  Unit {unit.unitNumber}
+                                </h3>
+                                {/* Priority Indicators */}
+                                {('hasOverdueTasks' in unit || 'isHotLead' in unit || 'isStaleLead' in unit) && (
+                                  <div className="flex items-center gap-1">
+                                    {unit.hasOverdueTasks && (
+                                      <div className="relative" data-testid={`indicator-overdue-${unit.unitNumber}`}>
+                                        <AlertCircle className="h-4 w-4 text-destructive fill-destructive" />
+                                      </div>
+                                    )}
+                                    {unit.isHotLead && (
+                                      <div className="relative" data-testid={`indicator-hot-${unit.unitNumber}`}>
+                                        <Zap className="h-4 w-4 text-[hsl(var(--status-on-hold))] fill-[hsl(var(--status-on-hold))]" />
+                                      </div>
+                                    )}
+                                    {unit.isStaleLead && (
+                                      <div className="relative" data-testid={`indicator-stale-${unit.unitNumber}`}>
+                                        <Clock className="h-4 w-4 text-muted-foreground" />
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             <div className="flex flex-col gap-1 items-end">
                               <Badge 

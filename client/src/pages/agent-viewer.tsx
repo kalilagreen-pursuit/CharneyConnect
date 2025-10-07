@@ -111,13 +111,55 @@ export default function AgentViewer() {
   const handleUnitSelect = (unitId: string) => {
     console.log(`[${actionId}] Unit selected: ${unitId}`);
     setSelectedUnitId(unitId);
+    // Switch to 3D viewer tab if coming from Active Deals
+    if (activeTab === "active-deals") {
+      setActiveTab("all-units");
+    }
   };
 
-  // Handle view details
-  const handleViewDetails = (unit: UnitWithDetails) => {
-    console.log(`[${actionId}] Opening Unit Sheet for Unit ${unit.unitNumber}`);
-    setSelectedUnitId(unit.id);
-    setShowUnitSheet(true);
+  // Handle view details - opens Lead Qualification Sheet for Active Deals, Unit Sheet for All Units
+  const handleViewDetails = async (unit: UnitWithDetails | UnitWithDealContext) => {
+    console.log(`[${actionId}] View details clicked for Unit ${unit.unitNumber}`);
+    
+    // Check if this is a deal with lead info (from Active Deals tab)
+    const isDeal = 'dealId' in unit && 'leadEmail' in unit;
+    
+    if (isDeal && unit.dealId && unit.leadEmail) {
+      // Open Lead Qualification Sheet
+      console.log(`[${actionId}] Opening Lead details for deal`);
+      
+      try {
+        // Fetch all leads and find one matching the email
+        const response = await fetch('/api/leads');
+        if (!response.ok) throw new Error('Failed to fetch leads');
+        const allLeads: Lead[] = await response.json();
+        
+        const matchingLead = allLeads.find(lead => lead.email === unit.leadEmail);
+        
+        if (matchingLead) {
+          setSelectedLead(matchingLead);
+          setShowQualificationSheet(true);
+        } else {
+          toast({
+            title: "Lead Not Found",
+            description: "This contact hasn't been qualified yet. Please qualify them first on the Leads page.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error(`[${actionId}] Error fetching lead:`, error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch lead information",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Open Unit Sheet for regular units (from All Units tab)
+      console.log(`[${actionId}] Opening Unit Sheet for Unit ${unit.unitNumber}`);
+      setSelectedUnitId(unit.id);
+      setShowUnitSheet(true);
+    }
   };
 
   const handleLogShowing = () => {

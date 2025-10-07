@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Mail, Phone, Building2, MapPin, DollarSign, Users } from "lucide-react";
 import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
+import { TasksPanel } from "@/components/tasks-panel";
 
 const leadStatusConfig: Record<string, { label: string; color: string }> = {
   new: { label: "New", color: "bg-blue-500 text-white dark:text-white border-blue-500" },

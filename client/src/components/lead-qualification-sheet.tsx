@@ -21,8 +21,10 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, DollarSign, MapPin, Calendar, TrendingUp, Eye } from "lucide-react";
+import { Loader2, DollarSign, MapPin, Calendar, TrendingUp, Eye, ListTodo } from "lucide-react";
 import { MatchedUnitsDrawer } from "./matched-units-drawer";
+import { TasksPanel } from "./tasks-panel";
+import { Separator } from "@/components/ui/separator";
 
 interface LeadQualificationSheetProps {
   lead: Lead;
@@ -259,6 +261,16 @@ export function LeadQualificationSheet({
             >
               Cancel
             </Button>
+          </div>
+
+          <Separator className="my-6" />
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+              <ListTodo className="h-5 w-5" />
+              Tasks
+            </h3>
+            <TasksPanel leadId={lead.id} />
           </div>
         </div>
       </SheetContent>

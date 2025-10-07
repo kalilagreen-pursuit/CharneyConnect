@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Lead, UnitWithDetails } from "@shared/schema";
 import {
   Sheet,
@@ -23,6 +24,7 @@ export function MatchedUnitsDrawer({
   open,
   onOpenChange,
 }: MatchedUnitsDrawerProps) {
+  const [, setLocation] = useLocation();
   const { data: matchedUnits, isLoading } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/leads", lead.id, "matched-units"],
     enabled: open && !!lead.id,
@@ -51,6 +53,17 @@ export function MatchedUnitsDrawer({
     }).format(price);
   };
 
+  const handleUnitClick = (unit: UnitWithDetails) => {
+    // Navigate to 3D viewer with lead context
+    const params = new URLSearchParams({
+      projectId: unit.projectId || "",
+      unitNumber: unit.unitNumber,
+      leadId: lead.id,
+    });
+    setLocation(`/agent/viewer?${params.toString()}`);
+    onOpenChange(false);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
@@ -75,6 +88,7 @@ export function MatchedUnitsDrawer({
               <Card
                 key={unit.id}
                 className="p-4 hover-elevate cursor-pointer"
+                onClick={() => handleUnitClick(unit)}
                 data-testid={`card-matched-unit-${unit.id}`}
               >
                 <div className="flex items-start justify-between mb-3">

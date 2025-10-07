@@ -28,6 +28,7 @@ export default function AgentViewer() {
   const [activeTab, setActiveTab] = useState("all-units");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showQualificationSheet, setShowQualificationSheet] = useState(false);
+  const [stageFilter, setStageFilter] = useState<string>("all");
   const [actionId] = useState(() => `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const { unitUpdates, clearUnitUpdates} = useRealtime();
   const { toast } = useToast();
@@ -77,6 +78,34 @@ export default function AgentViewer() {
   const selectedUnit = useMemo(() => {
     return units.find(u => u.id === selectedUnitId) || null;
   }, [units, selectedUnitId]);
+
+  // Calculate deal counts by stage
+  const dealCountsByStage = useMemo(() => {
+    const counts: Record<string, number> = {
+      all: activeDeals.length,
+      new: 0,
+      contacted: 0,
+      qualified: 0,
+      proposal: 0,
+      negotiation: 0,
+      closed_won: 0,
+      closed_lost: 0,
+    };
+    
+    activeDeals.forEach(deal => {
+      if (counts[deal.dealStage] !== undefined) {
+        counts[deal.dealStage]++;
+      }
+    });
+    
+    return counts;
+  }, [activeDeals]);
+
+  // Filter deals by stage
+  const filteredDeals = useMemo(() => {
+    if (stageFilter === "all") return activeDeals;
+    return activeDeals.filter(deal => deal.dealStage === stageFilter);
+  }, [activeDeals, stageFilter]);
 
   // Handle unit selection from card
   const handleUnitSelect = (unitId: string) => {
@@ -345,14 +374,92 @@ export default function AgentViewer() {
                 )}
               </TabsContent>
 
-              <TabsContent value="active-deals" className="mt-0">
+              <TabsContent value="active-deals" className="mt-0 space-y-4">
+                {/* Stats/Filter Header */}
+                {!isLoadingDeals && activeDeals.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant={stageFilter === "all" ? "default" : "outline"}
+                      onClick={() => setStageFilter("all")}
+                      data-testid="filter-all"
+                      className="uppercase"
+                    >
+                      All: {dealCountsByStage.all}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={stageFilter === "new" ? "default" : "outline"}
+                      onClick={() => setStageFilter("new")}
+                      data-testid="filter-new"
+                      className="uppercase"
+                    >
+                      New: {dealCountsByStage.new}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={stageFilter === "contacted" ? "default" : "outline"}
+                      onClick={() => setStageFilter("contacted")}
+                      data-testid="filter-contacted"
+                      className="uppercase"
+                    >
+                      Contacted: {dealCountsByStage.contacted}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={stageFilter === "qualified" ? "default" : "outline"}
+                      onClick={() => setStageFilter("qualified")}
+                      data-testid="filter-qualified"
+                      className="uppercase"
+                    >
+                      Qualified: {dealCountsByStage.qualified}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={stageFilter === "proposal" ? "default" : "outline"}
+                      onClick={() => setStageFilter("proposal")}
+                      data-testid="filter-proposal"
+                      className="uppercase"
+                    >
+                      Proposal: {dealCountsByStage.proposal}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={stageFilter === "negotiation" ? "default" : "outline"}
+                      onClick={() => setStageFilter("negotiation")}
+                      data-testid="filter-negotiation"
+                      className="uppercase"
+                    >
+                      Negotiation: {dealCountsByStage.negotiation}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={stageFilter === "closed_won" ? "default" : "outline"}
+                      onClick={() => setStageFilter("closed_won")}
+                      data-testid="filter-closed-won"
+                      className="uppercase"
+                    >
+                      Closed Won: {dealCountsByStage.closed_won}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={stageFilter === "closed_lost" ? "default" : "outline"}
+                      onClick={() => setStageFilter("closed_lost")}
+                      data-testid="filter-closed-lost"
+                      className="uppercase"
+                    >
+                      Closed Lost: {dealCountsByStage.closed_lost}
+                    </Button>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {isLoadingDeals ? (
                     <div className="col-span-full text-center py-12 text-muted-foreground">
                       Loading active deals...
                     </div>
-                  ) : activeDeals.length > 0 ? (
-                    activeDeals.map(unit => {
+                  ) : filteredDeals.length > 0 ? (
+                    filteredDeals.map(unit => {
                       // Map deal stage to Charney brand border color
                       const stageBorderColor = {
                         new: "border-l-muted-foreground",

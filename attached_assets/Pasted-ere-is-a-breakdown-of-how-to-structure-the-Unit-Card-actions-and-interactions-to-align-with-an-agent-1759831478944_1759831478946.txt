@@ -1,0 +1,36 @@
+ere is a breakdown of how to structure the Unit Card actions and interactions to align with an agent's unit-centric workflow:
+
+Agent Pipeline View: Unit Card Actions
+The unit card should clearly represent a potential opportunity (the unit) and the people (the leads) who are interested in it.
+
+1. The Primary Unit Card Action: Re-Visualizing the Property
+This is the fastest path back to the unit's core context.
+
+Action: Clicking anywhere on the main body of the Unit Card (the unit number, image, or primary details).
+
+Result: The user is taken directly to the 3D Viewer/Unit Map with that specific unit highlighted.
+
+Workflow Value: This allows the agent to quickly refresh their memory on the unit's floor plan, view, and location before contacting a lead or to answer an immediate question. It aligns the unit-centric sales approach with the visual tools.
+
+2. The Secondary Action: Managing the Associated Leads
+The "View Details" button should be the gateway to lead management for that specific unit. Since a unit can have multiple interested leads, this button should lead to a focused, consolidated view.
+
+Action: Clicking the dedicated "View Details" button (or an equivalent call-to-action like "Manage Leads").
+
+Result: The agent is taken to a Unit-Specific Lead Management Dashboard.
+
+This Unit-Specific Lead Management Dashboard should include:
+
+Component	Description	Agent Workflow Benefit
+List of Linked Leads	A mini-pipeline or a simple list of all leads the agent has associated with this specific unit. It should show the lead's name, their current stage (e.g., "Initial Contact," "Property Viewing Scheduled," "Negotiating"), and their lead score/priority.	Prioritization: The agent can see who the 'hottest' leads are for this unit and who needs the next action.
+Unit Activity Feed	A consolidated feed of all recent communication and activity related to this unit, regardless of which lead initiated it (e.g., "Lead A requested a brochure," "Agent sent follow-up email to Lead B," "Showing scheduled with Lead C").	Context & Efficiency: Prevents the agent from having to jump into multiple separate lead records to figure out the last interaction.
+Unit Information (Read-Only)	Key unit details, pricing, and availability status.	Completeness: All necessary context is available on a single screen without needing to navigate back to the map or a unit inventory list.
+"Create New Activity" Action	A quick button to log a call, email, or meeting, with the system automatically linking the activity to this unit.	Actionable: Allows the agent to move a lead forward or record an interaction immediately from the most relevant screen.
+
+Export to Sheets
+Summary of Unit Card Behavior
+By structuring the actions this way, you create a clear and efficient workflow:
+
+Interaction	Intent	Destination
+Click on Unit Card (Main Body)	“Show me the unit again.”	3D Unit Viewer/Map
+Click on "View Details" Button	“Show me the leads for this unit and my next steps.”	Unit-Specific Lead Management Dashboard

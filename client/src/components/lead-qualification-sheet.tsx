@@ -33,6 +33,25 @@ interface LeadQualificationSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function normalizeLocations(locations: string[] | string | null | undefined): string {
+  if (!locations) return "";
+  
+  if (Array.isArray(locations)) {
+    return locations.join(", ");
+  }
+  
+  if (typeof locations === "string") {
+    const cleaned = locations.trim();
+    if (cleaned.startsWith("{") && cleaned.endsWith("}")) {
+      const parsed = cleaned.slice(1, -1).split(",").map(s => s.trim());
+      return parsed.join(", ");
+    }
+    return cleaned;
+  }
+  
+  return "";
+}
+
 export function LeadQualificationSheet({
   lead,
   open,
@@ -48,7 +67,7 @@ export function LeadQualificationSheet({
     lead.targetPriceMax || ""
   );
   const [targetLocations, setTargetLocations] = useState<string>(
-    lead.targetLocations?.join(", ") || ""
+    normalizeLocations(lead.targetLocations)
   );
   const [timeFrameToBuy, setTimeFrameToBuy] = useState<string>(
     lead.timeFrameToBuy || ""
@@ -61,7 +80,7 @@ export function LeadQualificationSheet({
   useEffect(() => {
     setTargetPriceMin(lead.targetPriceMin || "");
     setTargetPriceMax(lead.targetPriceMax || "");
-    setTargetLocations(lead.targetLocations?.join(", ") || "");
+    setTargetLocations(normalizeLocations(lead.targetLocations));
     setTimeFrameToBuy(lead.timeFrameToBuy || "");
     setPipelineStage(lead.pipelineStage || "");
   }, [lead.id]);

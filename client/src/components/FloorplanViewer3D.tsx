@@ -89,6 +89,7 @@ export default function FloorplanViewer3D({
   const [isLoading, setIsLoading] = useState(false);
   const [webglError, setWebglError] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [showProspectForm, setShowProspectForm] = useState(false);
 
   const hideDetailsPanel = useCallback(() => {
     setShowPanel(false);

@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, DollarSign, MapPin, Calendar, TrendingUp } from "lucide-react";
+import { Loader2, DollarSign, MapPin, Calendar, TrendingUp, Eye } from "lucide-react";
+import { MatchedUnitsDrawer } from "./matched-units-drawer";
 
 interface LeadQualificationSheetProps {
   lead: Lead;
@@ -52,6 +53,7 @@ export function LeadQualificationSheet({
   const [pipelineStage, setPipelineStage] = useState<string>(
     lead.pipelineStage || ""
   );
+  const [matchedUnitsDrawerOpen, setMatchedUnitsDrawerOpen] = useState(false);
 
   useEffect(() => {
     setTargetPriceMin(lead.targetPriceMin || "");
@@ -215,7 +217,7 @@ export function LeadQualificationSheet({
               </div>
             </div>
           ) : matchedUnits && matchedUnits.length > 0 ? (
-            <div className="p-4 border rounded-md space-y-2">
+            <div className="p-4 border rounded-md space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold uppercase">Matched Units</p>
                 <Badge variant="secondary" data-testid="badge-matched-units-count">
@@ -225,6 +227,16 @@ export function LeadQualificationSheet({
               <p className="text-xs text-muted-foreground">
                 Based on budget and location preferences
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMatchedUnitsDrawerOpen(true)}
+                className="w-full"
+                data-testid="button-view-matched-units"
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                View Matched Units
+              </Button>
             </div>
           ) : null}
 
@@ -250,6 +262,12 @@ export function LeadQualificationSheet({
           </div>
         </div>
       </SheetContent>
+
+      <MatchedUnitsDrawer
+        lead={lead}
+        open={matchedUnitsDrawerOpen}
+        onOpenChange={setMatchedUnitsDrawerOpen}
+      />
     </Sheet>
   );
 }

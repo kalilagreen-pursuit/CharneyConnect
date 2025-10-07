@@ -76,7 +76,8 @@ export type Contact = typeof contacts.$inferSelect;
 export const deals = pgTable("Deals", {
   id: uuid("id").primaryKey().defaultRandom(),
   unitId: uuid("unit_id").notNull(),
-  buyerContactId: uuid("buyer_contact_id").notNull(),
+  buyerContactId: uuid("buyer_contact_id"), // Made nullable to support lead-based deals
+  leadId: uuid("lead_id"), // Link to leads table for new workflow
   brokerContactId: uuid("broker_contact_id"),
   agentId: text("agent_id").notNull(),
   dealStage: text("deal_stage").notNull(),

@@ -575,6 +575,16 @@ export default function FloorplanViewer3D({
           >
             SAVE CHANGES
           </Button>
+          
+          <Button
+            data-testid="button-add-prospect"
+            onClick={() => setShowProspectForm(true)}
+            className="w-full mt-2 uppercase"
+            variant="outline"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            ADD PROSPECT
+          </Button>
         </div>
       )}
 

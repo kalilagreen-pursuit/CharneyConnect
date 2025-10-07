@@ -305,17 +305,41 @@ export default function AgentViewer() {
                       Loading active deals...
                     </div>
                   ) : activeDeals.length > 0 ? (
-                    activeDeals.map(unit => (
-                      <Card
-                        key={unit.id}
-                        data-unit-id={unit.id}
-                        data-testid={`card-deal-${unit.unitNumber}`}
-                        className={cn(
-                          "p-4 cursor-pointer transition-all duration-200 hover-elevate",
-                          selectedUnitId === unit.id && "ring-2 ring-primary"
-                        )}
-                        onClick={() => handleUnitSelect(unit.id)}
-                      >
+                    activeDeals.map(unit => {
+                      // Map deal stage to Charney brand border color
+                      const stageBorderColor = {
+                        new: "border-l-muted-foreground",
+                        contacted: "border-l-primary",
+                        qualified: "border-l-[hsl(var(--status-available))]",
+                        proposal: "border-l-[hsl(var(--status-on-hold))]",
+                        negotiation: "border-l-[hsl(var(--status-contract))]",
+                        closed_won: "border-l-[hsl(var(--status-available))]",
+                        closed_lost: "border-l-destructive"
+                      }[unit.dealStage] || "border-l-muted";
+
+                      // Map deal stage to badge variant
+                      const stageBadgeVariant = {
+                        new: "secondary" as const,
+                        contacted: "default" as const,
+                        qualified: "default" as const,
+                        proposal: "default" as const,
+                        negotiation: "default" as const,
+                        closed_won: "default" as const,
+                        closed_lost: "destructive" as const
+                      }[unit.dealStage] || "secondary" as const;
+
+                      return (
+                        <Card
+                          key={unit.id}
+                          data-unit-id={unit.id}
+                          data-testid={`card-deal-${unit.unitNumber}`}
+                          className={cn(
+                            "p-4 cursor-pointer transition-all duration-200 hover-elevate border-l-4",
+                            stageBorderColor,
+                            selectedUnitId === unit.id && "ring-2 ring-primary"
+                          )}
+                          onClick={() => handleUnitSelect(unit.id)}
+                        >
                         <div className="space-y-3">
                           {/* Header: Unit Number + Status */}
                           <div className="flex items-start justify-between gap-2">
@@ -327,13 +351,22 @@ export default function AgentViewer() {
                                 Unit {unit.unitNumber}
                               </h3>
                             </div>
-                            <Badge 
-                              variant={getStatusBadgeVariant(unit.status)}
-                              data-testid={`badge-status-${unit.unitNumber}`}
-                              className="uppercase text-xs"
-                            >
-                              {formatStatus(unit.status)}
-                            </Badge>
+                            <div className="flex flex-col gap-1 items-end">
+                              <Badge 
+                                variant={getStatusBadgeVariant(unit.status)}
+                                data-testid={`badge-status-${unit.unitNumber}`}
+                                className="uppercase text-xs"
+                              >
+                                {formatStatus(unit.status)}
+                              </Badge>
+                              <Badge 
+                                variant={stageBadgeVariant}
+                                data-testid={`badge-stage-${unit.unitNumber}`}
+                                className="uppercase text-xs"
+                              >
+                                {unit.dealStage.replace('_', ' ')}
+                              </Badge>
+                            </div>
                           </div>
 
                           {/* Price */}
@@ -385,7 +418,8 @@ export default function AgentViewer() {
                           </Button>
                         </div>
                       </Card>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="col-span-full text-center py-12 text-muted-foreground">
                       No active deals found for this project

@@ -55,6 +55,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/units/:projectId/:unitNumber/leads", async (req, res) => {
+    try {
+      const { projectId, unitNumber } = req.params;
+      const leads = await storage.getLeadsByUnit(projectId, unitNumber);
+      res.json(leads);
+    } catch (error) {
+      console.error("Error fetching unit leads:", error);
+      res.status(500).json({ error: "Failed to fetch unit leads" });
+    }
+  });
+
   app.get("/api/agents/:agentId/units", async (req, res) => {
     try {
       const projectId = req.query.projectId as string | undefined;

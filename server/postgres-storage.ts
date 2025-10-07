@@ -507,4 +507,51 @@ export class PostgresStorage implements IStorage {
       return true;
     });
   }
+  
+  // Unit Leads - Get all leads/deals for a specific unit
+  async getLeadsByUnit(projectId: string, unitNumber: string): Promise<LeadWithDetails[]> {
+    const result = await db
+      .select({
+        deal: deals,
+        contact: contacts,
+        broker: contacts,
+        unit: units,
+        floorPlan: floorPlans,
+        project: projects,
+      })
+      .from(deals)
+      .innerJoin(contacts, eq(deals.buyerContactId, contacts.id))
+      .leftJoin(units, eq(deals.unitId, units.id))
+      .leftJoin(floorPlans, eq(units.floorPlanId, floorPlans.id))
+      .leftJoin(projects, eq(units.projectId, projects.id))
+      .where(
+        and(
+          eq(units.projectId, projectId),
+          eq(units.unitNumber, unitNumber)
+        )
+      );
+    
+    const leadsWithDetails: LeadWithDetails[] = [];
+    
+    for (const row of result) {
+      const broker = row.deal.brokerContactId
+        ? await this.getBrokerById(row.deal.brokerContactId)
+        : undefined;
+      
+      const dealActivities = await this.getActivitiesByLeadId(row.deal.id);
+      
+      leadsWithDetails.push({
+        ...row.deal,
+        contact: row.contact,
+        broker,
+        unit: row.unit ? this.mapToUnitWithDetails({ unit: row.unit, floorPlan: row.floorPlan, project: row.project }) : undefined,
+        activities: dealActivities,
+        status: row.deal.dealStage,
+        score: 0,
+        notes: row.deal.category || undefined,
+      });
+    }
+    
+    return leadsWithDetails;
+  }
 }

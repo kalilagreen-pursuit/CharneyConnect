@@ -69,6 +69,9 @@ export interface IStorage {
   
   // Unit Matching
   getMatchingUnitsForLead(leadId: string): Promise<UnitWithDetails[]>;
+  
+  // Unit Leads
+  getLeadsByUnit(projectId: string, unitNumber: string): Promise<LeadWithDetails[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -478,6 +481,11 @@ export class MemStorage implements IStorage {
       
       return true;
     });
+  }
+  
+  // Unit Leads
+  async getLeadsByUnit(projectId: string, unitNumber: string): Promise<LeadWithDetails[]> {
+    return [];
   }
 }
 

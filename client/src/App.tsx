@@ -12,6 +12,7 @@ import AgentSelect from "@/pages/agent-select";
 import ProjectSelect from "@/pages/project-select";
 import AgentViewer from "@/pages/agent-viewer";
 import ManagerView from "@/pages/manager-view";
+import UnitLeads from "@/pages/unit-leads";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/agent/project-select" component={ProjectSelect} />
       <Route path="/agent/viewer" component={AgentViewer} />
       <Route path="/manager" component={ManagerView} />
+      <Route path="/unit/:projectId/:unitNumber/leads" component={UnitLeads} />
       <Route component={NotFound} />
     </Switch>
   );

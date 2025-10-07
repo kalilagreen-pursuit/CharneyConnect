@@ -4,8 +4,9 @@ import { Lead } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Mail, Phone, Building2, MapPin, DollarSign, Users, Filter } from "lucide-react";
+import { Mail, Phone, Building2, MapPin, DollarSign, Users, Filter, Search } from "lucide-react";
 import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
 import { TasksPanel } from "@/components/tasks-panel";
 
@@ -132,6 +133,7 @@ export default function Leads() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [stageFilter, setStageFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { data: leads, isLoading } = useQuery<Lead[]>({
     queryKey: ["/api/leads"],
@@ -142,9 +144,19 @@ export default function Leads() {
     setSheetOpen(true);
   };
 
-  const filteredLeads = leads && stageFilter !== "all" 
-    ? leads.filter(l => l.pipelineStage?.toLowerCase() === stageFilter.toLowerCase())
-    : leads;
+  const filteredLeads = leads?.filter(lead => {
+    // Apply pipeline stage filter
+    const matchesStage = stageFilter === "all" || 
+      lead.pipelineStage?.toLowerCase() === stageFilter.toLowerCase();
+    
+    // Apply search filter
+    const matchesSearch = !searchQuery || 
+      lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.phone?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesStage && matchesSearch;
+  });
 
   const stats = leads ? {
     total: leads.length,
@@ -191,6 +203,27 @@ export default function Leads() {
                 <StatCard title="Closed" value={stats.closed} />
               </>
             ) : null}
+          </div>
+
+          {/* Search Bar */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-bold uppercase tracking-wide">
+                Search Leads
+              </h3>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by name, email, or phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-leads"
+              />
+            </div>
           </div>
 
           {/* Pipeline Stage Filters */}

@@ -69,7 +69,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/agents/:agentId/units", async (req, res) => {
     try {
       const projectId = req.query.projectId as string | undefined;
-      const units = await storage.getUnitsByAgentId(req.params.agentId, projectId);
+      const showAllProjectUnits = req.query.showAllProjectUnits === 'true';
+      const units = await storage.getUnitsByAgentId(req.params.agentId, projectId, showAllProjectUnits);
       res.json(units);
     } catch (error) {
       console.error("Error fetching agent units:", error);

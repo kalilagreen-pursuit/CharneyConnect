@@ -12,7 +12,7 @@ export interface IStorage {
   // Units
   getAllUnits(): Promise<UnitWithDetails[]>;
   getUnitById(id: string): Promise<UnitWithDetails | undefined>;
-  getUnitsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDetails[]>;
+  getUnitsByAgentId(agentId: string, projectId?: string, showAllProjectUnits?: boolean): Promise<UnitWithDetails[]>;
   getActiveDealsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDealContext[]>;
   createUnit(unit: InsertUnit): Promise<UnitWithDetails>;
   updateUnitStatus(id: string, status: UnitStatus): Promise<UnitWithDetails | undefined>;
@@ -179,7 +179,7 @@ export class MemStorage implements IStorage {
     return this.units.get(id);
   }
 
-  async getUnitsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDetails[]> {
+  async getUnitsByAgentId(agentId: string, projectId?: string, showAllProjectUnits?: boolean): Promise<UnitWithDetails[]> {
     // MemStorage doesn't have deals, return all units (optionally filtered by projectId)
     const allUnits = await this.getAllUnits();
     if (projectId) {

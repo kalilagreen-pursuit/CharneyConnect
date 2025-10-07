@@ -46,7 +46,22 @@ export class PostgresStorage implements IStorage {
     return this.mapToUnitWithDetails(result[0]);
   }
 
-  async getUnitsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDetails[]> {
+  async getUnitsByAgentId(agentId: string, projectId?: string, showAllProjectUnits?: boolean): Promise<UnitWithDetails[]> {
+    if (showAllProjectUnits && projectId) {
+      const result = await db
+        .select({
+          unit: units,
+          floorPlan: floorPlans,
+          project: projects,
+        })
+        .from(units)
+        .leftJoin(floorPlans, eq(units.floorPlanId, floorPlans.id))
+        .leftJoin(projects, eq(units.projectId, projects.id))
+        .where(eq(units.projectId, projectId));
+
+      return result.map(row => this.mapToUnitWithDetails(row));
+    }
+
     const whereConditions = projectId
       ? and(eq(deals.agentId, agentId), eq(units.projectId, projectId))
       : eq(deals.agentId, agentId);

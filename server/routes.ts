@@ -218,6 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeFrameToBuy: z.string().optional(),
         pipelineStage: z.string().optional(),
         leadScore: z.number().min(0).max(100).optional(),
+        agentId: z.string().optional(),
       });
 
       const validation = qualifySchema.safeParse(req.body);
@@ -225,13 +226,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error.message });
       }
 
+      const existingLead = await storage.getLeadById(req.params.id);
+      if (!existingLead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      const oldStage = existingLead.pipelineStage || "";
+      const { agentId, ...leadUpdates } = validation.data;
+
       const updatedLead = await storage.updateLead(
         req.params.id,
-        validation.data,
+        leadUpdates,
       );
 
       if (!updatedLead) {
         return res.status(404).json({ error: "Lead not found" });
+      }
+
+      if (validation.data.pipelineStage && agentId) {
+        const { handlePipelineStageChange } = await import("./automation");
+        await handlePipelineStageChange(
+          updatedLead,
+          oldStage,
+          validation.data.pipelineStage,
+          agentId
+        );
       }
 
       broadcastLeadUpdate(updatedLead, "updated");
@@ -249,6 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventType: z.string(),
         eventDescription: z.string(),
         scoreImpact: z.number(),
+        agentId: z.string().optional(),
       });
 
       const validation = engagementSchema.safeParse(req.body);
@@ -256,14 +276,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error.message });
       }
 
+      const { agentId, ...engagementData } = validation.data;
+
       const engagement = await storage.createLeadEngagement({
         leadId: req.params.id,
-        ...validation.data,
+        ...engagementData,
       });
 
       const newScore = await storage.calculateLeadScore(req.params.id);
 
-      res.status(201).json({ engagement, newScore });
+      const hasSpike = await storage.detectEngagementSpike(req.params.id);
+      if (hasSpike && agentId) {
+        const lead = await storage.getLeadById(req.params.id);
+        if (lead) {
+          const { handleEngagementSpike } = await import("./automation");
+          await handleEngagementSpike(lead, agentId);
+        }
+      }
+
+      res.status(201).json({ engagement, newScore, hasSpike });
     } catch (error) {
       console.error("Error logging engagement:", error);
       res.status(500).json({ error: "Failed to log engagement" });

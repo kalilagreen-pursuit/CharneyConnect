@@ -50,13 +50,13 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   const [isHolding, setIsHolding] = useState(false);
   const { toast } = useToast();
   
-  if (!unit) return null;
-  
-  const config = statusConfig[unit.status as UnitStatus] || statusConfig.available;
-  const price = typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price;
+  const config = unit ? (statusConfig[unit.status as UnitStatus] || statusConfig.available) : statusConfig.available;
+  const price = unit ? (typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price) : 0;
 
   // Next Best Action logic - will be enhanced in later tasks
   const getNextBestAction = () => {
+    if (!unit) return null;
+    
     console.log(`[${actionId}] Computing Next Best Action for Unit ${unit.unitNumber}`);
     
     if (unit.status === 'available') {
@@ -80,25 +80,24 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   const nextAction = getNextBestAction();
 
   const handleAddProspect = () => {
+    if (!unit) return;
     console.log(`[${actionId}] Opening Quick-Add Prospect form for Unit ${unit.unitNumber}`);
     setShowProspectForm(true);
   };
 
   const handleLogShowing = () => {
+    if (!unit) return;
     console.log(`[${actionId}] Opening Log Showing form for Unit ${unit.unitNumber}`);
     setShowLogShowingForm(true);
   };
 
   const handleHoldUnit = async () => {
+    if (!unit) return;
     console.log(`[${actionId}] Placing hold on Unit ${unit.unitNumber}`);
     setIsHolding(true);
 
     try {
-      await apiRequest(`/api/units/${unit.id}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: 'on_hold' }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      await apiRequest('PUT', `/api/units/${unit.id}/status`, { status: 'on_hold' });
 
       toast({
         title: "Unit Held",
@@ -127,6 +126,14 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
         className="w-full sm:max-w-md overflow-y-auto"
         data-testid="drawer-unit-sheet"
       >
+        {!unit ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-2">
+              <p className="text-muted-foreground">Loading unit details...</p>
+            </div>
+          </div>
+        ) : (
+          <>
         <SheetHeader className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -320,31 +327,37 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
             </>
           )}
         </div>
+        </>
+        )}
       </SheetContent>
 
       {/* Prospect Quick-Add Form */}
-      <ProspectQuickAddForm
-        isOpen={showProspectForm}
-        onClose={() => {
-          console.log(`[${actionId}] Prospect form closed`);
-          setShowProspectForm(false);
-        }}
-        unitId={unit.id}
-        unitNumber={unit.unitNumber}
-        agentName={agentName}
-      />
+      {unit && (
+        <>
+          <ProspectQuickAddForm
+            isOpen={showProspectForm}
+            onClose={() => {
+              console.log(`[${actionId}] Prospect form closed`);
+              setShowProspectForm(false);
+            }}
+            unitId={unit.id}
+            unitNumber={unit.unitNumber}
+            agentName={agentName}
+          />
 
-      {/* Log Showing Form */}
-      <LogShowingForm
-        isOpen={showLogShowingForm}
-        onClose={() => {
-          console.log(`[${actionId}] Log Showing form closed`);
-          setShowLogShowingForm(false);
-        }}
-        unitId={unit.id}
-        unitNumber={unit.unitNumber}
-        agentName={agentName}
-      />
+          {/* Log Showing Form */}
+          <LogShowingForm
+            isOpen={showLogShowingForm}
+            onClose={() => {
+              console.log(`[${actionId}] Log Showing form closed`);
+              setShowLogShowingForm(false);
+            }}
+            unitId={unit.id}
+            unitNumber={unit.unitNumber}
+            agentName={agentName}
+          />
+        </>
+      )}
     </Sheet>
   );
 }

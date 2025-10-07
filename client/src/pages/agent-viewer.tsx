@@ -24,6 +24,7 @@ const PROJECTS = [
 export default function AgentViewer() {
   const [, setLocation] = useLocation();
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [selectedUnitData, setSelectedUnitData] = useState<UnitWithDetails | null>(null);
   const [showUnitSheet, setShowUnitSheet] = useState(false);
   const [activeTab, setActiveTab] = useState("all-units");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -65,14 +66,15 @@ export default function AgentViewer() {
   });
 
   // Listen for realtime updates and invalidate cache
+  // Defer updates if unit drawer is open to prevent data loss
   useEffect(() => {
-    if (unitUpdates.size > 0) {
+    if (unitUpdates.size > 0 && !showUnitSheet) {
       console.log(`[${actionId}] Received ${unitUpdates.size} realtime unit updates - invalidating cache`);
       queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
       queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "active-deals", projectId] });
       clearUnitUpdates();
     }
-  }, [unitUpdates, actionId, agentId, projectId, clearUnitUpdates]);
+  }, [unitUpdates, actionId, agentId, projectId, clearUnitUpdates, showUnitSheet]);
 
   // Get selected unit object
   const selectedUnit = useMemo(() => {
@@ -158,6 +160,7 @@ export default function AgentViewer() {
       // Open Unit Sheet for regular units (from All Units tab)
       console.log(`[${actionId}] Opening Unit Sheet for Unit ${unit.unitNumber}`);
       setSelectedUnitId(unit.id);
+      setSelectedUnitData(unit as UnitWithDetails);
       setShowUnitSheet(true);
     }
   };
@@ -666,11 +669,12 @@ export default function AgentViewer() {
 
       {/* Unit Sheet Drawer */}
       <UnitSheetDrawer
-        unit={selectedUnit}
+        unit={selectedUnitData}
         isOpen={showUnitSheet}
         onClose={() => {
           console.log(`[${actionId}] Closing Unit Sheet`);
           setShowUnitSheet(false);
+          setSelectedUnitData(null);
         }}
         onLogShowing={handleLogShowing}
         agentName={agentName}

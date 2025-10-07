@@ -18,7 +18,7 @@ The application consists of a React (TypeScript) frontend using Vite, Wouter for
 ### UI/UX Decisions
 - **Unit Map Dashboard**: Color-coded unit cards (Available: Green, On Hold: Yellow, Contract: Blue, Sold: Red) with real-time stats and responsive grid layout.
 - **Advanced Filtering System**: Comprehensive filters for units (Building, Bedrooms, Bathrooms, Price, Square Footage) with AND logic, real-time stats, and iPad-optimized touch targets.
-- **Leads Management**: Lead cards with contact info, broker details, associated units, status tracking, and activity timeline.
+- **Leads Management**: Lead cards with contact info, broker details, associated units, status tracking, and activity timeline. Features real-time search by name, email, or phone (case-insensitive) that combines with pipeline stage filters for refined lead discovery.
 - **Prospect Qualification Workflow (NEW)**: Complete lead qualification system with:
   - Lead Qualification Sheet: Form-based qualification with budget range, target locations, and timeframe; uses useEffect pattern to reset form state on lead change
   - Matched Units Drawer: Shows scored unit matches with Charney brand status colors (bg-status-available/on-hold/contract/sold)

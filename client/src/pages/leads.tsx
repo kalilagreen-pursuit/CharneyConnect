@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Lead } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Mail, Phone, Building2, MapPin, DollarSign, Users } from "lucide-react";
+import { Mail, Phone, Building2, MapPin, DollarSign, Users, Filter } from "lucide-react";
 import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
 import { TasksPanel } from "@/components/tasks-panel";
 
@@ -130,6 +131,7 @@ function StatCard({ title, value }: { title: string; value: string | number }) {
 export default function Leads() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [stageFilter, setStageFilter] = useState<string>("all");
 
   const { data: leads, isLoading } = useQuery<Lead[]>({
     queryKey: ["/api/leads"],
@@ -139,6 +141,10 @@ export default function Leads() {
     setSelectedLead(lead);
     setSheetOpen(true);
   };
+
+  const filteredLeads = leads && stageFilter !== "all" 
+    ? leads.filter(l => l.pipelineStage?.toLowerCase() === stageFilter.toLowerCase())
+    : leads;
 
   const stats = leads ? {
     total: leads.length,
@@ -187,10 +193,78 @@ export default function Leads() {
             ) : null}
           </div>
 
+          {/* Pipeline Stage Filters */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-bold uppercase tracking-wide">
+                Filter by Pipeline Stage
+              </h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={stageFilter === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStageFilter("all")}
+                data-testid="button-filter-all"
+              >
+                All Leads
+              </Button>
+              <Button
+                variant={stageFilter === "new" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStageFilter("new")}
+                data-testid="button-filter-new"
+              >
+                New
+              </Button>
+              <Button
+                variant={stageFilter === "contacted" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStageFilter("contacted")}
+                data-testid="button-filter-contacted"
+              >
+                Contacted
+              </Button>
+              <Button
+                variant={stageFilter === "qualified" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStageFilter("qualified")}
+                data-testid="button-filter-qualified"
+              >
+                Qualified
+              </Button>
+              <Button
+                variant={stageFilter === "contract" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStageFilter("contract")}
+                data-testid="button-filter-contract"
+              >
+                Contract
+              </Button>
+              <Button
+                variant={stageFilter === "closed won" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStageFilter("closed won")}
+                data-testid="button-filter-closed-won"
+              >
+                Closed Won
+              </Button>
+              <Button
+                variant={stageFilter === "lost" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStageFilter("lost")}
+                data-testid="button-filter-lost"
+              >
+                Lost
+              </Button>
+            </div>
+          </div>
+
           {/* Leads Grid */}
           <div>
             <h2 className="text-xl font-black uppercase tracking-tight mb-4" data-testid="text-leads-section-title">
-              All Leads
+              {stageFilter === "all" ? "All Leads" : `${stageFilter.charAt(0).toUpperCase() + stageFilter.slice(1)} Leads`}
             </h2>
             
             {isLoading ? (
@@ -199,12 +273,24 @@ export default function Leads() {
                   <LeadCardSkeleton key={i} />
                 ))}
               </div>
-            ) : leads && leads.length > 0 ? (
+            ) : filteredLeads && filteredLeads.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="grid-leads">
-                {leads.map((lead) => (
+                {filteredLeads.map((lead) => (
                   <LeadCard key={lead.id} lead={lead} onClick={() => handleLeadClick(lead)} />
                 ))}
               </div>
+            ) : leads && leads.length > 0 ? (
+              <Card className="p-12">
+                <div className="text-center space-y-3">
+                  <Filter className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <h3 className="text-lg font-black uppercase tracking-tight">
+                    No Leads in This Stage
+                  </h3>
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                    There are no leads in the {stageFilter} stage. Try selecting a different filter.
+                  </p>
+                </div>
+              </Card>
             ) : (
               <Card className="p-12">
                 <div className="text-center space-y-3">

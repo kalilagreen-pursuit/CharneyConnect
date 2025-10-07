@@ -112,6 +112,12 @@ export type DealLead = Deal & {
 
 export type LeadWithDetails = DealLead;
 
+// Active Deal type for agent pipeline view (combines Deal, Lead, and Unit data)
+export type ActiveDeal = Deal & {
+  lead?: Lead;
+  unit?: UnitWithDetails;
+};
+
 export type UnitUpdateRequest = {
   status?: string;
   price?: number;

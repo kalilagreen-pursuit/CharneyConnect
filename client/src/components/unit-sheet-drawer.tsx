@@ -53,32 +53,6 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   const config = unit ? (statusConfig[unit.status as UnitStatus] || statusConfig.available) : statusConfig.available;
   const price = unit ? (typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price) : 0;
 
-  // Next Best Action logic - will be enhanced in later tasks
-  const getNextBestAction = () => {
-    if (!unit) return null;
-    
-    console.log(`[${actionId}] Computing Next Best Action for Unit ${unit.unitNumber}`);
-    
-    if (unit.status === 'available') {
-      return {
-        label: 'Schedule Showing',
-        icon: Calendar,
-        variant: 'default' as const,
-        action: handleLogShowing
-      };
-    } else if (unit.status === 'on_hold') {
-      return {
-        label: 'Follow Up on Hold',
-        icon: Sparkles,
-        variant: 'secondary' as const,
-        action: () => console.log(`[${actionId}] Follow up on hold`)
-      };
-    }
-    return null;
-  };
-
-  const nextAction = getNextBestAction();
-
   const handleAddProspect = () => {
     if (!unit) return;
     console.log(`[${actionId}] Opening Quick-Add Prospect form for Unit ${unit.unitNumber}`);
@@ -118,6 +92,32 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
       setIsHolding(false);
     }
   };
+
+  // Next Best Action logic - will be enhanced in later tasks
+  const getNextBestAction = () => {
+    if (!unit) return null;
+    
+    console.log(`[${actionId}] Computing Next Best Action for Unit ${unit.unitNumber}`);
+    
+    if (unit.status === 'available') {
+      return {
+        label: 'Schedule Showing',
+        icon: Calendar,
+        variant: 'default' as const,
+        action: handleLogShowing
+      };
+    } else if (unit.status === 'on_hold') {
+      return {
+        label: 'Follow Up on Hold',
+        icon: Sparkles,
+        variant: 'secondary' as const,
+        action: () => console.log(`[${actionId}] Follow up on hold`)
+      };
+    }
+    return null;
+  };
+
+  const nextAction = getNextBestAction();
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>

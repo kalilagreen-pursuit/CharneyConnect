@@ -19,7 +19,15 @@ The application consists of a React (TypeScript) frontend using Vite, Wouter for
 - **Unit Map Dashboard**: Color-coded unit cards (Available: Green, On Hold: Yellow, Contract: Blue, Sold: Red) with real-time stats and responsive grid layout.
 - **Advanced Filtering System**: Comprehensive filters for units (Building, Bedrooms, Bathrooms, Price, Square Footage) with AND logic, real-time stats, and iPad-optimized touch targets.
 - **Leads Management**: Lead cards with contact info, broker details, associated units, status tracking, and activity timeline.
-- **Manager View (NEW)**: Real-time Kanban board with 4 columns (Available, On Hold, Contract, Sold). Units are grouped by status and update automatically via Supabase Realtime without page refresh. Shows count badges and unit details including price, bedrooms, bathrooms, and square footage.
+- **Prospect Qualification Workflow (NEW)**: Complete lead qualification system with:
+  - Lead Qualification Sheet: Form-based qualification with budget range, target locations, and timeframe; uses useEffect pattern to reset form state on lead change
+  - Matched Units Drawer: Shows scored unit matches with Charney brand status colors (bg-status-available/on-hold/contract/sold)
+  - Tasks Panel: Agent task management with semantic priority colors (destructive/accent/secondary tokens) and task completion
+  - Pipeline Stage Filters: Filter leads by stage (All, New, Contacted, Qualified, Contract, Closed Won, Lost) with button group UI
+  - Automated Unit Matching: Backend logic matches units based on price range, location preferences, and availability
+  - Task Automation: Auto-creates follow-up tasks on qualification and engagement spikes
+  - Lead Scoring: Engagement tracking with score calculation and spike detection
+- **Manager View**: Real-time Kanban board with 4 columns (Available, On Hold, Contract, Sold). Units are grouped by status and update automatically via Supabase Realtime without page refresh. Shows count badges and unit details including price, bedrooms, bathrooms, and square footage.
 - **Agent View**: 3D building viewer with interactive unit selection and "Hold Unit" button. Status changes write directly to Supabase and trigger real-time updates across all views.
 - **3D Building Viewer**: Interactive 3D visualization using three.js with unit highlighting, touch controls (tap, drag, pinch), and Charney brand styling.
 - **iPad Optimization**: Large touch targets (min 44x44px), responsive layouts, and clean professional design.

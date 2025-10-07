@@ -236,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedLead = await storage.updateLead(
         req.params.id,
-        leadUpdates,
+        { ...leadUpdates, agentId },
       );
 
       if (!updatedLead) {

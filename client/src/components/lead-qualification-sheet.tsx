@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, DollarSign, MapPin, Calendar, TrendingUp, Eye, ListTodo } from "lucide-react";
+import { Loader2, DollarSign, MapPin, Calendar, TrendingUp, Eye, ListTodo, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { MatchedUnitsDrawer } from "./matched-units-drawer";
 import { TasksPanel } from "./tasks-panel";
 import { Separator } from "@/components/ui/separator";
@@ -56,6 +56,39 @@ export function LeadQualificationSheet({
     lead.pipelineStage || ""
   );
   const [matchedUnitsDrawerOpen, setMatchedUnitsDrawerOpen] = useState(false);
+
+  // Determine if lead is qualified
+  const isQualified = !!(lead.targetPriceMin || lead.targetPriceMax) && 
+                      !!lead.targetLocations && 
+                      lead.targetLocations.length > 0 && 
+                      !!lead.timeFrameToBuy;
+
+  // Agent name mapping
+  const agentNames: Record<string, string> = {
+    "agent-001": "Sarah Chen",
+    "agent-002": "Michael Rodriguez",
+    "agent-003": "Emily Park",
+    "agent-004": "David Thompson",
+    "agent-005": "Jessica Williams",
+  };
+
+  const agentName = lead.agentId ? agentNames[lead.agentId] || lead.agentId : null;
+
+  // Format last updated time
+  const formatLastUpdated = (date: Date | string) => {
+    const d = new Date(date);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return d.toLocaleDateString();
+  };
 
   useEffect(() => {
     setTargetPriceMin(lead.targetPriceMin || "");
@@ -120,6 +153,42 @@ export function LeadQualificationSheet({
             {lead.name} • {lead.email}
           </SheetDescription>
         </SheetHeader>
+
+        {/* Status Banner */}
+        <div 
+          className={`mt-6 p-3 rounded-md border ${
+            isQualified 
+              ? 'bg-emerald-500/10 border-emerald-500/20' 
+              : 'bg-amber-500/10 border-amber-500/20'
+          }`}
+          data-testid="banner-qualification-status"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {isQualified ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              )}
+              <div className="flex flex-col">
+                <span className="text-sm font-bold uppercase">
+                  {isQualified ? 'Qualified' : 'Unqualified'}
+                </span>
+                {agentName && (
+                  <span className="text-xs text-muted-foreground" data-testid="text-agent-name">
+                    by {agentName}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              <span data-testid="text-last-updated">
+                {formatLastUpdated(lead.updatedAt)}
+              </span>
+            </div>
+          </div>
+        </div>
 
         <div className="space-y-6 mt-6">
           <div className="space-y-4">

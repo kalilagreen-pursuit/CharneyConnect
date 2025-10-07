@@ -45,6 +45,7 @@ The application consists of a React (TypeScript) frontend using Vite, Wouter for
 - **Real-time**: WebSocket server on `/ws` for live unit and lead updates, powered by Supabase Realtime for instant synchronization.
 - **Data Models**: Frontend `UnitWithDetails` and `Lead/Deal` models are mapped from Supabase tables (`Units`, `FloorPlans`, `Projects`, `Contacts`, `Deals`, `Activities`, `public.leads`).
 - **Database Architecture**: SQL joins combine `Units`, `FloorPlans`, `Projects` for detailed unit data, and `Deals`, `Contacts`, `Units`, `Activities` for lead management. Supabase status values are mapped to CRM status values.
+- **Quick-Add Prospect**: Atomic transaction creates Contact, Deal, Activity, and Lead records simultaneously. POST /api/prospects endpoint uses Drizzle transaction to ensure all-or-nothing persistence. Frontend invalidates query cache for real-time Leads page updates. Prospects appear immediately on Leads page with agent assignment preserved.
 - **API Testing Support**: The `/api/agents/:agentId/units` endpoint supports an optional `showAllProjectUnits=true` query parameter that bypasses the deal requirement and returns all units from the specified project, enabling comprehensive testing and QA workflows.
 
 ## External Dependencies

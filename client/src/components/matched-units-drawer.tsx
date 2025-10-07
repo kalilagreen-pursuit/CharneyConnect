@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Bed, Bath, Ruler, DollarSign } from "lucide-react";
+import { Building2, Bed, Bath, Ruler, DollarSign, Edit } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 interface MatchedUnitsDrawerProps {
   lead: Lead;
@@ -68,12 +69,26 @@ export function MatchedUnitsDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="uppercase tracking-wide text-xl">
-            MATCHED UNITS
-          </SheetTitle>
-          <SheetDescription>
-            Units matching {lead.name}'s criteria
-          </SheetDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <SheetTitle className="uppercase tracking-wide text-xl">
+                MATCHED UNITS
+              </SheetTitle>
+              <SheetDescription className="mt-2">
+                Units matching {lead.name}'s criteria
+              </SheetDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              data-testid="button-edit-lead-from-drawer"
+              className="uppercase"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Lead
+            </Button>
+          </div>
         </SheetHeader>
 
         <div className="mt-6 space-y-4">

@@ -9,8 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, CheckCircle2 } from "lucide-react";
-import { prospectsStore, agentContextStore } from "@/lib/localStores";
+import { agentContextStore } from "@/lib/localStores";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 const prospectFormSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50),
@@ -60,36 +61,36 @@ export function ProspectQuickAddForm({ isOpen, onClose, unitId, unitNumber, agen
     setIsSubmitting(true);
 
     try {
-      const prospectId = crypto.randomUUID();
-      const timestamp = new Date().toISOString();
-      const prospect = {
-        id: prospectId,
+      const agentId = agentContextStore.getAgentId();
+      if (!agentId) {
+        throw new Error("Agent ID not found. Please refresh the page.");
+      }
+
+      console.log(`[${actionId}] Creating prospect via atomic API endpoint`);
+      
+      const prospectRes = await apiRequest("POST", "/api/prospects", {
         firstName: data.firstName,
         lastName: data.lastName,
-        contactMethod: 'in_person' as const,
-        budget: 0,
-        consentGiven: data.consentGiven,
-        consentTimestamp: data.consentGiven ? timestamp : '',
-        type: 'buyer' as const,
-        createdAt: timestamp,
-        agentId: agentContextStore.getAgentId() || '',
-        projectId: agentContextStore.getProjectId() || '',
-      };
-
-      prospectsStore.add(prospect);
-
-      console.log(`[${actionId}] Prospect saved successfully`, { 
-        prospectId: prospect.id,
-        consentGiven: prospect.consentGiven,
-        consentTimestamp: prospect.consentTimestamp,
+        email: data.email,
+        phone: data.phone,
         unitId,
-        unitNumber
+        unitNumber,
+        agentId,
+        consentGiven: data.consentGiven,
+      });
+      
+      const result = await prospectRes.json();
+
+      console.log(`[${actionId}] Prospect created successfully`, {
+        contactId: result.contact.id,
+        dealId: result.deal.id,
+        activityId: result.activity.id,
       });
 
       toast({
-        title: "Prospect Added",
-        description: `${data.firstName} ${data.lastName} has been added to your prospects.`,
-        duration: 3000,
+        title: "Prospect Added Successfully",
+        description: `${data.firstName} ${data.lastName} is now tracked for Unit ${unitNumber} and visible to your team.`,
+        duration: 4000,
       });
 
       // Reset form and close
@@ -97,11 +98,12 @@ export function ProspectQuickAddForm({ isOpen, onClose, unitId, unitNumber, agen
       onClose();
     } catch (error) {
       console.error(`[${actionId}] Error saving prospect:`, error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save prospect. Please try again.";
       toast({
-        title: "Error",
-        description: "Failed to save prospect. Please try again.",
+        title: "Error Adding Prospect",
+        description: errorMessage,
         variant: "destructive",
-        duration: 3000,
+        duration: 5000,
       });
     } finally {
       setIsSubmitting(false);

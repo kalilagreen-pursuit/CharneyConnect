@@ -6,12 +6,16 @@ import {
   unitStatuses,
   type UnitUpdateRequest,
   insertLeadSchema,
+  contacts,
+  deals,
+  activities,
 } from "@shared/schema";
 import { z } from "zod";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import ragRoutes from "../src/server/routes/rag.ts"; // 1. IMPORT YOUR NEW RAG ROUTER
+import { db } from "./db";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -149,6 +153,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching project counts:", error);
       res.status(500).json({ error: "Failed to fetch project counts" });
+    }
+  });
+
+  // Contacts endpoints
+  app.post("/api/contacts", async (req, res) => {
+    try {
+      const contactSchema = z.object({
+        firstName: z.string(),
+        lastName: z.string(),
+        email: z.string().email(),
+        phone: z.string(),
+        contactType: z.enum(['buyer', 'broker']),
+        consentGivenAt: z.string().optional(),
+      });
+
+      const validation = contactSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const { consentGivenAt, ...contactData } = validation.data;
+      const contact = await storage.createContact({
+        ...contactData,
+        consentGivenAt: consentGivenAt ? new Date(consentGivenAt) : undefined,
+      });
+
+      res.status(201).json(contact);
+    } catch (error) {
+      console.error("Error creating contact:", error);
+      res.status(500).json({ error: "Failed to create contact" });
+    }
+  });
+
+  // Deals endpoints
+  app.post("/api/deals", async (req, res) => {
+    try {
+      const dealSchema = z.object({
+        unitId: z.string().uuid(),
+        buyerContactId: z.string().uuid(),
+        brokerContactId: z.string().uuid().optional(),
+        agentId: z.string(),
+        dealStage: z.string(),
+        salePrice: z.string().optional(),
+        category: z.string().optional(),
+      });
+
+      const validation = dealSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const deal = await storage.createDealLead(validation.data);
+      res.status(201).json(deal);
+    } catch (error) {
+      console.error("Error creating deal:", error);
+      res.status(500).json({ error: "Failed to create deal" });
+    }
+  });
+
+  // Activities endpoints
+  app.post("/api/activities", async (req, res) => {
+    try {
+      const activitySchema = z.object({
+        dealId: z.string().uuid(),
+        activityType: z.string(),
+        notes: z.string(),
+      });
+
+      const validation = activitySchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const activity = await storage.createActivity(validation.data);
+      res.status(201).json(activity);
+    } catch (error) {
+      console.error("Error creating activity:", error);
+      res.status(500).json({ error: "Failed to create activity" });
+    }
+  });
+
+  // Prospects endpoint - atomic creation of Contact + Deal + Activity
+  app.post("/api/prospects", async (req, res) => {
+    try {
+      const prospectSchema = z.object({
+        firstName: z.string(),
+        lastName: z.string(),
+        email: z.string().email(),
+        phone: z.string(),
+        unitId: z.string().uuid(),
+        unitNumber: z.string(),
+        agentId: z.string(),
+        consentGiven: z.boolean(),
+      });
+
+      const validation = prospectSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: "Invalid request data",
+          details: validation.error.message 
+        });
+      }
+
+      const { firstName, lastName, email, phone, unitId, unitNumber, agentId, consentGiven } = validation.data;
+
+      // Use Drizzle transaction to ensure atomicity
+      const result = await db.transaction(async (tx) => {
+        // Step 1: Create Contact
+        const [contact] = await tx.insert(contacts).values({
+          firstName,
+          lastName,
+          email,
+          phone,
+          contactType: 'buyer',
+          consentGivenAt: consentGiven ? new Date() : undefined,
+        }).returning();
+
+        // Step 2: Create Deal linking contact to unit
+        const [deal] = await tx.insert(deals).values({
+          unitId,
+          buyerContactId: contact.id,
+          agentId,
+          dealStage: 'inquiry',
+          category: 'in_person_inquiry',
+        }).returning();
+
+        // Step 3: Create Activity to log the inquiry
+        const [activity] = await tx.insert(activities).values({
+          dealId: deal.id,
+          activityType: 'in_person_inquiry',
+          notes: `Initial inquiry for Unit ${unitNumber}. Marketing consent: ${consentGiven ? 'Given' : 'Not given'}`,
+        }).returning();
+
+        return { contact, deal, activity };
+      });
+
+      console.log('[API] Prospect created successfully (atomic transaction)', {
+        contactId: result.contact.id,
+        dealId: result.deal.id,
+        activityId: result.activity.id,
+        unitId,
+        agentId,
+      });
+
+      res.status(201).json({
+        contact: result.contact,
+        deal: result.deal,
+        activity: result.activity,
+        message: 'Prospect added successfully',
+      });
+    } catch (error) {
+      console.error("Error creating prospect:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      res.status(500).json({ 
+        error: "Failed to create prospect. Please try again.",
+        details: errorMessage
+      });
     }
   });
 

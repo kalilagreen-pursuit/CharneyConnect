@@ -198,6 +198,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Lead Qualification & Matching endpoints
+  app.get("/api/leads/:id/matched-units", async (req, res) => {
+    try {
+      const matchedUnits = await storage.getMatchingUnitsForLead(req.params.id);
+      res.json(matchedUnits);
+    } catch (error) {
+      console.error("Error fetching matched units:", error);
+      res.status(500).json({ error: "Failed to fetch matched units" });
+    }
+  });
+
+  app.post("/api/leads/:id/qualify", async (req, res) => {
+    try {
+      const qualifySchema = z.object({
+        targetPriceMin: z.number().optional(),
+        targetPriceMax: z.number().optional(),
+        targetLocations: z.array(z.string()).optional(),
+        timeFrameToBuy: z.string().optional(),
+        pipelineStage: z.string().optional(),
+        leadScore: z.number().min(0).max(100).optional(),
+      });
+
+      const validation = qualifySchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const updatedLead = await storage.updateLead(
+        req.params.id,
+        validation.data,
+      );
+
+      if (!updatedLead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      broadcastLeadUpdate(updatedLead, "updated");
+      res.json(updatedLead);
+    } catch (error) {
+      console.error("Error qualifying lead:", error);
+      res.status(500).json({ error: "Failed to qualify lead" });
+    }
+  });
+
+  // Engagement tracking endpoints
+  app.post("/api/leads/:id/engagement", async (req, res) => {
+    try {
+      const engagementSchema = z.object({
+        eventType: z.string(),
+        eventDescription: z.string(),
+        scoreImpact: z.number(),
+      });
+
+      const validation = engagementSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const engagement = await storage.createLeadEngagement({
+        leadId: req.params.id,
+        ...validation.data,
+      });
+
+      const newScore = await storage.calculateLeadScore(req.params.id);
+
+      res.status(201).json({ engagement, newScore });
+    } catch (error) {
+      console.error("Error logging engagement:", error);
+      res.status(500).json({ error: "Failed to log engagement" });
+    }
+  });
+
+  app.get("/api/leads/:id/engagement", async (req, res) => {
+    try {
+      const engagements = await storage.getLeadEngagementByLeadId(req.params.id);
+      res.json(engagements);
+    } catch (error) {
+      console.error("Error fetching engagements:", error);
+      res.status(500).json({ error: "Failed to fetch engagements" });
+    }
+  });
+
+  app.get("/api/leads/:id/engagement/spike", async (req, res) => {
+    try {
+      const hasSpike = await storage.detectEngagementSpike(req.params.id);
+      res.json({ hasSpike });
+    } catch (error) {
+      console.error("Error detecting engagement spike:", error);
+      res.status(500).json({ error: "Failed to detect engagement spike" });
+    }
+  });
+
+  // Task management endpoints
+  app.get("/api/agents/:agentId/tasks", async (req, res) => {
+    try {
+      const tasks = await storage.getTasksByAgentId(req.params.agentId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      res.status(500).json({ error: "Failed to fetch tasks" });
+    }
+  });
+
+  app.post("/api/tasks", async (req, res) => {
+    try {
+      const taskSchema = z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        taskType: z.string(),
+        priority: z.string(),
+        status: z.string(),
+        assignedAgentId: z.string(),
+        leadId: z.string().optional(),
+        unitId: z.string().optional(),
+        dueDate: z.string().optional(),
+      });
+
+      const validation = taskSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const task = await storage.createTask(validation.data);
+      res.status(201).json(task);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      res.status(500).json({ error: "Failed to create task" });
+    }
+  });
+
+  app.put("/api/tasks/:id", async (req, res) => {
+    try {
+      const taskUpdateSchema = z.object({
+        status: z.string().optional(),
+        completedAt: z.string().optional(),
+      });
+
+      const validation = taskUpdateSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const task = await storage.updateTask(req.params.id, validation.data);
+      
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      res.json(task);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      res.status(500).json({ error: "Failed to update task" });
+    }
+  });
+
   app.use("/api", ragRoutes);
 
   const httpServer = createServer(app);

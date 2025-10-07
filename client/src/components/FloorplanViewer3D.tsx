@@ -602,6 +602,16 @@ export default function FloorplanViewer3D({
         className="w-full h-full block"
         data-testid="canvas-3d-viewer"
       />
+      
+      {selectedUnit && (
+        <ProspectQuickAddForm
+          isOpen={showProspectForm}
+          onClose={() => setShowProspectForm(false)}
+          unitId={selectedUnit.id}
+          unitNumber={selectedUnit.unitNumber}
+          agentName={agentContextStore.getAgentName() || 'Agent'}
+        />
+      )}
     </div>
   );
 }

@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
-import { UnitWithDetails, UnitWithDealContext } from "@shared/schema";
+import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
+import { UnitWithDetails, UnitWithDealContext, Lead } from "@shared/schema";
 import { agentContextStore } from "@/lib/localStores";
 import { useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const PROJECTS = [
   { id: "2320eeb4-596b-437d-b4cb-830bdb3c3b01", name: "THE JACKSON" },
@@ -24,8 +26,11 @@ export default function AgentViewer() {
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [showUnitSheet, setShowUnitSheet] = useState(false);
   const [activeTab, setActiveTab] = useState("all-units");
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [showQualificationSheet, setShowQualificationSheet] = useState(false);
   const [actionId] = useState(() => `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const { unitUpdates, clearUnitUpdates} = useRealtime();
+  const { toast } = useToast();
   
   // Get project context from agentContextStore
   const agentName = agentContextStore.getAgentName() || 'Agent';
@@ -133,6 +138,48 @@ export default function AgentViewer() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(numPrice);
+  };
+
+  const handleEditLead = async (dealId: string) => {
+    console.log(`[${actionId}] Edit lead clicked for deal: ${dealId}`);
+    
+    // Find the deal in activeDeals to get the contact email
+    const deal = activeDeals.find(d => d.dealId === dealId);
+    if (!deal || !deal.leadEmail) {
+      toast({
+        title: "Error",
+        description: "Could not find deal information",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Fetch all leads and find one matching the email
+      const response = await fetch('/api/leads');
+      if (!response.ok) throw new Error('Failed to fetch leads');
+      const allLeads: Lead[] = await response.json();
+      
+      const matchingLead = allLeads.find(lead => lead.email === deal.leadEmail);
+      
+      if (matchingLead) {
+        setSelectedLead(matchingLead);
+        setShowQualificationSheet(true);
+      } else {
+        toast({
+          title: "Lead Not Found",
+          description: "This contact hasn't been qualified yet. Please qualify them first on the Leads page.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error(`[${actionId}] Error fetching lead:`, error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch lead information",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -394,7 +441,21 @@ export default function AgentViewer() {
                           {'leadName' in unit && (
                             <div className="pt-2 border-t">
                               <div className="text-xs text-muted-foreground">Lead</div>
-                              <div className="text-sm font-semibold">{unit.leadName}</div>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="text-sm font-semibold">{unit.leadName}</div>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditLead(unit.dealId);
+                                  }}
+                                  data-testid={`button-edit-lead-${unit.unitNumber}`}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
                           )}
 
@@ -443,6 +504,18 @@ export default function AgentViewer() {
         onLogShowing={handleLogShowing}
         agentName={agentName}
       />
+
+      {/* Lead Qualification Sheet */}
+      {selectedLead && (
+        <LeadQualificationSheet
+          lead={selectedLead}
+          open={showQualificationSheet}
+          onOpenChange={(open) => {
+            setShowQualificationSheet(open);
+            if (!open) setSelectedLead(null); // Clear selection when sheet closes
+          }}
+        />
+      )}
     </div>
   );
 }

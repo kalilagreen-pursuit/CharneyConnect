@@ -2,7 +2,7 @@ import { eq, and } from "drizzle-orm";
 import { db } from "./db";
 import { 
   units, floorPlans, projects, contacts, deals, activities, leads, tasks, leadEngagement,
-  type Unit, type UnitWithDetails, type UnitStatus,
+  type Unit, type UnitWithDetails, type UnitStatus, type UnitWithDealContext,
   type Contact, type InsertContact,
   type Deal, type InsertDeal, type DealLead,
   type Activity, type InsertActivity,
@@ -64,6 +64,44 @@ export class PostgresStorage implements IStorage {
       .where(whereConditions);
 
     return result.map(row => this.mapToUnitWithDetails(row));
+  }
+
+  async getActiveDealsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDealContext[]> {
+    const whereConditions = projectId
+      ? and(eq(deals.agentId, agentId), eq(units.projectId, projectId))
+      : eq(deals.agentId, agentId);
+
+    const result = await db
+      .select({
+        unit: units,
+        floorPlan: floorPlans,
+        project: projects,
+        deal: deals,
+        buyerContact: contacts,
+      })
+      .from(deals)
+      .innerJoin(units, eq(deals.unitId, units.id))
+      .leftJoin(floorPlans, eq(units.floorPlanId, floorPlans.id))
+      .leftJoin(projects, eq(units.projectId, projects.id))
+      .innerJoin(contacts, eq(deals.buyerContactId, contacts.id))
+      .where(whereConditions);
+
+    return result.map(row => {
+      const unitWithDetails = this.mapToUnitWithDetails({
+        unit: row.unit,
+        floorPlan: row.floorPlan,
+        project: row.project,
+      });
+
+      return {
+        ...unitWithDetails,
+        dealId: row.deal.id,
+        dealStage: row.deal.dealStage,
+        leadName: `${row.buyerContact.firstName} ${row.buyerContact.lastName}`,
+        leadEmail: row.buyerContact.email,
+        leadPhone: row.buyerContact.phone,
+      };
+    });
   }
 
   async createUnit(insertUnit: any): Promise<UnitWithDetails> {

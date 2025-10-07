@@ -116,6 +116,17 @@ export type UnitUpdateRequest = {
   price?: number;
 };
 
+// Unit with Deal context for Agent Active Deals view
+export type UnitWithDealContext = UnitWithDetails & {
+  dealId: string;
+  dealStage: string;
+  leadName: string;
+  leadEmail: string;
+  leadPhone?: string;
+  brokerName?: string;
+  brokerEmail?: string;
+};
+
 // Insert schemas
 export const insertUnitSchema = createInsertSchema(units).omit({ id: true, createdAt: true });
 export type InsertUnit = z.infer<typeof insertUnitSchema>;

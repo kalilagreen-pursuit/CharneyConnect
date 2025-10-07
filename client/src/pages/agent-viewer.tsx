@@ -5,9 +5,10 @@ import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
-import { UnitWithDetails } from "@shared/schema";
+import { UnitWithDetails, UnitWithDealContext } from "@shared/schema";
 import { agentContextStore } from "@/lib/localStores";
 import { useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
@@ -22,8 +23,9 @@ export default function AgentViewer() {
   const [, setLocation] = useLocation();
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [showUnitSheet, setShowUnitSheet] = useState(false);
+  const [activeTab, setActiveTab] = useState("all-units");
   const [actionId] = useState(() => `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
-  const { unitUpdates, clearUnitUpdates } = useRealtime();
+  const { unitUpdates, clearUnitUpdates} = useRealtime();
   
   // Get project context from agentContextStore
   const agentName = agentContextStore.getAgentName() || 'Agent';
@@ -45,11 +47,23 @@ export default function AgentViewer() {
     },
   });
 
+  // Fetch active deals for this agent and project
+  const { data: activeDeals = [], isLoading: isLoadingDeals } = useQuery<UnitWithDealContext[]>({
+    queryKey: ["/api/agents", agentId, "active-deals", projectId],
+    queryFn: async () => {
+      const response = await fetch(`/api/agents/${agentId}/active-deals?projectId=${projectId}`);
+      if (!response.ok) throw new Error('Failed to fetch active deals');
+      return response.json();
+    },
+    enabled: activeTab === "active-deals", // Only fetch when active deals tab is selected
+  });
+
   // Listen for realtime updates and invalidate cache
   useEffect(() => {
     if (unitUpdates.size > 0) {
       console.log(`[${actionId}] Received ${unitUpdates.size} realtime unit updates - invalidating cache`);
       queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "active-deals", projectId] });
       clearUnitUpdates();
     }
   }, [unitUpdates, actionId, agentId, projectId, clearUnitUpdates]);
@@ -190,13 +204,19 @@ export default function AgentViewer() {
         {/* Unit Cards Grid */}
         <div className="flex-1 overflow-auto bg-background" data-testid="container-unit-cards">
           <div className="p-6">
-            <h2 className="text-lg font-black uppercase tracking-tight mb-4">
-              UNIT DETAILS
-            </h2>
-            
-            {/* Units Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {units.map(unit => (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="all-units" data-testid="tab-all-units" className="uppercase font-bold">
+                  ALL UNITS
+                </TabsTrigger>
+                <TabsTrigger value="active-deals" data-testid="tab-active-deals" className="uppercase font-bold">
+                  MY ACTIVE DEALS
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all-units" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {units.map(unit => (
                 <Card
                   key={unit.id}
                   data-unit-id={unit.id}
@@ -269,13 +289,111 @@ export default function AgentViewer() {
                   </div>
                 </Card>
               ))}
-            </div>
+                </div>
 
-            {units.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                No units found for this project
-              </div>
-            )}
+                {units.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No units found for this project
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="active-deals" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {isLoadingDeals ? (
+                    <div className="col-span-full text-center py-12 text-muted-foreground">
+                      Loading active deals...
+                    </div>
+                  ) : activeDeals.length > 0 ? (
+                    activeDeals.map(unit => (
+                      <Card
+                        key={unit.id}
+                        data-unit-id={unit.id}
+                        data-testid={`card-deal-${unit.unitNumber}`}
+                        className={cn(
+                          "p-4 cursor-pointer transition-all duration-200 hover-elevate",
+                          selectedUnitId === unit.id && "ring-2 ring-primary"
+                        )}
+                        onClick={() => handleUnitSelect(unit.id)}
+                      >
+                        <div className="space-y-3">
+                          {/* Header: Unit Number + Status */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="text-xs text-muted-foreground uppercase">
+                                {unit.building}
+                              </div>
+                              <h3 className="text-xl font-black uppercase tracking-tight">
+                                Unit {unit.unitNumber}
+                              </h3>
+                            </div>
+                            <Badge 
+                              variant={getStatusBadgeVariant(unit.status)}
+                              data-testid={`badge-status-${unit.unitNumber}`}
+                              className="uppercase text-xs"
+                            >
+                              {formatStatus(unit.status)}
+                            </Badge>
+                          </div>
+
+                          {/* Price */}
+                          <div className="text-2xl font-bold" data-testid={`text-price-${unit.unitNumber}`}>
+                            {formatPrice(unit.price)}
+                          </div>
+
+                          {/* Unit Details */}
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1" data-testid={`text-beds-${unit.unitNumber}`}>
+                              <Bed className="h-4 w-4" />
+                              <span>{unit.bedrooms} BD</span>
+                            </div>
+                            <div className="flex items-center gap-1" data-testid={`text-baths-${unit.unitNumber}`}>
+                              <Bath className="h-4 w-4" />
+                              <span>{unit.bathrooms} BA</span>
+                            </div>
+                            <div className="flex items-center gap-1" data-testid={`text-sqft-${unit.unitNumber}`}>
+                              <Maximize2 className="h-4 w-4" />
+                              <span>{unit.squareFeet.toLocaleString()} SF</span>
+                            </div>
+                          </div>
+
+                          {/* Lead Info (Active Deals only) */}
+                          {'leadName' in unit && (
+                            <div className="pt-2 border-t">
+                              <div className="text-xs text-muted-foreground">Lead</div>
+                              <div className="text-sm font-semibold">{unit.leadName}</div>
+                            </div>
+                          )}
+
+                          {/* Floor */}
+                          <div className="text-xs text-muted-foreground">
+                            Floor {unit.floor}
+                          </div>
+
+                          {/* View Details Button */}
+                          <Button
+                            size="sm"
+                            className="w-full uppercase"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDetails(unit);
+                            }}
+                            data-testid={`button-view-details-${unit.unitNumber}`}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </Button>
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-12 text-muted-foreground">
+                      No active deals found for this project
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

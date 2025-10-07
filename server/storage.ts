@@ -1,5 +1,5 @@
 import { 
-  type UnitWithDetails, type InsertUnit, type UnitStatus, type UnitUpdateRequest,
+  type UnitWithDetails, type UnitWithDealContext, type InsertUnit, type UnitStatus, type UnitUpdateRequest,
   type Contact, type InsertContact,
   type Lead, type InsertLead, type DealLead, type InsertDeal, type LeadWithDetails,
   type Activity, type InsertActivity,
@@ -13,6 +13,7 @@ export interface IStorage {
   getAllUnits(): Promise<UnitWithDetails[]>;
   getUnitById(id: string): Promise<UnitWithDetails | undefined>;
   getUnitsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDetails[]>;
+  getActiveDealsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDealContext[]>;
   createUnit(unit: InsertUnit): Promise<UnitWithDetails>;
   updateUnitStatus(id: string, status: UnitStatus): Promise<UnitWithDetails | undefined>;
   updateUnitPrice(id: string, price: number): Promise<UnitWithDetails | undefined>;
@@ -180,6 +181,11 @@ export class MemStorage implements IStorage {
       return allUnits.filter(unit => unit.projectId === projectId);
     }
     return allUnits;
+  }
+
+  async getActiveDealsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDealContext[]> {
+    // MemStorage doesn't have deals, return empty array
+    return [];
   }
 
   async createUnit(insertUnit: InsertUnit): Promise<UnitWithDetails> {

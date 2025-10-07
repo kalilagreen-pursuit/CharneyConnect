@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, DollarSign, MapPin, Calendar, TrendingUp, Eye, ListTodo, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { Loader2, DollarSign, MapPin, Calendar, TrendingUp, Eye, ListTodo, CheckCircle2, AlertCircle, Clock, Check } from "lucide-react";
 import { MatchedUnitsDrawer } from "./matched-units-drawer";
 import { TasksPanel } from "./tasks-panel";
 import { Separator } from "@/components/ui/separator";
@@ -193,9 +193,14 @@ export function LeadQualificationSheet({
         <div className="space-y-6 mt-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="price-min" className="text-sm font-bold uppercase">
-                <DollarSign className="inline h-4 w-4 mr-1" />
-                Budget Range
+              <Label htmlFor="price-min" className="text-sm font-bold uppercase flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <DollarSign className="inline h-4 w-4" />
+                  <span>Budget Range</span>
+                </div>
+                {(lead.targetPriceMin || lead.targetPriceMax) && (
+                  <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" data-testid="check-budget-filled" />
+                )}
               </Label>
               <div className="flex gap-2">
                 <Input
@@ -218,9 +223,14 @@ export function LeadQualificationSheet({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="locations" className="text-sm font-bold uppercase">
-                <MapPin className="inline h-4 w-4 mr-1" />
-                Target Locations
+              <Label htmlFor="locations" className="text-sm font-bold uppercase flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <MapPin className="inline h-4 w-4" />
+                  <span>Target Locations</span>
+                </div>
+                {lead.targetLocations && lead.targetLocations.length > 0 && (
+                  <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" data-testid="check-locations-filled" />
+                )}
               </Label>
               <Input
                 id="locations"
@@ -236,9 +246,14 @@ export function LeadQualificationSheet({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="timeframe" className="text-sm font-bold uppercase">
-                <Calendar className="inline h-4 w-4 mr-1" />
-                Timeframe to Buy
+              <Label htmlFor="timeframe" className="text-sm font-bold uppercase flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Calendar className="inline h-4 w-4" />
+                  <span>Timeframe to Buy</span>
+                </div>
+                {lead.timeFrameToBuy && (
+                  <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" data-testid="check-timeframe-filled" />
+                )}
               </Label>
               <Select
                 value={timeFrameToBuy}
@@ -321,7 +336,7 @@ export function LeadQualificationSheet({
               {qualifyMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Qualify Lead
+              {isQualified ? 'Update Qualification' : 'Qualify Lead'}
             </Button>
             <Button
               variant="outline"

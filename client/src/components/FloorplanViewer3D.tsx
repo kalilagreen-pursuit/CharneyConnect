@@ -3,7 +3,9 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, UserPlus } from "lucide-react";
+import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
+import { agentContextStore } from "@/lib/localStores";
 
 interface Project {
   id: string;

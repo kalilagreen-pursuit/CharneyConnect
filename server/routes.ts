@@ -9,6 +9,7 @@ import {
   contacts,
   deals,
   activities,
+  leads,
 } from "@shared/schema";
 import { z } from "zod";
 import express from "express";
@@ -286,13 +287,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           notes: `Initial inquiry for Unit ${unitNumber}. Marketing consent: ${consentGiven ? 'Given' : 'Not given'}`,
         }).returning();
 
-        return { contact, deal, activity };
+        // Step 4: Create Lead in public.leads table for pipeline tracking
+        const [lead] = await tx.insert(leads).values({
+          name: `${firstName} ${lastName}`,
+          email,
+          phone,
+          status: 'new',
+          pipelineStage: 'new',
+          agentId,
+        }).returning();
+
+        return { contact, deal, activity, lead };
       });
 
       console.log('[API] Prospect created successfully (atomic transaction)', {
         contactId: result.contact.id,
         dealId: result.deal.id,
         activityId: result.activity.id,
+        leadId: result.lead.id,
         unitId,
         agentId,
       });
@@ -301,6 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contact: result.contact,
         deal: result.deal,
         activity: result.activity,
+        lead: result.lead,
         message: 'Prospect added successfully',
       });
     } catch (error) {

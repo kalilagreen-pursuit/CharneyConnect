@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserPlus, CheckCircle2 } from "lucide-react";
 import { agentContextStore } from "@/lib/localStores";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const prospectFormSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50),
@@ -92,6 +92,9 @@ export function ProspectQuickAddForm({ isOpen, onClose, unitId, unitNumber, agen
         description: `${data.firstName} ${data.lastName} is now tracked for Unit ${unitNumber} and visible to your team.`,
         duration: 4000,
       });
+
+      // Invalidate leads query to refresh the leads page
+      queryClient.invalidateQueries({ queryKey: ['/api/leads'] });
 
       // Reset form and close
       form.reset();

@@ -125,7 +125,11 @@ export type InsertContact = z.infer<typeof insertContactSchema>;
 
 export const insertDealSchema = createInsertSchema(deals).omit({ id: true, createdAt: true });
 
-// Leads table (public.leads) - CRM lead management
+// Pipeline stages for lead qualification
+export const pipelineStages = ["new", "contacted", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"] as const;
+export type PipelineStage = typeof pipelineStages[number];
+
+// Leads table (public.leads) - CRM lead management with qualification
 export const leads = pgTable("leads", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -135,17 +139,95 @@ export const leads = pgTable("leads", {
   value: integer("value"),
   phone: text("phone"),
   address: text("address"),
+  targetPriceMin: numeric("target_price_min"),
+  targetPriceMax: numeric("target_price_max"),
+  targetLocations: text("target_locations").array(),
+  timeFrameToBuy: text("time_frame_to_buy"),
+  leadScore: integer("lead_score").notNull().default(0),
+  pipelineStage: text("pipeline_stage").notNull().default('new'),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export type Lead = typeof leads.$inferSelect;
-export const insertLeadSchema = createInsertSchema(leads).omit({ id: true }).extend({
+export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, createdAt: true, updatedAt: true }).extend({
   company: z.string().optional(),
   value: z.number().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
+  targetPriceMin: z.string().optional(),
+  targetPriceMax: z.string().optional(),
+  targetLocations: z.array(z.string()).optional(),
+  timeFrameToBuy: z.string().optional(),
+  leadScore: z.number().optional(),
+  pipelineStage: z.string().optional(),
 });
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type InsertDeal = z.infer<typeof insertDealSchema>;
 
 export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true });
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
+
+// Task priorities and statuses
+export const taskPriorities = ["low", "medium", "high", "urgent"] as const;
+export type TaskPriority = typeof taskPriorities[number];
+
+export const taskStatuses = ["pending", "in_progress", "completed", "cancelled"] as const;
+export type TaskStatus = typeof taskStatuses[number];
+
+// Tasks table for agent task management
+export const tasks = pgTable("tasks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  leadId: uuid("lead_id").notNull(),
+  agentId: text("agent_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  priority: text("priority").notNull().default('medium'),
+  status: text("status").notNull().default('pending'),
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  automationSource: text("automation_source"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type Task = typeof tasks.$inferSelect;
+export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, updatedAt: true }).extend({
+  description: z.string().optional(),
+  dueDate: z.date().optional(),
+  completedAt: z.date().optional(),
+  automationSource: z.string().optional(),
+});
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+
+// Engagement event types
+export const engagementEventTypes = ["email_open", "email_click", "website_visit", "document_view", "form_submit", "phone_call", "meeting_scheduled", "meeting_attended"] as const;
+export type EngagementEventType = typeof engagementEventTypes[number];
+
+// Lead Engagement table for tracking interactions and scoring
+export const leadEngagement = pgTable("lead_engagement", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  leadId: uuid("lead_id").notNull(),
+  eventType: text("event_type").notNull(),
+  eventMetadata: text("event_metadata"),
+  scoreImpact: integer("score_impact").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type LeadEngagement = typeof leadEngagement.$inferSelect;
+export const insertLeadEngagementSchema = createInsertSchema(leadEngagement).omit({ id: true, createdAt: true }).extend({
+  eventMetadata: z.string().optional(),
+});
+export type InsertLeadEngagement = z.infer<typeof insertLeadEngagementSchema>;
+
+// Extended types for frontend display
+export type TaskWithLead = Task & {
+  lead: Lead;
+};
+
+export type LeadWithEngagement = Lead & {
+  engagementEvents: LeadEngagement[];
+  tasks: Task[];
+  engagementScore: number;
+  lastEngagement?: Date;
+};

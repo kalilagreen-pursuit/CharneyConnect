@@ -2,7 +2,9 @@ import {
   type UnitWithDetails, type InsertUnit, type UnitStatus, type UnitUpdateRequest,
   type Contact, type InsertContact,
   type Lead, type InsertLead, type DealLead, type InsertDeal, type LeadWithDetails,
-  type Activity, type InsertActivity
+  type Activity, type InsertActivity,
+  type Task, type InsertTask, type TaskWithLead,
+  type LeadEngagement, type InsertLeadEngagement, type LeadWithEngagement
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -50,6 +52,22 @@ export interface IStorage {
     reserved: number;
     sold: number;
   }>>;
+  
+  // Tasks
+  getAllTasks(): Promise<Task[]>;
+  getTasksByLeadId(leadId: string): Promise<Task[]>;
+  getTasksByAgentId(agentId: string): Promise<Task[]>;
+  createTask(task: InsertTask): Promise<Task>;
+  updateTask(id: string, task: Partial<InsertTask>): Promise<Task | undefined>;
+  completeTask(id: string): Promise<Task | undefined>;
+  
+  // Lead Engagement
+  getLeadEngagementByLeadId(leadId: string): Promise<LeadEngagement[]>;
+  createLeadEngagement(engagement: InsertLeadEngagement): Promise<LeadEngagement>;
+  calculateLeadScore(leadId: string): Promise<number>;
+  
+  // Unit Matching
+  getMatchingUnitsForLead(leadId: string): Promise<UnitWithDetails[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -129,7 +147,15 @@ export class MemStorage implements IStorage {
         value: lead.value ?? null,
         phone: lead.phone ?? null,
         company: lead.company ?? null,
-        address: lead.address ?? null
+        address: lead.address ?? null,
+        targetPriceMin: null,
+        targetPriceMax: null,
+        targetLocations: null,
+        timeFrameToBuy: null,
+        leadScore: 0,
+        pipelineStage: 'new',
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       this.leads.set(id, leadWithDefaults);
     });
@@ -250,7 +276,15 @@ export class MemStorage implements IStorage {
       value: insertLead.value ?? null,
       phone: insertLead.phone ?? null,
       company: insertLead.company ?? null,
-      address: insertLead.address ?? null
+      address: insertLead.address ?? null,
+      targetPriceMin: insertLead.targetPriceMin ?? null,
+      targetPriceMax: insertLead.targetPriceMax ?? null,
+      targetLocations: insertLead.targetLocations ?? null,
+      timeFrameToBuy: insertLead.timeFrameToBuy ?? null,
+      leadScore: insertLead.leadScore ?? 0,
+      pipelineStage: insertLead.pipelineStage ?? 'new',
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.leads.set(id, lead);
     return lead;
@@ -293,6 +327,7 @@ export class MemStorage implements IStorage {
       unitId: insertDeal.unitId,
       buyerContactId: insertDeal.buyerContactId,
       brokerContactId: insertDeal.brokerContactId ?? null,
+      agentId: insertDeal.agentId,
       dealStage: insertDeal.dealStage,
       salePrice: insertDeal.salePrice ?? null,
       category: insertDeal.category ?? null,
@@ -351,6 +386,90 @@ export class MemStorage implements IStorage {
       reserved: project.units.filter(u => u.status === 'on_hold' || u.status === 'contract').length,
       sold: project.units.filter(u => u.status === 'sold').length,
     }));
+  }
+  
+  // Tasks (stub implementations for MemStorage)
+  async getAllTasks(): Promise<Task[]> {
+    return [];
+  }
+  
+  async getTasksByLeadId(leadId: string): Promise<Task[]> {
+    return [];
+  }
+  
+  async getTasksByAgentId(agentId: string): Promise<Task[]> {
+    return [];
+  }
+  
+  async createTask(task: InsertTask): Promise<Task> {
+    const id = randomUUID();
+    const newTask: Task = {
+      ...task,
+      id,
+      description: task.description ?? null,
+      status: task.status ?? 'pending',
+      priority: task.priority ?? 'medium',
+      dueDate: task.dueDate ?? null,
+      completedAt: task.completedAt ?? null,
+      automationSource: task.automationSource ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    return newTask;
+  }
+  
+  async updateTask(id: string, task: Partial<InsertTask>): Promise<Task | undefined> {
+    return undefined;
+  }
+  
+  async completeTask(id: string): Promise<Task | undefined> {
+    return undefined;
+  }
+  
+  // Lead Engagement (stub implementations for MemStorage)
+  async getLeadEngagementByLeadId(leadId: string): Promise<LeadEngagement[]> {
+    return [];
+  }
+  
+  async createLeadEngagement(engagement: InsertLeadEngagement): Promise<LeadEngagement> {
+    const id = randomUUID();
+    const newEngagement: LeadEngagement = {
+      ...engagement,
+      id,
+      eventMetadata: engagement.eventMetadata ?? null,
+      scoreImpact: engagement.scoreImpact ?? 0,
+      createdAt: new Date()
+    };
+    return newEngagement;
+  }
+  
+  async calculateLeadScore(leadId: string): Promise<number> {
+    return 0;
+  }
+  
+  // Unit Matching
+  async getMatchingUnitsForLead(leadId: string): Promise<UnitWithDetails[]> {
+    const lead = this.leads.get(leadId);
+    if (!lead) return [];
+    
+    const allUnits = Array.from(this.units.values());
+    
+    return allUnits.filter(unit => {
+      if (unit.status !== 'available') return false;
+      
+      if (lead.targetPriceMin && lead.targetPriceMax) {
+        const price = parseFloat(unit.price);
+        const minPrice = parseFloat(lead.targetPriceMin);
+        const maxPrice = parseFloat(lead.targetPriceMax);
+        if (price < minPrice || price > maxPrice) return false;
+      }
+      
+      if (lead.targetLocations && lead.targetLocations.length > 0) {
+        if (!lead.targetLocations.includes(unit.building)) return false;
+      }
+      
+      return true;
+    });
   }
 }
 

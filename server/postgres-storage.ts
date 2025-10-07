@@ -1,12 +1,14 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "./db";
 import { 
-  units, floorPlans, projects, contacts, deals, activities, leads,
+  units, floorPlans, projects, contacts, deals, activities, leads, tasks, leadEngagement,
   type Unit, type UnitWithDetails, type UnitStatus,
   type Contact, type InsertContact,
   type Deal, type InsertDeal, type DealLead,
   type Activity, type InsertActivity,
-  type Lead, type InsertLead, type LeadWithDetails
+  type Lead, type InsertLead, type LeadWithDetails,
+  type Task, type InsertTask,
+  type LeadEngagement, type InsertLeadEngagement
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -286,12 +288,12 @@ export class PostgresStorage implements IStorage {
       unit: unitWithDetails,
       activities,
       status: deal.dealStage,
-      score: this.calculateLeadScore(deal, activities),
+      score: this.calculateDealScore(deal, activities),
       notes: deal.category ?? undefined,
     };
   }
 
-  private calculateLeadScore(deal: Deal, activities: Activity[]): number {
+  private calculateDealScore(deal: Deal, activities: Activity[]): number {
     // Simple scoring based on deal stage and activity count
     const stageScores: Record<string, number> = {
       'new': 25,
@@ -324,6 +326,86 @@ export class PostgresStorage implements IStorage {
         reserved: projectUnits.filter(u => u.status === 'on_hold' || u.status === 'contract').length,
         sold: projectUnits.filter(u => u.status === 'sold').length,
       };
+    });
+  }
+  
+  // Tasks
+  async getAllTasks(): Promise<Task[]> {
+    return db.select().from(tasks);
+  }
+  
+  async getTasksByLeadId(leadId: string): Promise<Task[]> {
+    return db.select().from(tasks).where(eq(tasks.leadId, leadId));
+  }
+  
+  async getTasksByAgentId(agentId: string): Promise<Task[]> {
+    return db.select().from(tasks).where(eq(tasks.agentId, agentId));
+  }
+  
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const result = await db.insert(tasks).values(insertTask).returning();
+    return result[0];
+  }
+  
+  async updateTask(id: string, updateData: Partial<InsertTask>): Promise<Task | undefined> {
+    const result = await db.update(tasks).set({
+      ...updateData,
+      updatedAt: new Date()
+    }).where(eq(tasks.id, id)).returning();
+    return result[0];
+  }
+  
+  async completeTask(id: string): Promise<Task | undefined> {
+    const result = await db.update(tasks).set({
+      status: 'completed',
+      completedAt: new Date(),
+      updatedAt: new Date()
+    }).where(eq(tasks.id, id)).returning();
+    return result[0];
+  }
+  
+  // Lead Engagement
+  async getLeadEngagementByLeadId(leadId: string): Promise<LeadEngagement[]> {
+    return db.select().from(leadEngagement).where(eq(leadEngagement.leadId, leadId));
+  }
+  
+  async createLeadEngagement(insertEngagement: InsertLeadEngagement): Promise<LeadEngagement> {
+    const result = await db.insert(leadEngagement).values(insertEngagement).returning();
+    return result[0];
+  }
+  
+  async calculateLeadScore(leadId: string): Promise<number> {
+    const lead = await this.getLeadById(leadId);
+    if (!lead) return 0;
+    
+    const engagements = await this.getLeadEngagementByLeadId(leadId);
+    const totalScore = engagements.reduce((sum, e) => sum + e.scoreImpact, 0);
+    
+    return Math.max(0, Math.min(lead.leadScore + totalScore, 100));
+  }
+  
+  // Unit Matching
+  async getMatchingUnitsForLead(leadId: string): Promise<UnitWithDetails[]> {
+    const lead = await this.getLeadById(leadId);
+    if (!lead) return [];
+    
+    const allUnits = await this.getAllUnits();
+    
+    return allUnits.filter(unit => {
+      if (unit.status !== 'available') return false;
+      
+      if (lead.targetPriceMin && lead.targetPriceMax) {
+        const price = parseFloat(unit.price);
+        const minPrice = parseFloat(lead.targetPriceMin);
+        const maxPrice = parseFloat(lead.targetPriceMax);
+        if (price < minPrice || price > maxPrice) return false;
+      }
+      
+      if (lead.targetLocations && lead.targetLocations.length > 0) {
+        if (!lead.targetLocations.includes(unit.building)) return false;
+      }
+      
+      return true;
     });
   }
 }

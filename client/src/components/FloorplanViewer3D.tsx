@@ -94,6 +94,7 @@ export default function FloorplanViewer3D({
   const hideDetailsPanel = useCallback(() => {
     setShowPanel(false);
     setSelectedUnit(null);
+    setShowProspectForm(false);
   }, []);
 
   const loadProject = useCallback(

@@ -1,0 +1,45 @@
+he new features are broken down into three main components: Data Model Extensions, Agent Workflow Logic, and Automation Triggers.
+
+A. Data Model Extensions (Database/Schema Changes)
+The existing Lead model must be extended to include these fields:
+
+target_price_min and target_price_max (Integer)
+
+target_locations (Array of Strings/Tags)
+
+time_frame_to_buy (String, e.g., '0-3 Months', '6+ Months')
+
+lead_score (Integer, default 0, will be updated by an automation)
+
+pipeline_stage (String, to replace or extend current status tracking, e.g., 'New Qualified', 'Nurturing', 'Hot Prospect')
+
+B. Agent Workflow Logic (UI/Backend Endpoints)
+Lead Qualification Form: Modify the Lead creation/edit page (e.g., /leads/edit) to include the new fields from Section A. This must be an intuitive form for the agent to quickly input data.
+
+Unit Matching Endpoint: Create a new backend function/endpoint (/api/leads/{id}/match_units) that queries the Units database and returns a list of available units where:
+
+Unit Price is between target_price_min and target_price_max.
+
+Unit Location matches at least one tag in target_locations.
+
+C. Automation Triggers (Core Feature)
+Implement a background job or scheduled function (e.g., using Replit's built-in scheduling or a simple worker) that runs on two specific triggers:
+
+Trigger 1: New Lead Qualification: When a Lead's pipeline_stage is set to 'New Qualified':
+
+Action 1 (Matching): Immediately run the Unit Matching function (from B.2).
+
+Action 2 (Task/Alert): Create a new Task in the database assigned to the lead's owner: "Review & Present X Matched Units."
+
+Action 3 (Nurture Start): Start an automated email sequence based on the time_frame_to_buy field.
+
+Trigger 2: Engagement Spike: When the lead's lead_score increases by a threshold (e.g., ≥10 points in one day, which you can assume is tracked from email clicks), create a high-priority Task for the agent: "Hot Lead Re-Engagement Call."
+
+Final Instruction: Please output a detailed, numbered implementation plan, broken down into logical files and tasks (e.g., 'Modify models.py', 'Update LeadEditForm.jsx', 'Create automation_worker.py')."**
+
+Why this works best with Replit AI:
+Plan Mode forces a full architecture proposal first.
+
+Explicit file and task naming guides the Agent on where to look and what to change in your existing project structure.
+
+Structured Requirements (A, B, C) leave no ambiguity for the AI, leading to a higher-quality, more accurate plan.

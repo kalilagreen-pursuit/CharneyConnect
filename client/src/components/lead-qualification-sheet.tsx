@@ -21,10 +21,11 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, DollarSign, MapPin, Calendar, TrendingUp, Eye, ListTodo } from "lucide-react";
+import { Loader2, DollarSign, MapPin, Calendar, TrendingUp, Eye, ListTodo, CheckCircle2, AlertCircle } from "lucide-react";
 import { MatchedUnitsDrawer } from "./matched-units-drawer";
 import { TasksPanel } from "./tasks-panel";
 import { Separator } from "@/components/ui/separator";
+import { formatDistanceToNow } from "date-fns";
 
 interface LeadQualificationSheetProps {
   lead: Lead;
@@ -105,8 +106,22 @@ export function LeadQualificationSheet({
       timeFrameToBuy: timeFrameToBuy || undefined,
       pipelineStage: pipelineStage || undefined,
       leadScore: 50,
-      agentId: "agent-001",
+      agentId: lead.agentId || "agent-001",
     });
+  };
+
+  const isQualified = !!(lead.targetPriceMin || lead.targetPriceMax || lead.targetLocations?.length || lead.timeFrameToBuy);
+  const hasPrice = !!(lead.targetPriceMin || lead.targetPriceMax);
+  const hasLocations = !!(lead.targetLocations?.length);
+  const hasTimeframe = !!lead.timeFrameToBuy;
+  const hasPipelineStage = !!lead.pipelineStage && lead.pipelineStage !== 'new';
+
+  const agentNames: Record<string, string> = {
+    'agent-001': 'Sarah Chen',
+    'agent-002': 'Michael Rodriguez',
+    'agent-003': 'Emily Park',
+    'agent-004': 'David Thompson',
+    'agent-005': 'Jessica Williams',
   };
 
   return (
@@ -114,19 +129,41 @@ export function LeadQualificationSheet({
       <SheetContent className="sm:max-w-xl overflow-y-auto" data-testid="sheet-lead-qualification">
         <SheetHeader>
           <SheetTitle className="text-xl font-black uppercase tracking-tight">
-            Qualify Lead
+            {isQualified ? 'Update Lead Qualification' : 'Qualify Lead'}
           </SheetTitle>
           <SheetDescription>
             {lead.name} • {lead.email}
           </SheetDescription>
         </SheetHeader>
 
+        <div className={`mt-4 p-3 rounded-md border-l-4 ${isQualified ? 'bg-green-50 border-green-500 dark:bg-green-950/20' : 'bg-amber-50 border-amber-500 dark:bg-amber-950/20'}`} data-testid="banner-qualification-status">
+          <div className="flex items-start gap-2">
+            {isQualified ? (
+              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+            )}
+            <div className="flex-1">
+              <p className={`font-bold text-sm ${isQualified ? 'text-green-900 dark:text-green-100' : 'text-amber-900 dark:text-amber-100'}`}>
+                {isQualified ? 'Lead Qualified' : 'Needs Qualification'}
+              </p>
+              <p className={`text-xs ${isQualified ? 'text-green-700 dark:text-green-300' : 'text-amber-700 dark:text-amber-300'}`}>
+                {isQualified 
+                  ? `Last updated ${formatDistanceToNow(new Date(lead.updatedAt))} ago${lead.agentId ? ` by ${agentNames[lead.agentId] || lead.agentId}` : ''}`
+                  : 'Complete qualification fields to match with available units'
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-6 mt-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="price-min" className="text-sm font-bold uppercase">
-                <DollarSign className="inline h-4 w-4 mr-1" />
+              <Label htmlFor="price-min" className="text-sm font-bold uppercase flex items-center gap-2">
+                <DollarSign className="inline h-4 w-4" />
                 Budget Range
+                {hasPrice && <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" data-testid="indicator-price-filled" />}
               </Label>
               <div className="flex gap-2">
                 <Input
@@ -149,9 +186,10 @@ export function LeadQualificationSheet({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="locations" className="text-sm font-bold uppercase">
-                <MapPin className="inline h-4 w-4 mr-1" />
+              <Label htmlFor="locations" className="text-sm font-bold uppercase flex items-center gap-2">
+                <MapPin className="inline h-4 w-4" />
                 Target Locations
+                {hasLocations && <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" data-testid="indicator-locations-filled" />}
               </Label>
               <Input
                 id="locations"
@@ -167,9 +205,10 @@ export function LeadQualificationSheet({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="timeframe" className="text-sm font-bold uppercase">
-                <Calendar className="inline h-4 w-4 mr-1" />
+              <Label htmlFor="timeframe" className="text-sm font-bold uppercase flex items-center gap-2">
+                <Calendar className="inline h-4 w-4" />
                 Timeframe to Buy
+                {hasTimeframe && <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" data-testid="indicator-timeframe-filled" />}
               </Label>
               <Select
                 value={timeFrameToBuy}
@@ -188,9 +227,10 @@ export function LeadQualificationSheet({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="pipeline-stage" className="text-sm font-bold uppercase">
-                <TrendingUp className="inline h-4 w-4 mr-1" />
+              <Label htmlFor="pipeline-stage" className="text-sm font-bold uppercase flex items-center gap-2">
+                <TrendingUp className="inline h-4 w-4" />
                 Pipeline Stage
+                {hasPipelineStage && <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" data-testid="indicator-pipeline-filled" />}
               </Label>
               <Select
                 value={pipelineStage}
@@ -252,7 +292,7 @@ export function LeadQualificationSheet({
               {qualifyMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Qualify Lead
+              {isQualified ? 'Update Qualification' : 'Qualify Lead'}
             </Button>
             <Button
               variant="outline"

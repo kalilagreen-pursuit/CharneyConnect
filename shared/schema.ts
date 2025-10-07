@@ -146,6 +146,7 @@ export const leads = pgTable("leads", {
   timeFrameToBuy: text("time_frame_to_buy"),
   leadScore: integer("lead_score").notNull().default(0),
   pipelineStage: text("pipeline_stage").notNull().default('new'),
+  agentId: text("agent_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

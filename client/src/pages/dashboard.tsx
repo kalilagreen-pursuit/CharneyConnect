@@ -6,10 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Building2, Bed, Bath, Maximize, SlidersHorizontal, X } from "lucide-react";
+import { Building2, Bed, Bath, Maximize, SlidersHorizontal, X, UserPlus } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import FloorplanViewer3D from "@/components/FloorplanViewer3D";
+import { QuickProspectWorkflow } from "@/components/quick-prospect-workflow";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
   available: { 
@@ -174,6 +175,8 @@ export default function Dashboard() {
   const [show3DViewer, setShow3DViewer] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedUnitNumber, setSelectedUnitNumber] = useState<string>('');
+  const [showQuickProspect, setShowQuickProspect] = useState(false);
+  const [prospectMatchedUnits, setProspectMatchedUnits] = useState<UnitWithDetails[]>([]);
 
   const { buildings, bedroomOptions, bathroomOptions, minPrice, maxPrice, minSqft, maxSqft } = useMemo(() => {
     if (!units) return {
@@ -250,6 +253,22 @@ export default function Dashboard() {
     setActiveStatusFilter(activeStatusFilter === status ? null : status);
   };
 
+  const handleProspectCreated = (leadId: string, matchedUnits: any[]) => {
+    console.log('[Dashboard] Prospect created with matched units', { leadId, matchedCount: matchedUnits.length });
+    
+    if (matchedUnits.length > 0) {
+      // Store matched units and open 3D viewer with first match
+      setProspectMatchedUnits(matchedUnits);
+      const firstUnit = matchedUnits[0];
+      setSelectedProjectId(firstUnit.project?.id || '');
+      setSelectedUnitNumber(firstUnit.unitNumber);
+      setShow3DViewer(true);
+    }
+    
+    // Close the prospect form
+    setShowQuickProspect(false);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="border-b bg-card sticky top-0 z-10">
@@ -263,21 +282,33 @@ export default function Dashboard() {
                 Real-time inventory tracking and status management
               </p>
             </div>
-            <Button
-              variant={showFilters ? "default" : "outline"}
-              size="default"
-              onClick={() => setShowFilters(!showFilters)}
-              className="gap-2"
-              data-testid="button-toggle-filters"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              Filters
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                  !
-                </Badge>
-              )}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                variant="default"
+                size="default"
+                onClick={() => setShowQuickProspect(true)}
+                className="gap-2"
+                data-testid="button-quick-prospect"
+              >
+                <UserPlus className="h-4 w-4" />
+                Quick Prospect
+              </Button>
+              <Button
+                variant={showFilters ? "default" : "outline"}
+                size="default"
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-2"
+                data-testid="button-toggle-filters"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                Filters
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    !
+                  </Badge>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -531,6 +562,13 @@ export default function Dashboard() {
           onClose={() => setShow3DViewer(false)}
         />
       )}
+
+      <QuickProspectWorkflow
+        isOpen={showQuickProspect}
+        onClose={() => setShowQuickProspect(false)}
+        onProspectCreated={handleProspectCreated}
+        buildings={buildings}
+      />
     </div>
   );
 }

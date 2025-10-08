@@ -87,9 +87,11 @@ export function QuickProspectWorkflow({
     setIsSubmitting(true);
 
     try {
-      const agentId = agentContextStore.getAgentId();
+      // Get agent ID from context, or use default agent if not set
+      let agentId = agentContextStore.getAgentId();
       if (!agentId) {
-        throw new Error("Agent ID not found. Please refresh the page.");
+        agentId = 'agent-001'; // Default to Sarah Chen when no agent context
+        console.log(`[${actionId}] No agent context found, using default agent: agent-001`);
       }
 
       console.log(`[${actionId}] Creating prospect with qualification via API`);

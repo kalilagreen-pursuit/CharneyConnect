@@ -82,6 +82,7 @@ export const deals = pgTable("Deals", {
   dealStage: text("deal_stage").notNull(),
   salePrice: numeric("sale_price"),
   category: text("category"),
+  leadId: uuid("lead_id"), // Link to leads table
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -247,3 +248,47 @@ export type LeadWithEngagement = Lead & {
   engagementScore: number;
   lastEngagement?: Date;
 };
+
+// AI Conversations table - stores conversation metadata
+export const aiConversations = pgTable("ai_conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  conversationId: text("conversation_id").notNull().unique(),
+  agentId: text("agent_id").notNull(),
+  title: text("title"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type AiConversation = typeof aiConversations.$inferSelect;
+export const insertAiConversationSchema = createInsertSchema(aiConversations).omit({ id: true, createdAt: true, updatedAt: true }).extend({
+  title: z.string().optional(),
+});
+export type InsertAiConversation = z.infer<typeof insertAiConversationSchema>;
+
+// AI Messages table - stores individual messages in conversations
+export const aiMessages = pgTable("ai_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  conversationId: text("conversation_id").notNull().references(() => aiConversations.conversationId, { onDelete: "cascade" }),
+  role: text("role").notNull(), // 'user' or 'assistant'
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type AiMessage = typeof aiMessages.$inferSelect;
+export const insertAiMessageSchema = createInsertSchema(aiMessages).omit({ id: true, createdAt: true });
+export type InsertAiMessage = z.infer<typeof insertAiMessageSchema>;
+
+// AI Feedback table - stores thumbs up/down feedback
+export const aiFeedback = pgTable("ai_feedback", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  messageId: uuid("message_id").notNull().references(() => aiMessages.id, { onDelete: "cascade" }),
+  feedbackType: text("feedback_type").notNull(), // 'positive' or 'negative'
+  comment: text("comment"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type AiFeedback = typeof aiFeedback.$inferSelect;
+export const insertAiFeedbackSchema = createInsertSchema(aiFeedback).omit({ id: true, createdAt: true }).extend({
+  comment: z.string().optional(),
+});
+export type InsertAiFeedback = z.infer<typeof insertAiFeedbackSchema>;

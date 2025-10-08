@@ -177,6 +177,11 @@ export default function Dashboard() {
   const [selectedUnitNumber, setSelectedUnitNumber] = useState<string>('');
   const [showQuickProspect, setShowQuickProspect] = useState(false);
   const [prospectMatchedUnits, setProspectMatchedUnits] = useState<UnitWithDetails[]>([]);
+  const [currentProspectContext, setCurrentProspectContext] = useState<{
+    leadId: string;
+    contactId: string;
+    prospectName: string;
+  } | null>(null);
 
   const { buildings, bedroomOptions, bathroomOptions, minPrice, maxPrice, minSqft, maxSqft } = useMemo(() => {
     if (!units) return {
@@ -253,13 +258,24 @@ export default function Dashboard() {
     setActiveStatusFilter(activeStatusFilter === status ? null : status);
   };
 
-  const handleProspectCreated = (leadId: string, matchedUnits: any[]) => {
-    console.log('[Dashboard] Prospect created with matched units', { leadId, matchedCount: matchedUnits.length });
+  const handleProspectCreated = (result: { leadId: string; contactId: string; prospectName: string; matchedUnits: any[] }) => {
+    console.log('[Dashboard] Prospect created with matched units', { 
+      leadId: result.leadId, 
+      contactId: result.contactId,
+      matchedCount: result.matchedUnits.length 
+    });
     
-    if (matchedUnits.length > 0) {
-      // Store matched units and open 3D viewer with first match
-      setProspectMatchedUnits(matchedUnits);
-      const firstUnit = matchedUnits[0];
+    if (result.matchedUnits.length > 0) {
+      // Store matched units and prospect context
+      setProspectMatchedUnits(result.matchedUnits);
+      setCurrentProspectContext({
+        leadId: result.leadId,
+        contactId: result.contactId,
+        prospectName: result.prospectName,
+      });
+      
+      // Open 3D viewer with first match
+      const firstUnit = result.matchedUnits[0];
       setSelectedProjectId(firstUnit.project?.id || '');
       setSelectedUnitNumber(firstUnit.unitNumber);
       setShow3DViewer(true);
@@ -562,8 +578,10 @@ export default function Dashboard() {
           onClose={() => {
             setShow3DViewer(false);
             setProspectMatchedUnits([]); // Clear matched units when closing
+            setCurrentProspectContext(null); // Clear prospect context
           }}
           matchedUnitNumbers={prospectMatchedUnits.map(u => u.unitNumber)}
+          prospectContext={currentProspectContext || undefined}
         />
       )}
 

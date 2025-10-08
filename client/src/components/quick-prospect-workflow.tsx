@@ -34,10 +34,17 @@ const prospectQualificationSchema = z.object({
 
 type ProspectQualificationData = z.infer<typeof prospectQualificationSchema>;
 
+interface ProspectResult {
+  leadId: string;
+  contactId: string;
+  prospectName: string;
+  matchedUnits: any[];
+}
+
 interface QuickProspectWorkflowProps {
   isOpen: boolean;
   onClose: () => void;
-  onProspectCreated?: (leadId: string, matchedUnits: any[]) => void;
+  onProspectCreated?: (result: ProspectResult) => void;
   buildings: string[];
 }
 
@@ -127,8 +134,13 @@ export function QuickProspectWorkflow({
       // Reset form and notify parent
       form.reset();
       
-      if (onProspectCreated && result.matchedUnits?.length > 0) {
-        onProspectCreated(result.lead.id, result.matchedUnits);
+      if (onProspectCreated) {
+        onProspectCreated({
+          leadId: result.lead.id,
+          contactId: result.contact.id,
+          prospectName: `${data.firstName} ${data.lastName}`,
+          matchedUnits: result.matchedUnits || [],
+        });
       } else {
         onClose();
       }

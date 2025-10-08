@@ -25,6 +25,12 @@ interface UnitData {
   };
 }
 
+interface ProspectContext {
+  leadId: string;
+  contactId: string;
+  prospectName: string;
+}
+
 interface FloorplanViewer3DProps {
   projectId?: string;
   unitNumber?: string;
@@ -33,6 +39,7 @@ interface FloorplanViewer3DProps {
   embedded?: boolean;
   onProjectChange?: (projectId: string) => void;
   matchedUnitNumbers?: string[]; // Array of unit numbers to highlight (from prospect matching)
+  prospectContext?: ProspectContext; // Prospect context for linking unit
 }
 
 const PROJECTS: Project[] = [
@@ -68,6 +75,7 @@ export default function FloorplanViewer3D({
   embedded = false,
   onProjectChange,
   matchedUnitNumbers = [],
+  prospectContext,
 }: FloorplanViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -253,6 +261,81 @@ export default function FloorplanViewer3D({
       }
     } catch (error) {
       console.error("Error fetching unit details:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleHoldUnitForProspect = async () => {
+    if (!selectedUnit || !prospectContext) return;
+    setIsLoading(true);
+
+    try {
+      const agentId = agentContextStore.getAgentId();
+      if (!agentId) {
+        throw new Error("Agent ID not found");
+      }
+
+      // Update unit status to on_hold
+      const statusResponse = await fetch(`/api/units/${selectedUnit.id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "on_hold" }),
+      });
+
+      if (!statusResponse.ok) {
+        throw new Error("Failed to update unit status");
+      }
+
+      // Create deal linking prospect to unit
+      const dealResponse = await fetch("/api/deals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unitId: selectedUnit.id,
+          buyerContactId: prospectContext.contactId,
+          agentId,
+          dealStage: "inquiry",
+          category: "in_person_inquiry",
+        }),
+      });
+
+      if (!dealResponse.ok) {
+        throw new Error("Failed to create deal");
+      }
+
+      const deal = await dealResponse.json();
+
+      // Create activity
+      await fetch("/api/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dealId: deal.id,
+          activityType: "unit_hold",
+          notes: `Unit ${selectedUnit.unitNumber} held for ${prospectContext.prospectName}`,
+        }),
+      });
+
+      // Update the 3D view
+      const mesh = unitMeshMapRef.current.get(`Unit_${selectedUnit.unitNumber}`);
+      if (mesh) {
+        mesh.material = new THREE.MeshStandardMaterial({
+          color: STATUS_COLORS["on_hold"] || 0xbdc3c7,
+        });
+      }
+
+      setSelectedUnit({ ...selectedUnit, status: "on_hold" });
+      hideDetailsPanel();
+      
+      console.log("[3D Viewer] Unit held for prospect successfully", {
+        unitId: selectedUnit.id,
+        prospectName: prospectContext.prospectName,
+        dealId: deal.id,
+      });
+    } catch (error) {
+      console.error("Error holding unit for prospect:", error);
+      alert("Failed to hold unit. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -594,24 +677,54 @@ export default function FloorplanViewer3D({
             </div>
           </div>
 
-          <Button
-            data-testid="button-save-changes"
-            onClick={handleSaveChanges}
-            className="w-full mt-4 uppercase"
-            disabled={isLoading}
-          >
-            SAVE CHANGES
-          </Button>
-          
-          <Button
-            data-testid="button-add-prospect"
-            onClick={() => setShowProspectForm(true)}
-            className="w-full mt-2 uppercase"
-            variant="outline"
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            ADD PROSPECT
-          </Button>
+          {prospectContext ? (
+            <>
+              <div className="mt-4 p-3 bg-muted rounded-lg">
+                <p className="text-sm font-bold uppercase mb-1">Prospect</p>
+                <p className="text-sm text-muted-foreground">{prospectContext.prospectName}</p>
+              </div>
+              
+              {selectedUnit.status === 'available' && (
+                <Button
+                  data-testid="button-hold-for-prospect"
+                  onClick={handleHoldUnitForProspect}
+                  className="w-full mt-4 uppercase"
+                  disabled={isLoading}
+                >
+                  HOLD UNIT FOR PROSPECT
+                </Button>
+              )}
+              
+              {selectedUnit.status !== 'available' && (
+                <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg text-center">
+                  <p className="text-sm font-bold uppercase">
+                    Unit {selectedUnit.status === 'on_hold' ? 'On Hold' : selectedUnit.status === 'contract' ? 'In Contract' : 'Sold'}
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <Button
+                data-testid="button-save-changes"
+                onClick={handleSaveChanges}
+                className="w-full mt-4 uppercase"
+                disabled={isLoading}
+              >
+                SAVE CHANGES
+              </Button>
+              
+              <Button
+                data-testid="button-add-prospect"
+                onClick={() => setShowProspectForm(true)}
+                className="w-full mt-2 uppercase"
+                variant="outline"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                ADD PROSPECT
+              </Button>
+            </>
+          )}
         </div>
       )}
 

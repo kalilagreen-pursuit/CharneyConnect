@@ -236,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Prospects endpoint - atomic creation of Contact + Deal + Activity
+  // Prospects endpoint - atomic creation of Contact + Deal + Activity + Lead with qualification
   app.post("/api/prospects", async (req, res) => {
     try {
       const prospectSchema = z.object({
@@ -244,10 +244,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: z.string(),
         email: z.string().email(),
         phone: z.string(),
-        unitId: z.string().uuid(),
-        unitNumber: z.string(),
+        unitId: z.string().uuid().optional(), // Optional - may not have unit yet
+        unitNumber: z.string().optional(),
         agentId: z.string(),
         consentGiven: z.boolean(),
+        // Qualification fields (optional)
+        targetPriceMin: z.number().optional(),
+        targetPriceMax: z.number().optional(),
+        targetBedrooms: z.number().optional(),
+        targetBathrooms: z.number().optional(),
+        targetSqft: z.number().optional(),
+        targetBuilding: z.string().optional(),
       });
 
       const validation = prospectSchema.safeParse(req.body);
@@ -258,7 +265,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { firstName, lastName, email, phone, unitId, unitNumber, agentId, consentGiven } = validation.data;
+      const { 
+        firstName, lastName, email, phone, unitId, unitNumber, agentId, consentGiven,
+        targetPriceMin, targetPriceMax, targetBedrooms, targetBathrooms, targetSqft, targetBuilding
+      } = validation.data;
 
       // Use Drizzle transaction to ensure atomicity
       const result = await db.transaction(async (tx) => {
@@ -272,42 +282,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
           consentGivenAt: consentGiven ? new Date() : undefined,
         }).returning();
 
-        // Step 2: Create Deal linking contact to unit
-        const [deal] = await tx.insert(deals).values({
-          unitId,
-          buyerContactId: contact.id,
-          agentId,
-          dealStage: 'inquiry',
-          category: 'in_person_inquiry',
-        }).returning();
+        // Step 2: Create Deal linking contact to unit (if unit specified)
+        let deal = null;
+        if (unitId) {
+          const [createdDeal] = await tx.insert(deals).values({
+            unitId,
+            buyerContactId: contact.id,
+            agentId,
+            dealStage: 'inquiry',
+            category: 'in_person_inquiry',
+          }).returning();
+          deal = createdDeal;
+        }
 
-        // Step 3: Create Activity to log the inquiry
-        const [activity] = await tx.insert(activities).values({
-          dealId: deal.id,
-          activityType: 'in_person_inquiry',
-          notes: `Initial inquiry for Unit ${unitNumber}. Marketing consent: ${consentGiven ? 'Given' : 'Not given'}`,
-        }).returning();
+        // Step 3: Create Activity to log the inquiry (if deal exists)
+        let activity = null;
+        if (deal) {
+          const [createdActivity] = await tx.insert(activities).values({
+            dealId: deal.id,
+            activityType: 'in_person_inquiry',
+            notes: `Initial inquiry for Unit ${unitNumber}. Marketing consent: ${consentGiven ? 'Given' : 'Not given'}`,
+          }).returning();
+          activity = createdActivity;
+        }
 
-        // Step 4: Create Lead in public.leads table for pipeline tracking
-        const [lead] = await tx.insert(leads).values({
+        // Step 4: Create Lead in public.leads table with qualification data
+        const leadValues: any = {
           name: `${firstName} ${lastName}`,
           email,
           phone,
           status: 'new',
           pipelineStage: 'new',
           agentId,
-        }).returning();
+        };
+
+        // Add qualification fields if provided
+        if (targetPriceMin) leadValues.targetPriceMin = targetPriceMin.toString();
+        if (targetPriceMax) leadValues.targetPriceMax = targetPriceMax.toString();
+        if (targetBedrooms) leadValues.targetBedrooms = targetBedrooms;
+        if (targetBathrooms) leadValues.targetBathrooms = targetBathrooms;
+        if (targetSqft) leadValues.targetSqft = targetSqft;
+        if (targetBuilding) leadValues.targetLocations = [targetBuilding];
+
+        const [lead] = await tx.insert(leads).values(leadValues).returning();
 
         return { contact, deal, activity, lead };
       });
 
-      console.log('[API] Prospect created successfully (atomic transaction)', {
+      // Step 5: Find matched units based on qualification criteria
+      let matchedUnits: any[] = [];
+      if (targetPriceMin || targetPriceMax || targetBedrooms || targetBathrooms || targetSqft || targetBuilding) {
+        const allUnits = await storage.getAllUnits();
+        
+        matchedUnits = allUnits.filter(unit => {
+          // Only match available units
+          if (unit.status !== 'available') return false;
+          
+          const unitPrice = typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price;
+          
+          // Price range filter
+          if (targetPriceMin && unitPrice < targetPriceMin) return false;
+          if (targetPriceMax && unitPrice > targetPriceMax) return false;
+          
+          // Bedrooms filter
+          if (targetBedrooms && unit.bedrooms !== targetBedrooms) return false;
+          
+          // Bathrooms filter
+          if (targetBathrooms && unit.bathrooms < targetBathrooms) return false;
+          
+          // Square footage filter (minimum)
+          if (targetSqft && unit.squareFeet < targetSqft) return false;
+          
+          // Building filter
+          if (targetBuilding && unit.building !== targetBuilding) return false;
+          
+          return true;
+        });
+
+        // Sort by price ascending
+        matchedUnits.sort((a, b) => {
+          const priceA = typeof a.price === 'string' ? parseFloat(a.price) : a.price;
+          const priceB = typeof b.price === 'string' ? parseFloat(b.price) : b.price;
+          return priceA - priceB;
+        });
+      }
+
+      console.log('[API] Prospect created successfully with qualification', {
         contactId: result.contact.id,
-        dealId: result.deal.id,
-        activityId: result.activity.id,
+        dealId: result.deal?.id,
+        activityId: result.activity?.id,
         leadId: result.lead.id,
         unitId,
         agentId,
+        matchedUnits: matchedUnits.length,
+        hasQualification: !!(targetPriceMin || targetPriceMax || targetBedrooms),
       });
 
       res.status(201).json({
@@ -315,6 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deal: result.deal,
         activity: result.activity,
         lead: result.lead,
+        matchedUnits,
         message: 'Prospect added successfully',
       });
     } catch (error) {

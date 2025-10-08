@@ -605,16 +605,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI Chat Assistant endpoint
+  // AI Chat Assistant endpoint with persistence
   app.post("/api/chat/strategy", async (req, res) => {
     try {
       const chatSchema = z.object({
         message: z.string(),
         conversationId: z.string().optional(),
-        history: z.array(z.object({
-          role: z.enum(["user", "assistant"]),
-          content: z.string(),
-        })).optional(),
+        agentId: z.string().default("default_agent"), // Default agent if not provided
       });
 
       const validation = chatSchema.safeParse(req.body);
@@ -622,7 +619,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error.message });
       }
 
-      const { message, history = [] } = validation.data;
+      const { message, agentId } = validation.data;
+      let conversationId = validation.data.conversationId || `conv_${Date.now()}`;
+      
+      // Check if conversation exists, if not create it
+      let conversation = await storage.getConversationByConversationId(conversationId);
+      if (!conversation) {
+        conversation = await storage.createConversation({
+          conversationId,
+          agentId,
+        });
+      }
+      
+      // Load conversation history from database
+      const dbMessages = await storage.getMessagesByConversationId(conversationId);
+      const history = dbMessages.map(msg => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content
+      }));
+      
+      // Save user message to database
+      await storage.createMessage({
+        conversationId,
+        role: "user",
+        content: message
+      });
 
       // Initialize Gemini AI
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -641,7 +662,7 @@ You help real estate agents with:
 Provide concise, actionable advice that agents can use immediately in sales conversations.
 Be professional, confident, and focused on closing deals.`;
 
-      // Build conversation history
+      // Build conversation history with database messages
       let conversationContext = systemPersona + "\n\n";
       
       if (history.length > 0) {
@@ -658,10 +679,20 @@ Be professional, confident, and focused on closing deals.`;
       const result = await model.generateContent(conversationContext);
       const response = result.response;
       const answer = response.text();
+      
+      // Save AI response to database
+      await storage.createMessage({
+        conversationId,
+        role: "assistant",
+        content: answer
+      });
+      
+      // Update conversation timestamp
+      await storage.touchConversation(conversationId);
 
       res.json({ 
         message: answer,
-        conversationId: validation.data.conversationId || `conv_${Date.now()}`
+        conversationId
       });
     } catch (error) {
       console.error("Error in chat endpoint:", error);

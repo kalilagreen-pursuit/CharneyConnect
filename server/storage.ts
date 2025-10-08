@@ -4,7 +4,10 @@ import {
   type Lead, type InsertLead, type DealLead, type InsertDeal, type LeadWithDetails,
   type Activity, type InsertActivity,
   type Task, type InsertTask, type TaskWithLead,
-  type LeadEngagement, type InsertLeadEngagement, type LeadWithEngagement
+  type LeadEngagement, type InsertLeadEngagement, type LeadWithEngagement,
+  type AiConversation, type InsertAiConversation,
+  type AiMessage, type InsertAiMessage,
+  type AiFeedback, type InsertAiFeedback
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -73,6 +76,21 @@ export interface IStorage {
   
   // Unit Leads
   getLeadsByUnit(projectId: string, unitNumber: string): Promise<LeadWithDetails[]>;
+  
+  // AI Conversations
+  createConversation(conversation: InsertAiConversation): Promise<AiConversation>;
+  getConversationByConversationId(conversationId: string): Promise<AiConversation | undefined>;
+  getConversationsByAgentId(agentId: string): Promise<AiConversation[]>;
+  updateConversationTitle(conversationId: string, title: string): Promise<AiConversation | undefined>;
+  touchConversation(conversationId: string): Promise<void>;
+  
+  // AI Messages
+  createMessage(message: InsertAiMessage): Promise<AiMessage>;
+  getMessagesByConversationId(conversationId: string): Promise<AiMessage[]>;
+  
+  // AI Feedback
+  createFeedback(feedback: InsertAiFeedback): Promise<AiFeedback>;
+  getFeedbackByMessageId(messageId: string): Promise<AiFeedback | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -493,6 +511,63 @@ export class MemStorage implements IStorage {
   // Unit Leads
   async getLeadsByUnit(projectId: string, unitNumber: string): Promise<LeadWithDetails[]> {
     return [];
+  }
+  
+  // AI Conversations (stub implementations for MemStorage)
+  async createConversation(conversation: InsertAiConversation): Promise<AiConversation> {
+    const id = randomUUID();
+    return {
+      id,
+      ...conversation,
+      title: conversation.title ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+  
+  async getConversationByConversationId(conversationId: string): Promise<AiConversation | undefined> {
+    return undefined;
+  }
+  
+  async getConversationsByAgentId(agentId: string): Promise<AiConversation[]> {
+    return [];
+  }
+  
+  async updateConversationTitle(conversationId: string, title: string): Promise<AiConversation | undefined> {
+    return undefined;
+  }
+  
+  async touchConversation(conversationId: string): Promise<void> {
+    // Stub: MemStorage doesn't persist
+  }
+  
+  // AI Messages (stub implementations for MemStorage)
+  async createMessage(message: InsertAiMessage): Promise<AiMessage> {
+    const id = randomUUID();
+    return {
+      id,
+      ...message,
+      createdAt: new Date()
+    };
+  }
+  
+  async getMessagesByConversationId(conversationId: string): Promise<AiMessage[]> {
+    return [];
+  }
+  
+  // AI Feedback (stub implementations for MemStorage)
+  async createFeedback(feedback: InsertAiFeedback): Promise<AiFeedback> {
+    const id = randomUUID();
+    return {
+      id,
+      ...feedback,
+      comment: feedback.comment ?? null,
+      createdAt: new Date()
+    };
+  }
+  
+  async getFeedbackByMessageId(messageId: string): Promise<AiFeedback | undefined> {
+    return undefined;
   }
 }
 

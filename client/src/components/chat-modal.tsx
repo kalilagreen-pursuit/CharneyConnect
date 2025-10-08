@@ -23,15 +23,15 @@ export function ChatModal({ open, onOpenChange }: ChatModalProps) {
   const [conversationId, setConversationId] = useState<string>();
 
   const chatMutation = useMutation({
-    mutationFn: async ({ userMessage, currentHistory }: { userMessage: string; currentHistory: Message[] }) => {
-      // Send conversation history (NOT including the current user message)
+    mutationFn: async (userMessage: string) => {
+      // Server loads history from database, no need to send it
       const response = await apiRequest(
         "POST",
         "/api/chat/strategy",
         { 
           message: userMessage, 
           conversationId,
-          history: currentHistory  // History before current message
+          agentId: "default_agent"  // TODO: Get from auth context
         }
       );
       return await response.json() as { message: string; conversationId: string };
@@ -49,10 +49,9 @@ export function ChatModal({ open, onOpenChange }: ChatModalProps) {
     if (!input.trim()) return;
 
     const userMessage = input.trim();
-    const currentHistory = messages;  // Capture history before adding new message
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setInput("");
-    chatMutation.mutate({ userMessage, currentHistory });
+    chatMutation.mutate(userMessage);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

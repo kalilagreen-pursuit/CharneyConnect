@@ -605,6 +605,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cache for property data (refresh every 5 minutes)
+  let propertyDataCache: {
+    data: string;
+    timestamp: number;
+  } | null = null;
+  
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  const priceFormatter = new Intl.NumberFormat('en-US', { 
+    style: 'currency', 
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  });
+
+  async function getPropertyKnowledgeBase(): Promise<string> {
+    const now = Date.now();
+    
+    // Return cached data if still valid
+    if (propertyDataCache && (now - propertyDataCache.timestamp) < CACHE_TTL) {
+      return propertyDataCache.data;
+    }
+    
+    // Load fresh property data
+    const units = await storage.getAllUnits();
+    const projectCounts = await storage.getProjectCounts();
+    
+    // Group units by building for comprehensive overview
+    const unitsByBuilding = units.reduce((acc, unit) => {
+      if (!acc[unit.building]) acc[unit.building] = [];
+      acc[unit.building].push(unit);
+      return acc;
+    }, {} as Record<string, typeof units>);
+    
+    const propertyContext = `
+AVAILABLE INVENTORY:
+${projectCounts.map(p => `
+${p.name} (${p.address}):
+- Total Units: ${p.totalUnits}
+- Available: ${p.available}
+- Reserved/Contract: ${p.reserved}
+- Sold: ${p.sold}
+`).join('\n')}
+
+UNIT SPECIFICATIONS BY BUILDING (All Available Units, Ordered by Price):
+${Object.entries(unitsByBuilding).map(([building, buildingUnits]) => {
+  const availableUnits = buildingUnits
+    .filter(u => u.status === 'Available')
+    .sort((a, b) => parseFloat(a.price) - parseFloat(b.price)); // Sort by price ascending
+    
+  if (availableUnits.length === 0) return '';
+  
+  return `
+${building} (${availableUnits.length} available):
+${availableUnits.map(u => `- Unit ${u.unitNumber}: ${u.bedrooms}BR/${u.bathrooms}BA, ${u.squareFeet}sqft, ${priceFormatter.format(parseFloat(u.price))}, Floor ${u.floor}`).join('\n')}
+`;
+}).filter(Boolean).join('\n')}
+
+Total Available Units: ${units.filter(u => u.status === 'Available').length}
+Price Range: ${priceFormatter.format(Math.min(...units.map(u => parseFloat(u.price))))} - ${priceFormatter.format(Math.max(...units.map(u => parseFloat(u.price))))}
+`;
+    
+    // Cache the result
+    propertyDataCache = {
+      data: propertyContext,
+      timestamp: now
+    };
+    
+    return propertyContext;
+  }
+
   // AI Chat Assistant endpoint with persistence
   app.post("/api/chat/strategy", async (req, res) => {
     try {
@@ -651,13 +721,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         model: "gemini-2.0-flash-exp" 
       });
 
-      // Define system persona
+      // Get cached property knowledge base
+      const propertyContext = await getPropertyKnowledgeBase();
+
+      // Define system persona with property knowledge
       const systemPersona = `You are the Charney Sales Assistant, an expert AI strategist for luxury condo sales. 
 You help real estate agents with:
 - Property details and unit specifications
 - Objection handling and closing techniques  
 - Buyer qualification and matching strategies
 - Market intelligence and competitive positioning
+
+You have access to real-time property data and can reference specific units, prices, and availability.
+When discussing properties, use actual data from the inventory below.
+
+${propertyContext}
 
 Provide concise, actionable advice that agents can use immediately in sales conversations.
 Be professional, confident, and focused on closing deals.`;

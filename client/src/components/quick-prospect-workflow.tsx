@@ -170,8 +170,8 @@ export function QuickProspectWorkflow({
   const hasQualificationData = !!(
     form.watch("targetPriceMin") || 
     form.watch("targetPriceMax") || 
-    form.watch("targetBedrooms") ||
-    form.watch("targetBathrooms") ||
+    (form.watch("targetBedrooms") && form.watch("targetBedrooms") !== "any") ||
+    (form.watch("targetBathrooms") && form.watch("targetBathrooms") !== "any") ||
     form.watch("targetSqft") ||
     (form.watch("targetBuilding") && form.watch("targetBuilding") !== "all")
   );

@@ -68,8 +68,8 @@ export function QuickProspectWorkflow({
       consentGiven: false,
       targetPriceMin: "",
       targetPriceMax: "",
-      targetBedrooms: "",
-      targetBathrooms: "",
+      targetBedrooms: "any",
+      targetBathrooms: "any",
       targetSqft: "",
       targetBuilding: "all",
     },
@@ -101,13 +101,13 @@ export function QuickProspectWorkflow({
         phone: data.phone,
         agentId,
         consentGiven: data.consentGiven,
-        // Qualification fields
+        // Qualification fields - filter out "any" values
         targetPriceMin: data.targetPriceMin ? Number(data.targetPriceMin) : undefined,
         targetPriceMax: data.targetPriceMax ? Number(data.targetPriceMax) : undefined,
-        targetBedrooms: data.targetBedrooms ? Number(data.targetBedrooms) : undefined,
-        targetBathrooms: data.targetBathrooms ? Number(data.targetBathrooms) : undefined,
+        targetBedrooms: data.targetBedrooms && data.targetBedrooms !== "any" ? Number(data.targetBedrooms) : undefined,
+        targetBathrooms: data.targetBathrooms && data.targetBathrooms !== "any" ? Number(data.targetBathrooms) : undefined,
         targetSqft: data.targetSqft ? Number(data.targetSqft) : undefined,
-        targetBuilding: data.targetBuilding !== "all" ? data.targetBuilding : undefined,
+        targetBuilding: data.targetBuilding && data.targetBuilding !== "all" ? data.targetBuilding : undefined,
       });
       
       const result = await prospectRes.json();
@@ -407,7 +407,7 @@ export function QuickProspectWorkflow({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Any</SelectItem>
+                          <SelectItem value="any">Any</SelectItem>
                           <SelectItem value="1">1 Bedroom</SelectItem>
                           <SelectItem value="2">2 Bedrooms</SelectItem>
                           <SelectItem value="3">3 Bedrooms</SelectItem>
@@ -436,7 +436,7 @@ export function QuickProspectWorkflow({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Any</SelectItem>
+                          <SelectItem value="any">Any</SelectItem>
                           <SelectItem value="1">1 Bathroom</SelectItem>
                           <SelectItem value="2">2 Bathrooms</SelectItem>
                           <SelectItem value="3">3+ Bathrooms</SelectItem>

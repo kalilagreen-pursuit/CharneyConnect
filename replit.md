@@ -19,7 +19,7 @@ The application consists of a React (TypeScript) frontend using Vite, Wouter for
 - **Unit Map Dashboard**: Color-coded unit cards (Available: Green, On Hold: Yellow, Contract: Blue, Sold: Red) with real-time stats and responsive grid layout.
 - **Advanced Filtering System**: Comprehensive filters for units (Building, Bedrooms, Bathrooms, Price, Square Footage) with AND logic, real-time stats, and iPad-optimized touch targets.
 - **Leads Management**: Lead cards with contact info, broker details, associated units, status tracking, and activity timeline. Features real-time search by name, email, or phone (case-insensitive) that combines with pipeline stage filters for refined lead discovery.
-- **Prospect Qualification Workflow (NEW)**: Complete lead qualification system with:
+- **Prospect Qualification Workflow**: Complete lead qualification system with:
   - Lead Qualification Sheet: Form-based qualification with budget range, target locations, and timeframe; uses useEffect pattern to reset form state on lead change
   - Matched Units Drawer: Shows scored unit matches with Charney brand status colors (bg-status-available/on-hold/contract/sold)
   - Tasks Panel: Agent task management with semantic priority colors (destructive/accent/secondary tokens) and task completion
@@ -27,6 +27,13 @@ The application consists of a React (TypeScript) frontend using Vite, Wouter for
   - Automated Unit Matching: Backend logic matches units based on price range, location preferences, and availability
   - Task Automation: Auto-creates follow-up tasks on qualification and engagement spikes
   - Lead Scoring: Engagement tracking with score calculation and spike detection
+- **Quick Prospect Workflow Enhancements**: Streamlined prospect creation with advanced features:
+  - Agent Assignment: Dropdown to select which agent owns the prospect (5 agents: Sarah Chen, Michael Rodriguez, Emily Park, David Thompson, Jessica Williams)
+  - Duplicate Prevention: Autocomplete search to find and select existing prospects by name, email, or phone (min 2 characters)
+  - Smart Form States: Contact fields auto-populate and become read-only when existing prospect selected; "Existing Prospect Selected" badge appears
+  - Unit Card Integration: "Add Prospect" buttons on Unit Map cards open Quick Prospect with unit pre-selected
+  - Dynamic Button Text: Changes based on context ("Add Prospect for Unit 803", "Link to Unit 803", "Update Prospect", "Add & Show Units")
+  - Backend Intelligence: Supports both new contact creation and linking existing prospects to units via contactId parameter
 - **Manager View**: Real-time Kanban board with 4 columns (Available, On Hold, Contract, Sold). Units are grouped by status and update automatically via Supabase Realtime without page refresh. Shows count badges and unit details including price, bedrooms, bathrooms, and square footage.
 - **Agent View**: 3D building viewer with interactive unit selection, "Hold Unit" button, and Quick-Add Prospect feature. Agents can add prospects directly from the 3D unit details modal with automatic unit and agent linking. Status changes write directly to Supabase and trigger real-time updates across all views.
 - **3D Building Viewer**: Interactive 3D visualization using three.js with unit highlighting, touch controls (tap, drag, pinch), and Charney brand styling. Unit details modal includes "Add Prospect" button that opens ProspectQuickAddForm with pre-populated unit and agent context.

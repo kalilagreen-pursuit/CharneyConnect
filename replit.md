@@ -1,7 +1,7 @@
 # Charney CRM - AI-Native Condo Sales Tracking
 
 ## Overview
-Charney CRM is an iPad-optimized CRM system for real-time condo sales tracking and lead management. It features a visual Unit Map with color-coded status, comprehensive lead management, and WebSocket-powered real-time updates. The project aims to provide a professional, data-focused interface for Demo Day presentations, enabling efficient lead conversion and unit sales tracking.
+Charney CRM is an iPad-optimized CRM system for real-time condo sales tracking and lead management. It features a visual Unit Map with color-coded status, comprehensive lead management, WebSocket-powered real-time updates, and an AI-powered sales assistant. The project aims to provide a professional, data-focused interface for Demo Day presentations, enabling efficient lead conversion and unit sales tracking with intelligent sales coaching.
 
 ## User Preferences
 - **Brand Guidelines**: Charney brand design system with red (#FF5959), black, and cream colors
@@ -30,6 +30,7 @@ The application consists of a React (TypeScript) frontend using Vite, Wouter for
 - **Manager View**: Real-time Kanban board with 4 columns (Available, On Hold, Contract, Sold). Units are grouped by status and update automatically via Supabase Realtime without page refresh. Shows count badges and unit details including price, bedrooms, bathrooms, and square footage.
 - **Agent View**: 3D building viewer with interactive unit selection, "Hold Unit" button, and Quick-Add Prospect feature. Agents can add prospects directly from the 3D unit details modal with automatic unit and agent linking. Status changes write directly to Supabase and trigger real-time updates across all views.
 - **3D Building Viewer**: Interactive 3D visualization using three.js with unit highlighting, touch controls (tap, drag, pinch), and Charney brand styling. Unit details modal includes "Add Prospect" button that opens ProspectQuickAddForm with pre-populated unit and agent context.
+- **AI Sales Assistant**: Floating action button (bottom-right, all pages) provides instant access to Gemini-powered sales coaching. Features multi-turn conversational context for follow-up questions, custom sales persona with objection handling and closing strategies, and Charney-branded chat modal. Conversation history maintained within session for contextual responses. Future: database persistence, knowledge base integration with property data, and feedback-based learning.
 - **iPad Optimization**: Large touch targets (min 44x44px), responsive layouts, and clean professional design.
 
 ### Design System - Charney Brand
@@ -59,3 +60,4 @@ The application consists of a React (TypeScript) frontend using Vite, Wouter for
 - **3D Graphics**: three.js
 - **Validation**: Zod
 - **WebSocket**: Integrated WebSocket server and client
+- **AI**: Google Gemini 2.0 Flash (via @google/generative-ai)

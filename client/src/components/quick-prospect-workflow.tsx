@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +10,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, CheckCircle2, Bed, Bath, DollarSign, Maximize, Building2 } from "lucide-react";
+import { UserPlus, CheckCircle2, Bed, Bath, DollarSign, Maximize, Building2, Users, Search, X } from "lucide-react";
 import { agentContextStore } from "@/lib/localStores";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils";
+import type { Contact } from "@shared/schema";
+
+const AGENTS = [
+  { id: 'agent-001', name: 'Sarah Chen', role: 'Senior Sales Agent' },
+  { id: 'agent-002', name: 'Michael Rodriguez', role: 'Sales Agent' },
+  { id: 'agent-003', name: 'Emily Park', role: 'Sales Agent' },
+  { id: 'agent-004', name: 'David Thompson', role: 'Junior Sales Agent' },
+  { id: 'agent-005', name: 'Jessica Williams', role: 'Sales Agent' },
+];
 
 const prospectQualificationSchema = z.object({
+  // Agent Assignment
+  agentId: z.string().min(1, "Agent selection is required"),
+  
   // Basic Info
   firstName: z.string().min(1, "First name is required").max(50),
   lastName: z.string().min(1, "Last name is required").max(50),
@@ -46,21 +59,40 @@ interface QuickProspectWorkflowProps {
   onClose: () => void;
   onProspectCreated?: (result: ProspectResult) => void;
   buildings: string[];
+  unitId?: string;
+  unitNumber?: string;
 }
 
 export function QuickProspectWorkflow({ 
   isOpen, 
   onClose, 
   onProspectCreated,
-  buildings = []
+  buildings = [],
+  unitId,
+  unitNumber
 }: QuickProspectWorkflowProps) {
   const [actionId] = useState(() => `workflow-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProspect, setSelectedProspect] = useState<Contact | null>(null);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const { toast } = useToast();
+
+  // Search for existing prospects
+  const { data: searchResults = [] } = useQuery<Contact[]>({
+    queryKey: ['/api/prospects/search', searchQuery],
+    enabled: searchQuery.length >= 2 && !selectedProspect,
+    queryFn: async () => {
+      const res = await fetch(`/api/prospects/search?q=${encodeURIComponent(searchQuery)}`);
+      if (!res.ok) throw new Error('Search failed');
+      return res.json();
+    },
+  });
 
   const form = useForm<ProspectQualificationData>({
     resolver: zodResolver(prospectQualificationSchema),
     defaultValues: {
+      agentId: agentContextStore.getAgentId() || 'agent-001',
       firstName: "",
       lastName: "",
       email: "",
@@ -75,6 +107,17 @@ export function QuickProspectWorkflow({
     },
   });
 
+  // Populate form when existing prospect is selected
+  useEffect(() => {
+    if (selectedProspect) {
+      form.setValue("firstName", selectedProspect.firstName);
+      form.setValue("lastName", selectedProspect.lastName);
+      form.setValue("email", selectedProspect.email);
+      form.setValue("phone", selectedProspect.phone || "");
+      form.setValue("consentGiven", !!selectedProspect.consentGivenAt);
+    }
+  }, [selectedProspect, form]);
+
   const handleSubmit = async (data: ProspectQualificationData) => {
     console.log(`[${actionId}] Submitting Quick Prospect Workflow`, { 
       firstName: data.firstName,
@@ -87,22 +130,23 @@ export function QuickProspectWorkflow({
     setIsSubmitting(true);
 
     try {
-      // Get agent ID from context, or use default agent if not set
-      let agentId = agentContextStore.getAgentId();
-      if (!agentId) {
-        agentId = 'agent-001'; // Default to Sarah Chen when no agent context
-        console.log(`[${actionId}] No agent context found, using default agent: agent-001`);
-      }
-
-      console.log(`[${actionId}] Creating prospect with qualification via API`);
+      console.log(`[${actionId}] Creating prospect with qualification via API`, {
+        agentId: data.agentId,
+        hasQualification: !!(data.targetPriceMin || data.targetPriceMax || data.targetBedrooms),
+      });
       
       const prospectRes = await apiRequest("POST", "/api/prospects", {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         phone: data.phone,
-        agentId,
+        agentId: data.agentId,
         consentGiven: data.consentGiven,
+        // Unit information (if clicked from unit card)
+        unitId: unitId,
+        unitNumber: unitNumber,
+        // Existing prospect information (if selected from search)
+        contactId: selectedProspect?.id,
         // Qualification fields - filter out "any" values
         targetPriceMin: data.targetPriceMin ? Number(data.targetPriceMin) : undefined,
         targetPriceMax: data.targetPriceMax ? Number(data.targetPriceMax) : undefined,
@@ -163,7 +207,35 @@ export function QuickProspectWorkflow({
   const handleClose = () => {
     console.log(`[${actionId}] Closing Quick Prospect Workflow without saving`);
     form.reset();
+    setSearchQuery("");
+    setSelectedProspect(null);
+    setShowSearchResults(false);
     onClose();
+  };
+
+  const handleSelectProspect = (prospect: Contact) => {
+    setSelectedProspect(prospect);
+    setSearchQuery(`${prospect.firstName} ${prospect.lastName}`);
+    setShowSearchResults(false);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedProspect(null);
+    setSearchQuery("");
+    form.reset({
+      agentId: agentContextStore.getAgentId() || 'agent-001',
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      consentGiven: false,
+      targetPriceMin: "",
+      targetPriceMax: "",
+      targetBedrooms: "any",
+      targetBathrooms: "any",
+      targetSqft: "",
+      targetBuilding: "all",
+    });
   };
 
   const consentGiven = form.watch("consentGiven");
@@ -198,6 +270,69 @@ export function QuickProspectWorkflow({
           </div>
         </DialogHeader>
 
+        {/* Prospect Search */}
+        <div className="space-y-2 mt-4">
+          <div className="relative">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSearchResults(true);
+                  }}
+                  onFocus={() => setShowSearchResults(true)}
+                  placeholder="Search existing prospect or add new..."
+                  className="pl-10 min-h-11"
+                  data-testid="input-search-prospect"
+                  disabled={!!selectedProspect}
+                />
+                {selectedProspect && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                    onClick={handleClearSelection}
+                    data-testid="button-clear-prospect"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && searchQuery.length >= 2 && searchResults.length > 0 && !selectedProspect && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                {searchResults.map((prospect) => (
+                  <button
+                    key={prospect.id}
+                    type="button"
+                    onClick={() => handleSelectProspect(prospect)}
+                    className="w-full px-4 py-3 text-left hover-elevate active-elevate-2 border-b last:border-b-0"
+                    data-testid={`button-select-prospect-${prospect.id}`}
+                  >
+                    <div className="font-medium">
+                      {prospect.firstName} {prospect.lastName}
+                    </div>
+                    <div className="text-sm text-muted-foreground">{prospect.email}</div>
+                    <div className="text-xs text-muted-foreground">{prospect.phone}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {selectedProspect && (
+            <Badge variant="secondary" className="gap-1">
+              <CheckCircle2 className="h-3 w-3" />
+              Existing Prospect Selected
+            </Badge>
+          )}
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 mt-4">
             {/* Basic Information Section */}
@@ -205,6 +340,38 @@ export function QuickProspectWorkflow({
               <div className="border-b pb-2">
                 <h3 className="text-sm font-black uppercase tracking-wide">Contact Information</h3>
               </div>
+
+              {/* Agent Assignment */}
+              <FormField
+                control={form.control}
+                name="agentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-bold uppercase tracking-wide">
+                      Assign To Agent <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="min-h-11" data-testid="select-agent">
+                          <SelectValue placeholder="Select agent" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {AGENTS.map((agent) => (
+                          <SelectItem key={agent.id} value={agent.id} data-testid={`select-item-agent-${agent.id}`}>
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{agent.name}</span>
+                              <span className="text-xs text-muted-foreground">({agent.role})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 {/* First Name */}
@@ -222,6 +389,7 @@ export function QuickProspectWorkflow({
                           placeholder="John"
                           className="min-h-11"
                           data-testid="input-first-name"
+                          disabled={!!selectedProspect}
                         />
                       </FormControl>
                       <FormMessage />
@@ -244,6 +412,7 @@ export function QuickProspectWorkflow({
                           placeholder="Smith"
                           className="min-h-11"
                           data-testid="input-last-name"
+                          disabled={!!selectedProspect}
                         />
                       </FormControl>
                       <FormMessage />
@@ -269,6 +438,7 @@ export function QuickProspectWorkflow({
                           placeholder="john.smith@example.com"
                           className="min-h-11"
                           data-testid="input-email"
+                          disabled={!!selectedProspect}
                         />
                       </FormControl>
                       <FormMessage />
@@ -292,6 +462,7 @@ export function QuickProspectWorkflow({
                           placeholder="(555) 123-4567"
                           className="min-h-11"
                           data-testid="input-phone"
+                          disabled={!!selectedProspect}
                         />
                       </FormControl>
                       <FormMessage />
@@ -312,6 +483,7 @@ export function QuickProspectWorkflow({
                         onCheckedChange={field.onChange}
                         className="mt-1"
                         data-testid="checkbox-consent"
+                        disabled={!!selectedProspect}
                       />
                     </FormControl>
                     <div className="flex-1 space-y-1">
@@ -531,7 +703,16 @@ export function QuickProspectWorkflow({
                 ) : (
                   <>
                     <UserPlus className="h-4 w-4" />
-                    {hasQualificationData ? "Add & Show Units" : "Add Prospect"}
+                    {selectedProspect && unitId 
+                      ? `Link to Unit ${unitNumber}`
+                      : selectedProspect
+                        ? "Update Prospect"
+                        : unitId
+                          ? `Add Prospect for Unit ${unitNumber}`
+                          : hasQualificationData 
+                            ? "Add & Show Units" 
+                            : "Add Prospect"
+                    }
                   </>
                 )}
               </Button>

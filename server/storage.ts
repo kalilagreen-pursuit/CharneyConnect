@@ -25,6 +25,7 @@ export interface IStorage {
   getAllContacts(): Promise<Contact[]>;
   getContactById(id: string): Promise<Contact | undefined>;
   createContact(contact: InsertContact): Promise<Contact>;
+  searchContacts(query: string): Promise<Contact[]>;
   
   // Brokers (using contacts with contactType = 'broker')
   getAllBrokers(): Promise<Contact[]>;
@@ -263,6 +264,17 @@ export class MemStorage implements IStorage {
     };
     this.contacts.set(id, contact);
     return contact;
+  }
+
+  async searchContacts(query: string): Promise<Contact[]> {
+    const allContacts = Array.from(this.contacts.values());
+    const lowerQuery = query.toLowerCase();
+    return allContacts.filter(contact => 
+      contact.firstName.toLowerCase().includes(lowerQuery) ||
+      contact.lastName.toLowerCase().includes(lowerQuery) ||
+      contact.email.toLowerCase().includes(lowerQuery) ||
+      (contact.phone && contact.phone.toLowerCase().includes(lowerQuery))
+    );
   }
 
   // Brokers (using contacts table)

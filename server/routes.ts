@@ -17,6 +17,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import ragRoutes from "../src/server/routes/rag.ts"; // 1. IMPORT YOUR NEW RAG ROUTER
 import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -236,10 +237,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Prospect search endpoint - search for existing prospects by name, email, or phone
+  app.get("/api/prospects/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.trim().length < 2) {
+        return res.json([]);
+      }
+
+      const searchTerm = query.trim().toLowerCase();
+      
+      // Search contacts by name, email, or phone
+      const results = await storage.searchContacts(searchTerm);
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching prospects:", error);
+      res.status(500).json({ error: "Failed to search prospects" });
+    }
+  });
+
   // Prospects endpoint - atomic creation of Contact + Deal + Activity + Lead with qualification
   app.post("/api/prospects", async (req, res) => {
     try {
       const prospectSchema = z.object({
+        contactId: z.string().uuid().optional(), // Optional - existing prospect
         firstName: z.string(),
         lastName: z.string(),
         email: z.string().email(),
@@ -266,21 +288,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { 
-        firstName, lastName, email, phone, unitId, unitNumber, agentId, consentGiven,
+        contactId, firstName, lastName, email, phone, unitId, unitNumber, agentId, consentGiven,
         targetPriceMin, targetPriceMax, targetBedrooms, targetBathrooms, targetSqft, targetBuilding
       } = validation.data;
 
       // Use Drizzle transaction to ensure atomicity
       const result = await db.transaction(async (tx) => {
-        // Step 1: Create Contact
-        const [contact] = await tx.insert(contacts).values({
-          firstName,
-          lastName,
-          email,
-          phone,
-          contactType: 'buyer',
-          consentGivenAt: consentGiven ? new Date() : undefined,
-        }).returning();
+        // Step 1: Get or Create Contact
+        let contact;
+        if (contactId) {
+          // Use existing contact
+          const existing = await tx.select().from(contacts).where(eq(contacts.id, contactId)).limit(1);
+          if (existing.length === 0) {
+            throw new Error("Contact not found");
+          }
+          contact = existing[0];
+        } else {
+          // Create new contact
+          const [newContact] = await tx.insert(contacts).values({
+            firstName,
+            lastName,
+            email,
+            phone,
+            contactType: 'buyer',
+            consentGivenAt: consentGiven ? new Date() : undefined,
+          }).returning();
+          contact = newContact;
+        }
 
         // Step 2: Create Deal linking contact to unit (if unit specified)
         let deal = null;

@@ -1,4 +1,4 @@
-import { eq, and, lt, sql } from "drizzle-orm";
+import { eq, and, lt, sql, or, ilike } from "drizzle-orm";
 import { db } from "./db";
 import { 
   units, floorPlans, projects, contacts, deals, activities, leads, tasks, leadEngagement,
@@ -206,6 +206,18 @@ export class PostgresStorage implements IStorage {
   async createContact(insertContact: InsertContact): Promise<Contact> {
     const result = await db.insert(contacts).values(insertContact).returning();
     return result[0];
+  }
+
+  async searchContacts(query: string): Promise<Contact[]> {
+    const searchPattern = `%${query}%`;
+    return db.select().from(contacts).where(
+      or(
+        ilike(contacts.firstName, searchPattern),
+        ilike(contacts.lastName, searchPattern),
+        ilike(contacts.email, searchPattern),
+        ilike(contacts.phone, searchPattern)
+      )
+    );
   }
 
   // Brokers (using contacts table with contactType = 'broker')

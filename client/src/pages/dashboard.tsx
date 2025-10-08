@@ -35,14 +35,17 @@ const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: 
   },
 };
 
-function UnitCard({ unit, onViewIn3D }: { unit: UnitWithDetails; onViewIn3D?: (projectId: string, unitNumber: string) => void }) {
+function UnitCard({ unit, onViewIn3D, onAddProspect }: { 
+  unit: UnitWithDetails; 
+  onViewIn3D?: (projectId: string, unitNumber: string) => void;
+  onAddProspect?: (unitId: string, unitNumber: string) => void;
+}) {
   const config = statusConfig[unit.status as UnitStatus] || statusConfig.available;
   
   return (
     <Card 
-      className="hover-elevate active-elevate-2 transition-all duration-200 cursor-pointer" 
+      className="hover-elevate active-elevate-2 transition-all duration-200" 
       data-testid={`card-unit-${unit.id}`}
-      onClick={() => onViewIn3D?.(unit.project?.id || '', unit.unitNumber)}
     >
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
         <CardTitle 
@@ -93,6 +96,34 @@ function UnitCard({ unit, onViewIn3D }: { unit: UnitWithDetails; onViewIn3D?: (p
               {unit.squareFeet.toLocaleString()} SF
             </span>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-3 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddProspect?.(unit.id, unit.unitNumber);
+            }}
+            className="gap-1.5 font-black uppercase text-xs"
+            data-testid={`button-add-prospect-${unit.id}`}
+          >
+            <UserPlus className="h-3.5 w-3.5" />
+            Add Prospect
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewIn3D?.(unit.project?.id || '', unit.unitNumber);
+            }}
+            className="gap-1.5 font-black uppercase text-xs"
+            data-testid={`button-view-3d-${unit.id}`}
+          >
+            View 3D
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -176,6 +207,7 @@ export default function Dashboard() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedUnitNumber, setSelectedUnitNumber] = useState<string>('');
   const [showQuickProspect, setShowQuickProspect] = useState(false);
+  const [selectedUnitForProspect, setSelectedUnitForProspect] = useState<{ unitId: string; unitNumber: string } | null>(null);
   const [prospectMatchedUnits, setProspectMatchedUnits] = useState<UnitWithDetails[]>([]);
   const [currentProspectContext, setCurrentProspectContext] = useState<{
     leadId: string;
@@ -281,8 +313,14 @@ export default function Dashboard() {
       setShow3DViewer(true);
     }
     
-    // Close the prospect form
+    // Close the prospect form and clear selected unit
     setShowQuickProspect(false);
+    setSelectedUnitForProspect(null);
+  };
+
+  const handleAddProspectToUnit = (unitId: string, unitNumber: string) => {
+    setSelectedUnitForProspect({ unitId, unitNumber });
+    setShowQuickProspect(true);
   };
 
   return (
@@ -561,6 +599,7 @@ export default function Dashboard() {
                       setSelectedUnitNumber(unitNumber);
                       setShow3DViewer(true);
                     }}
+                    onAddProspect={handleAddProspectToUnit}
                   />
                 ))}
               </div>
@@ -610,9 +649,14 @@ export default function Dashboard() {
 
       <QuickProspectWorkflow
         isOpen={showQuickProspect}
-        onClose={() => setShowQuickProspect(false)}
+        onClose={() => {
+          setShowQuickProspect(false);
+          setSelectedUnitForProspect(null);
+        }}
         onProspectCreated={handleProspectCreated}
         buildings={buildings}
+        unitId={selectedUnitForProspect?.unitId}
+        unitNumber={selectedUnitForProspect?.unitNumber}
       />
     </div>
   );

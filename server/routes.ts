@@ -17,6 +17,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import ragRoutes from "../src/server/routes/rag.ts"; // 1. IMPORT YOUR NEW RAG ROUTER
 import { db } from "./db";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -601,6 +602,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating task:", error);
       res.status(500).json({ error: "Failed to update task" });
+    }
+  });
+
+  // AI Chat Assistant endpoint
+  app.post("/api/chat/strategy", async (req, res) => {
+    try {
+      const chatSchema = z.object({
+        message: z.string(),
+        conversationId: z.string().optional(),
+      });
+
+      const validation = chatSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.message });
+      }
+
+      const { message } = validation.data;
+
+      // Initialize Gemini AI
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.0-flash-exp" 
+      });
+
+      // Define system persona
+      const systemPersona = `You are the Charney Sales Assistant, an expert AI strategist for luxury condo sales. 
+You help real estate agents with:
+- Property details and unit specifications
+- Objection handling and closing techniques  
+- Buyer qualification and matching strategies
+- Market intelligence and competitive positioning
+
+Provide concise, actionable advice that agents can use immediately in sales conversations.
+Be professional, confident, and focused on closing deals.`;
+
+      // Construct the prompt
+      const prompt = `${systemPersona}
+
+Agent Question: ${message}
+
+Your Response:`;
+
+      // Call Gemini API
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const answer = response.text();
+
+      res.json({ 
+        message: answer,
+        conversationId: validation.data.conversationId || `conv_${Date.now()}`
+      });
+    } catch (error) {
+      console.error("Error in chat endpoint:", error);
+      res.status(500).json({ error: "Failed to process chat message" });
     }
   });
 

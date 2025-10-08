@@ -611,6 +611,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const chatSchema = z.object({
         message: z.string(),
         conversationId: z.string().optional(),
+        history: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        })).optional(),
       });
 
       const validation = chatSchema.safeParse(req.body);
@@ -618,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error.message });
       }
 
-      const { message } = validation.data;
+      const { message, history = [] } = validation.data;
 
       // Initialize Gemini AI
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -637,15 +641,21 @@ You help real estate agents with:
 Provide concise, actionable advice that agents can use immediately in sales conversations.
 Be professional, confident, and focused on closing deals.`;
 
-      // Construct the prompt
-      const prompt = `${systemPersona}
+      // Build conversation history
+      let conversationContext = systemPersona + "\n\n";
+      
+      if (history.length > 0) {
+        conversationContext += "Previous conversation:\n";
+        history.forEach((msg) => {
+          const label = msg.role === "user" ? "Agent" : "Assistant";
+          conversationContext += `${label}: ${msg.content}\n\n`;
+        });
+      }
 
-Agent Question: ${message}
-
-Your Response:`;
+      conversationContext += `Agent: ${message}\n\nYour Response:`;
 
       // Call Gemini API
-      const result = await model.generateContent(prompt);
+      const result = await model.generateContent(conversationContext);
       const response = result.response;
       const answer = response.text();
 

@@ -225,7 +225,6 @@ export default function Dashboard() {
     onHold: units.filter(u => u.status === "on_hold").length,
     contract: units.filter(u => u.status === "contract").length,
     sold: units.filter(u => u.status === "sold").length,
-    totalValue: units.reduce((sum, u) => sum + (typeof u.price === 'string' ? parseFloat(u.price) : u.price), 0),
   } : null;
 
   const hasActiveFilters = activeStatusFilter !== null ||
@@ -412,10 +411,10 @@ export default function Dashboard() {
       <div className="flex-1 overflow-auto">
         <div className="p-6 space-y-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {isLoading ? (
               <>
-                {[...Array(6)].map((_, i) => (
+                {[...Array(5)].map((_, i) => (
                   <Card key={i}>
                     <CardHeader className="space-y-0 pb-2">
                       <Skeleton className="h-4 w-20" />
@@ -458,7 +457,6 @@ export default function Dashboard() {
                   onClick={() => handleStatusFilterClick("sold")}
                   isActive={activeStatusFilter === "sold"}
                 />
-                <StatCard title="Total Value" value={formatCurrency(stats.totalValue)} />
               </>
             ) : null}
           </div>

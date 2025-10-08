@@ -559,7 +559,11 @@ export default function Dashboard() {
         <FloorplanViewer3D
           projectId={selectedProjectId}
           unitNumber={selectedUnitNumber}
-          onClose={() => setShow3DViewer(false)}
+          onClose={() => {
+            setShow3DViewer(false);
+            setProspectMatchedUnits([]); // Clear matched units when closing
+          }}
+          matchedUnitNumbers={prospectMatchedUnits.map(u => u.unitNumber)}
         />
       )}
 

@@ -32,6 +32,7 @@ interface FloorplanViewer3DProps {
   onUnitClick?: (unitNumber: string) => void;
   embedded?: boolean;
   onProjectChange?: (projectId: string) => void;
+  matchedUnitNumbers?: string[]; // Array of unit numbers to highlight (from prospect matching)
 }
 
 const PROJECTS: Project[] = [
@@ -66,6 +67,7 @@ export default function FloorplanViewer3D({
   onUnitClick,
   embedded = false,
   onProjectChange,
+  matchedUnitNumbers = [],
 }: FloorplanViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -153,8 +155,11 @@ export default function FloorplanViewer3D({
       const response = await fetch("/api/units");
       const units = await response.json();
 
+      const hasMatchedUnits = matchedUnitNumbers.length > 0;
       const defaultMaterial = new THREE.MeshStandardMaterial({
         color: 0xbdc3c7,
+        transparent: hasMatchedUnits,
+        opacity: hasMatchedUnits ? 0.3 : 1.0, // Fade non-matched units when there are matches
       });
       unitMeshMapRef.current.forEach((mesh) => {
         mesh.material = defaultMaterial;
@@ -166,8 +171,29 @@ export default function FloorplanViewer3D({
         const meshName = `Unit_${unit.unitNumber}`;
         const mesh = unitMeshMapRef.current.get(meshName);
         if (mesh) {
+          const isMatched = matchedUnitNumbers.includes(unit.unitNumber);
           const color = STATUS_COLORS[unit.status] || 0xbdc3c7;
-          mesh.material = new THREE.MeshStandardMaterial({ color });
+          
+          if (isMatched) {
+            // Matched units: bright with pulsing glow
+            mesh.material = new THREE.MeshStandardMaterial({ 
+              color,
+              emissive: 0x00ff00, // Green glow for matched units
+              emissiveIntensity: 0.4,
+              transparent: false,
+              opacity: 1.0,
+            });
+          } else if (hasMatchedUnits) {
+            // Non-matched units when there are matches: faded
+            mesh.material = new THREE.MeshStandardMaterial({ 
+              color,
+              transparent: true,
+              opacity: 0.3,
+            });
+          } else {
+            // Normal display when no matches
+            mesh.material = new THREE.MeshStandardMaterial({ color });
+          }
         }
       });
 

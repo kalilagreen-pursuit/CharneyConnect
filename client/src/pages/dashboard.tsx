@@ -298,161 +298,41 @@ export default function Dashboard() {
                 Real-time inventory tracking and status management
               </p>
             </div>
-            <div className="flex gap-3">
-              <Button
-                variant="default"
-                size="default"
-                onClick={() => setShowQuickProspect(true)}
-                className="gap-2"
-                data-testid="button-quick-prospect"
-              >
-                <UserPlus className="h-4 w-4" />
-                Quick Prospect
-              </Button>
-              <Button
-                variant={showFilters ? "default" : "outline"}
-                size="default"
-                onClick={() => setShowFilters(!showFilters)}
-                className="gap-2"
-                data-testid="button-toggle-filters"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                Filters
-                {hasActiveFilters && (
-                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                    !
-                  </Badge>
-                )}
-              </Button>
-            </div>
+            <Button
+              variant="default"
+              size="default"
+              onClick={() => setShowQuickProspect(true)}
+              className="gap-2"
+              data-testid="button-quick-prospect"
+            >
+              <UserPlus className="h-4 w-4" />
+              Quick Prospect
+            </Button>
           </div>
         </div>
+      </div>
 
-        {showFilters && (
-          <div className="border-t bg-muted/30" data-testid="panel-filters">
-            <div className="px-6 py-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-black uppercase tracking-tight text-sm">Filter Units</h3>
-                {hasActiveFilters && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="gap-2"
-                    data-testid="button-clear-filters"
-                  >
-                    <X className="h-4 w-4" />
-                    Clear All
-                  </Button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Building/Tower Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium" htmlFor="filter-building">
-                    Building/Tower
-                  </label>
-                  <Select value={selectedBuilding} onValueChange={setSelectedBuilding}>
-                    <SelectTrigger id="filter-building" data-testid="select-building" className="min-h-11">
-                      <SelectValue placeholder="All Buildings" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Buildings</SelectItem>
-                      {buildings.map(building => (
-                        <SelectItem key={building} value={building}>
-                          {building}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Bedrooms Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium" htmlFor="filter-bedrooms">
-                    Bedrooms
-                  </label>
-                  <Select value={selectedBedrooms} onValueChange={setSelectedBedrooms}>
-                    <SelectTrigger id="filter-bedrooms" data-testid="select-bedrooms" className="min-h-11">
-                      <SelectValue placeholder="All Bedrooms" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Bedrooms</SelectItem>
-                      {bedroomOptions.map(beds => (
-                        <SelectItem key={beds} value={beds.toString()}>
-                          {beds} Bedroom{beds !== 1 ? 's' : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Bathrooms Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium" htmlFor="filter-bathrooms">
-                    Bathrooms
-                  </label>
-                  <Select value={selectedBathrooms} onValueChange={setSelectedBathrooms}>
-                    <SelectTrigger id="filter-bathrooms" data-testid="select-bathrooms" className="min-h-11">
-                      <SelectValue placeholder="All Bathrooms" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Bathrooms</SelectItem>
-                      {bathroomOptions.map(baths => (
-                        <SelectItem key={baths} value={baths.toString()}>
-                          {baths} Bathroom{baths !== 1 ? 's' : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
-                {/* Price Range Filter */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Price Range</label>
-                    <span className="text-sm text-muted-foreground" data-testid="text-price-range">
-                      {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}
-                    </span>
-                  </div>
-                  <div className="min-h-11 flex items-center" data-testid="slider-price">
-                    <Slider
-                      min={minPrice}
-                      max={maxPrice}
-                      step={50000}
-                      value={priceRange}
-                      onValueChange={(value) => setPriceRange(value as [number, number])}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-
-                {/* Square Footage Filter */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Square Footage</label>
-                    <span className="text-sm text-muted-foreground" data-testid="text-sqft-range">
-                      {sqftRange[0].toLocaleString()} - {sqftRange[1].toLocaleString()} SF
-                    </span>
-                  </div>
-                  <div className="min-h-11 flex items-center" data-testid="slider-sqft">
-                    <Slider
-                      min={minSqft}
-                      max={maxSqft}
-                      step={50}
-                      value={sqftRange}
-                      onValueChange={(value) => setSqftRange(value as [number, number])}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Building Selector Buttons */}
+      <div className="flex-shrink-0 flex items-center justify-center gap-3 p-4 bg-[#f6f1eb] border-b">
+        <Button
+          data-testid="button-building-all"
+          variant={selectedBuilding === "all" ? "default" : "outline"}
+          onClick={() => setSelectedBuilding("all")}
+          className="font-black uppercase tracking-tight"
+        >
+          ALL BUILDINGS
+        </Button>
+        {buildings.map((building) => (
+          <Button
+            key={building}
+            data-testid={`button-building-${building.toLowerCase().replace(/\s+/g, "-")}`}
+            variant={selectedBuilding === building ? "default" : "outline"}
+            onClick={() => setSelectedBuilding(building)}
+            className="font-black uppercase tracking-tight"
+          >
+            {building}
+          </Button>
+        ))}
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -514,12 +394,155 @@ export default function Dashboard() {
               <h2 className="text-xl font-black uppercase tracking-tight" data-testid="text-units-section-title">
                 {hasActiveFilters ? 'Filtered Units' : 'All Units'}
               </h2>
-              {hasActiveFilters && (
-                <span className="text-sm text-muted-foreground" data-testid="text-filter-count">
-                  Showing {filteredUnits.length} of {units?.length || 0} units
-                </span>
-              )}
+              <div className="flex items-center gap-3">
+                {hasActiveFilters && (
+                  <span className="text-sm text-muted-foreground" data-testid="text-filter-count">
+                    Showing {filteredUnits.length} of {units?.length || 0} units
+                  </span>
+                )}
+                <Button
+                  variant={showFilters ? "default" : "outline"}
+                  size="default"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="gap-2"
+                  data-testid="button-toggle-filters"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Filters
+                  {hasActiveFilters && (
+                    <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                      !
+                    </Badge>
+                  )}
+                </Button>
+              </div>
             </div>
+
+            {showFilters && (
+              <div className="border bg-muted/30 rounded-lg mb-4" data-testid="panel-filters">
+                <div className="p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-black uppercase tracking-tight text-sm">Filter Units</h3>
+                    {hasActiveFilters && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearFilters}
+                        className="gap-2"
+                        data-testid="button-clear-filters"
+                      >
+                        <X className="h-4 w-4" />
+                        Clear All
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Building/Tower Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium" htmlFor="filter-building">
+                        Building/Tower
+                      </label>
+                      <Select value={selectedBuilding} onValueChange={setSelectedBuilding}>
+                        <SelectTrigger id="filter-building" data-testid="select-building" className="min-h-11">
+                          <SelectValue placeholder="All Buildings" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Buildings</SelectItem>
+                          {buildings.map(building => (
+                            <SelectItem key={building} value={building}>
+                              {building}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Bedrooms Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium" htmlFor="filter-bedrooms">
+                        Bedrooms
+                      </label>
+                      <Select value={selectedBedrooms} onValueChange={setSelectedBedrooms}>
+                        <SelectTrigger id="filter-bedrooms" data-testid="select-bedrooms" className="min-h-11">
+                          <SelectValue placeholder="All Bedrooms" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Bedrooms</SelectItem>
+                          {bedroomOptions.map(beds => (
+                            <SelectItem key={beds} value={beds.toString()}>
+                              {beds} Bedroom{beds !== 1 ? 's' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Bathrooms Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium" htmlFor="filter-bathrooms">
+                        Bathrooms
+                      </label>
+                      <Select value={selectedBathrooms} onValueChange={setSelectedBathrooms}>
+                        <SelectTrigger id="filter-bathrooms" data-testid="select-bathrooms" className="min-h-11">
+                          <SelectValue placeholder="All Bathrooms" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Bathrooms</SelectItem>
+                          {bathroomOptions.map(baths => (
+                            <SelectItem key={baths} value={baths.toString()}>
+                              {baths} Bathroom{baths !== 1 ? 's' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+                    {/* Price Range Filter */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">Price Range</label>
+                        <span className="text-sm text-muted-foreground" data-testid="text-price-range">
+                          {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}
+                        </span>
+                      </div>
+                      <div className="min-h-11 flex items-center" data-testid="slider-price">
+                        <Slider
+                          min={minPrice}
+                          max={maxPrice}
+                          step={50000}
+                          value={priceRange}
+                          onValueChange={(value) => setPriceRange(value as [number, number])}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Square Footage Filter */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">Square Footage</label>
+                        <span className="text-sm text-muted-foreground" data-testid="text-sqft-range">
+                          {sqftRange[0].toLocaleString()} - {sqftRange[1].toLocaleString()} SF
+                        </span>
+                      </div>
+                      <div className="min-h-11 flex items-center" data-testid="slider-sqft">
+                        <Slider
+                          min={minSqft}
+                          max={maxSqft}
+                          step={50}
+                          value={sqftRange}
+                          onValueChange={(value) => setSqftRange(value as [number, number])}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

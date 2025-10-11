@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit, AlertCircle, Zap, Clock, Calendar } from "lucide-react";
+import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit, AlertCircle, Zap, Clock, Calendar, CheckCircle } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
 import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
 import { UnitWithDetails, UnitWithDealContext, Lead } from "@shared/schema";
@@ -36,12 +36,12 @@ export default function AgentViewer() {
   const { toast } = useToast();
   const startShowingMutation = useStartShowing();
   const endShowingMutation = useEndShowing();
-  
+
   // Showing session state
   const [activeVisitId, setActiveVisitId] = useState<string | null>(null);
   const [showStartShowingDialog, setShowStartShowingDialog] = useState(false);
   const [selectedLeadForShowing, setSelectedLeadForShowing] = useState<string | null>(null);
-  
+
   // Fetch showing itinerary (viewed units in current session)
   const { data: viewedUnits = [] } = useShowingItinerary(activeVisitId);
 
@@ -49,7 +49,7 @@ export default function AgentViewer() {
   const viewedUnitIds = useMemo(() => {
     return new Set(viewedUnits.map(vu => vu.unitId));
   }, [viewedUnits]);
-  
+
   // Get project context from agentContextStore
   const agentName = agentContextStore.getAgentName() || 'Agent';
   const agentId = agentContextStore.getAgentId() || 'agent-001';
@@ -115,13 +115,13 @@ export default function AgentViewer() {
       closed_won: 0,
       closed_lost: 0,
     };
-    
+
     activeDeals.forEach(deal => {
       if (counts[deal.dealStage] !== undefined) {
         counts[deal.dealStage]++;
       }
     });
-    
+
     return counts;
   }, [activeDeals]);
 
@@ -138,7 +138,7 @@ export default function AgentViewer() {
   const handleUnitSelect = (unitId: string) => {
     console.log(`[${actionId}] Unit selected: ${unitId}`);
     setSelectedUnitId(unitId);
-    
+
     // Log the unit view if there's an active showing session
     if (activeVisitId && !viewedUnitIds.has(unitId)) {
       console.log(`[${actionId}] Logging unit view for showing session: ${activeVisitId}`);
@@ -151,7 +151,7 @@ export default function AgentViewer() {
         },
       });
     }
-    
+
     // Switch to 3D viewer tab if coming from Active Deals
     if (activeTab === "active-deals") {
       setActiveTab("all-units");
@@ -161,22 +161,22 @@ export default function AgentViewer() {
   // Handle view details - opens Lead Qualification Sheet for Active Deals, Unit Sheet for All Units
   const handleViewDetails = async (unit: UnitWithDetails | UnitWithDealContext) => {
     console.log(`[${actionId}] View details clicked for Unit ${unit.unitNumber}`);
-    
+
     // Check if this is a deal with lead info (from Active Deals tab)
     const isDeal = 'dealId' in unit && 'leadEmail' in unit;
-    
+
     if (isDeal && unit.dealId && unit.leadEmail) {
       // Open Lead Qualification Sheet
       console.log(`[${actionId}] Opening Lead details for deal`);
-      
+
       try {
         // Fetch all leads and find one matching the email
         const response = await fetch('/api/leads');
         if (!response.ok) throw new Error('Failed to fetch leads');
         const allLeads: Lead[] = await response.json();
-        
+
         const matchingLead = allLeads.find(lead => lead.email === unit.leadEmail);
-        
+
         if (matchingLead) {
           setSelectedLead(matchingLead);
           setShowQualificationSheet(true);
@@ -255,7 +255,7 @@ export default function AgentViewer() {
 
   const handleEditLead = async (dealId: string) => {
     console.log(`[${actionId}] Edit lead clicked for deal: ${dealId}`);
-    
+
     // Find the deal in activeDeals to get the contact email
     const deal = activeDeals.find(d => d.dealId === dealId);
     if (!deal || !deal.leadEmail) {
@@ -272,9 +272,9 @@ export default function AgentViewer() {
       const response = await fetch('/api/leads');
       if (!response.ok) throw new Error('Failed to fetch leads');
       const allLeads: Lead[] = await response.json();
-      
+
       const matchingLead = allLeads.find(lead => lead.email === deal.leadEmail);
-      
+
       if (matchingLead) {
         setSelectedLead(matchingLead);
         setShowQualificationSheet(true);
@@ -307,7 +307,7 @@ export default function AgentViewer() {
     }
 
     console.log(`[${actionId}] Starting showing session for lead: ${selectedLeadForShowing}`);
-    
+
     startShowingMutation.mutate(
       {
         leadId: selectedLeadForShowing,
@@ -317,16 +317,16 @@ export default function AgentViewer() {
       {
         onSuccess: (data) => {
           setActiveVisitId(data.id);
-          
+
           toast({
             title: "Showing Started",
             description: "All unit views will now be tracked for this session.",
             duration: 3000,
           });
-          
+
           setShowStartShowingDialog(false);
           setSelectedLeadForShowing(null);
-          
+
           console.log(`[${actionId}] Showing session started: ${data.id}`);
         },
         onError: (error) => {
@@ -406,11 +406,11 @@ export default function AgentViewer() {
                             description: `Follow-up task created for ${viewedUnits.length} viewed unit(s).`,
                             duration: 3000,
                           });
-                          
+
                           // Clear the active session
                           setActiveVisitId(null);
                           queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
-                          
+
                           console.log(`[${actionId}] Showing ended and automation triggered`);
                         },
                         onError: (error) => {
@@ -704,11 +704,11 @@ export default function AgentViewer() {
                                 </h3>
                                 {activeVisitId && viewedUnitIds.has(unit.id) && (
                                   <Badge 
-                                    variant="outline" 
-                                    className="bg-primary/10 text-primary border-primary text-xs"
+                                    variant="outline"
+                                    className="bg-green-500/10 text-green-600 border-green-500"
                                     data-testid={`badge-viewed-deal-${unit.unitNumber}`}
                                   >
-                                    <Eye className="h-3 w-3 mr-1" />
+                                    <CheckCircle className="h-3 w-3 mr-1 fill-green-600" />
                                     VIEWED
                                   </Badge>
                                 )}
@@ -854,7 +854,7 @@ export default function AgentViewer() {
               Select a lead to track unit views for this showing session.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {allLeads.length > 0 ? (
               <>
@@ -874,7 +874,7 @@ export default function AgentViewer() {
                     ))}
                   </select>
                 </div>
-                
+
                 <Button
                   className="w-full uppercase font-black"
                   onClick={handleStartShowing}

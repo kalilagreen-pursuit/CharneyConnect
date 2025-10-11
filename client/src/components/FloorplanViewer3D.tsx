@@ -3,7 +3,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { Button } from "@/components/ui/button";
-import { X, UserPlus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { X, UserPlus, Eye } from "lucide-react";
 import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { agentContextStore } from "@/lib/localStores";
 
@@ -40,6 +41,8 @@ interface FloorplanViewer3DProps {
   onProjectChange?: (projectId: string) => void;
   matchedUnitNumbers?: string[]; // Array of unit numbers to highlight (from prospect matching)
   prospectContext?: ProspectContext; // Prospect context for linking unit
+  activeVisitId?: string | null; // Active showing session ID
+  viewedUnitIds?: Set<string>; // Set of viewed unit IDs in current session
 }
 
 const PROJECTS: Project[] = [
@@ -76,6 +79,8 @@ export default function FloorplanViewer3D({
   onProjectChange,
   matchedUnitNumbers = [],
   prospectContext,
+  activeVisitId = null,
+  viewedUnitIds = new Set(),
 }: FloorplanViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -617,9 +622,21 @@ export default function FloorplanViewer3D({
           </button>
 
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold uppercase">
-              UNIT {selectedUnit.unitNumber}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold uppercase">
+                UNIT {selectedUnit.unitNumber}
+              </h2>
+              {activeVisitId && viewedUnitIds.has(selectedUnit.id) && (
+                <Badge 
+                  variant="outline" 
+                  className="bg-primary/10 text-primary border-primary text-xs"
+                  data-testid={`badge-viewed-3d-${selectedUnit.unitNumber}`}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  VIEWED
+                </Badge>
+              )}
+            </div>
             {isLoading && (
               <div className="w-6 h-6 border-4 border-border border-t-primary rounded-full animate-spin" />
             )}

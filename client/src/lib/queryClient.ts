@@ -87,9 +87,18 @@ type ViewedUnitSummary = {
 };
 
 // Fetch showing itinerary (viewed units for active session)
+const fetchItinerary = async (visitId: string): Promise<ViewedUnitSummary[]> => {
+  const response = await apiRequest('GET', `/api/showings/${visitId}/summary`, undefined);
+  return response.json();
+};
+
 export const useShowingItinerary = (visitId: string | null) => {
   return {
     queryKey: [`/api/showings/${visitId}/summary`],
+    queryFn: () => {
+      if (!visitId) throw new Error('No active visit session');
+      return fetchItinerary(visitId);
+    },
     enabled: !!visitId, // Only fetch if we have an active visit
     staleTime: 0, // Always fetch fresh data
   };

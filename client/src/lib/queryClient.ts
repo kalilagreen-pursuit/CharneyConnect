@@ -1,4 +1,4 @@
-import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { QueryClient, QueryFunction, useMutation } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -67,12 +67,14 @@ const updateTouredUnits = async ({ leadId, payload }: { leadId: string; payload:
 };
 
 export const useUpdateTouredUnits = (leadId: string) => {
-  return {
+  const queryClientInstance = queryClient;
+
+  return useMutation({
     mutationFn: (payload: TouredUpdatePayload) => updateTouredUnits({ leadId, payload }),
     onSuccess: () => {
       // Invalidate the specific lead query to refetch fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/leads', leadId] });
+      queryClientInstance.invalidateQueries({ queryKey: ['/api/leads', leadId] });
       console.log('Toured Units updated successfully on the backend.');
     },
-  };
+  });
 };

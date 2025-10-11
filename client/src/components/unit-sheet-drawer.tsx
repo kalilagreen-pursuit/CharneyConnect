@@ -6,32 +6,34 @@ import { Separator } from "@/components/ui/separator";
 import { Building2, Bed, Bath, Maximize, Home, UserPlus, Calendar, Sparkles, Eye, Lock } from "lucide-react";
 import { UnitWithDetails, UnitStatus } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { LogShowingForm } from "@/components/log-showing-form";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, useUpdateTouredUnits } from "@/lib/queryClient";
+import { agentContextStore } from "@/lib/localStores";
 import { useToast } from "@/hooks/use-toast";
+import { useTouredUnits } from "@/hooks/use-toured-units";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
-  available: { 
-    label: "Available", 
-    color: "text-white dark:text-white", 
-    bgColor: "bg-status-available border-status-available" 
+  available: {
+    label: "Available",
+    color: "text-white dark:text-white",
+    bgColor: "bg-status-available border-status-available"
   },
-  on_hold: { 
-    label: "On Hold", 
-    color: "text-gray-900 dark:text-gray-900", 
-    bgColor: "bg-status-on-hold border-status-on-hold" 
+  on_hold: {
+    label: "On Hold",
+    color: "text-gray-900 dark:text-gray-900",
+    bgColor: "bg-status-on-hold border-status-on-hold"
   },
-  contract: { 
-    label: "Contract", 
-    color: "text-white dark:text-white", 
-    bgColor: "bg-status-contract border-status-contract" 
+  contract: {
+    label: "Contract",
+    color: "text-white dark:text-white",
+    bgColor: "bg-status-contract border-status-contract"
   },
-  sold: { 
-    label: "Sold", 
-    color: "text-white dark:text-white", 
-    bgColor: "bg-status-sold border-status-sold" 
+  sold: {
+    label: "Sold",
+    color: "text-white dark:text-white",
+    bgColor: "bg-status-sold border-status-sold"
   },
 };
 
@@ -49,9 +51,36 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   const [showLogShowingForm, setShowLogShowingForm] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const { toast } = useToast();
-  
+
+  const leadContext = agentContextStore.useStore(); // Access lead context
+
   const config = unit ? (statusConfig[unit.status as UnitStatus] || statusConfig.available) : statusConfig.available;
   const price = unit ? (typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price) : 0;
+
+  // Toured Units Logic
+  const { isToured, addUnit, removeUnit, getUpdatePayload } = useTouredUnits(leadContext);
+  const updateTouredUnitsMutation = useUpdateTouredUnits(leadContext?.id); // Pass leadId to the mutation hook
+
+  // Only initialize if leadContext is available
+  const unitId = unit?.id;
+  const isCurrentUnitToured = unitId ? isToured(unitId) : false;
+
+
+  const handleToggleToured = () => {
+    if (!unitId || !leadContext) return;
+
+    // Local state update
+    if (isCurrentUnitToured) {
+      removeUnit(unitId);
+    } else {
+      addUnit(unitId);
+    }
+
+    // Trigger API save (send the new payload)
+    const newPayload = getUpdatePayload();
+    updateTouredUnitsMutation.mutate(newPayload);
+  };
+
 
   const handleAddProspect = () => {
     if (!unit) return;
@@ -96,9 +125,9 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   // Next Best Action logic - will be enhanced in later tasks
   const getNextBestAction = () => {
     if (!unit) return null;
-    
+
     console.log(`[${actionId}] Computing Next Best Action for Unit ${unit.unitNumber}`);
-    
+
     if (unit.status === 'available') {
       return {
         label: 'Schedule Showing',
@@ -121,8 +150,8 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent 
-        side="right" 
+      <SheetContent
+        side="right"
         className="w-full sm:max-w-md overflow-y-auto"
         data-testid="drawer-unit-sheet"
       >
@@ -137,7 +166,7 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
         <SheetHeader className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <SheetTitle 
+              <SheetTitle
                 className="text-2xl font-black uppercase tracking-tight"
                 data-testid="text-unit-sheet-title"
               >
@@ -150,7 +179,7 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
                 </span>
               </div>
             </div>
-            <Badge 
+            <Badge
               className={`${config.bgColor} ${config.color} border-2`}
               data-testid="badge-unit-status"
             >
@@ -168,7 +197,7 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
                   Asking Price
                 </span>
               </div>
-              <div 
+              <div
                 className="text-3xl font-mono font-bold mt-1"
                 data-testid="text-unit-price"
               >
@@ -182,7 +211,7 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
             <h3 className="font-black uppercase tracking-tight text-sm text-muted-foreground">
               Unit Details
             </h3>
-            
+
             <div className="grid grid-cols-3 gap-3">
               <Card>
                 <CardContent className="pt-6 text-center space-y-2">
@@ -284,7 +313,7 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
                 {isHolding ? 'Holding Unit...' : 'Hold Unit'}
               </Button>
             )}
-            
+
             <Button
               variant="default"
               size="lg"
@@ -295,7 +324,7 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
               <UserPlus className="h-4 w-4" />
               Quick-Add Prospect
             </Button>
-            
+
             <Button
               variant="outline"
               size="lg"
@@ -308,23 +337,25 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
             </Button>
           </div>
 
-          {/* Notes */}
-          {unit.notes && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <h3 className="font-black uppercase tracking-tight text-sm text-muted-foreground">
-                  Notes
-                </h3>
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-sm text-muted-foreground" data-testid="text-unit-notes">
-                      {unit.notes}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </>
+          {/* Toured Units Toggle (only shown when leadContext is available) */}
+          {leadContext && (
+            <div className="pt-4 border-t">
+              <Button
+                onClick={handleToggleToured}
+                variant={isCurrentUnitToured ? "destructive" : "default"}
+                className="w-full uppercase font-black"
+                disabled={updateTouredUnitsMutation?.isPending}
+                data-testid="button-toggle-toured"
+              >
+                {updateTouredUnitsMutation?.isPending ? (
+                  "UPDATING..."
+                ) : isCurrentUnitToured ? (
+                  "REMOVE FROM TOURED LIST"
+                ) : (
+                  "ADD TO TOURED LIST"
+                )}
+              </Button>
+            </div>
           )}
         </div>
         </>

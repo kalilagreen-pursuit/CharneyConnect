@@ -9,10 +9,8 @@ import { formatCurrency } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { LogShowingForm } from "@/components/log-showing-form";
-import { apiRequest, useUpdateTouredUnits, useLogUnitView } from "@/lib/queryClient";
-import { agentContextStore } from "@/lib/localStores";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useTouredUnits } from "@/hooks/use-toured-units";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
   available: {
@@ -52,44 +50,9 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   const [showLogShowingForm, setShowLogShowingForm] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const { toast } = useToast();
-  const logUnitViewMutation = useLogUnitView(activeVisitId);
-
-  // Auto-log unit view when drawer opens during active showing
-  useEffect(() => {
-    if (isOpen && unit && activeVisitId) {
-      console.log(`[${actionId}] Auto-logging unit view for Unit ${unit.unitNumber} in visit ${activeVisitId}`);
-      logUnitViewMutation.mutate(unit.id);
-    }
-  }, [isOpen, unit?.id, activeVisitId]);
-
-  const leadContext = agentContextStore.useStore(); // Access lead context
 
   const config = unit ? (statusConfig[unit.status as UnitStatus] || statusConfig.available) : statusConfig.available;
   const price = unit ? (typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price) : 0;
-
-  // Toured Units Logic
-  const { isToured, addUnit, removeUnit, getUpdatePayload } = useTouredUnits(leadContext);
-  const updateTouredUnitsMutation = useUpdateTouredUnits(leadContext?.id); // Pass leadId to the mutation hook
-
-  // Only initialize if leadContext is available
-  const unitId = unit?.id;
-  const isCurrentUnitToured = unitId ? isToured(unitId) : false;
-
-
-  const handleToggleToured = () => {
-    if (!unitId || !leadContext) return;
-
-    // Local state update
-    if (isCurrentUnitToured) {
-      removeUnit(unitId);
-    } else {
-      addUnit(unitId);
-    }
-
-    // Trigger API save (send the new payload)
-    const newPayload = getUpdatePayload();
-    updateTouredUnitsMutation.mutate(newPayload);
-  };
 
 
   const handleAddProspect = () => {
@@ -346,27 +309,6 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
               Log Showing
             </Button>
           </div>
-
-          {/* Toured Units Toggle (only shown when leadContext is available) */}
-          {leadContext && (
-            <div className="pt-4 border-t">
-              <Button
-                onClick={handleToggleToured}
-                variant={isCurrentUnitToured ? "destructive" : "default"}
-                className="w-full uppercase font-black"
-                disabled={updateTouredUnitsMutation?.isPending}
-                data-testid="button-toggle-toured"
-              >
-                {updateTouredUnitsMutation?.isPending ? (
-                  "UPDATING..."
-                ) : isCurrentUnitToured ? (
-                  "REMOVE FROM TOURED LIST"
-                ) : (
-                  "ADD TO TOURED LIST"
-                )}
-              </Button>
-            </div>
-          )}
         </div>
         </>
         )}

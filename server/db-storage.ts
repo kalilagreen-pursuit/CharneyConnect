@@ -1,6 +1,5 @@
-
 import { db } from './db';
-import { units, contacts, brokers, leads, activities } from '@shared/schema';
+import { units, contacts, brokers, leads, activities, visits, viewedUnits } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import type { IStorage } from './storage';
 import type { 
@@ -8,7 +7,8 @@ import type {
   Contact, InsertContact,
   Broker, InsertBroker,
   Lead, InsertLead, LeadWithDetails,
-  Activity, InsertActivity
+  Activity, InsertActivity,
+  Visit, ViewedUnitSummary
 } from '@shared/schema';
 
 export class DbStorage implements IStorage {
@@ -120,5 +120,31 @@ export class DbStorage implements IStorage {
   async createActivity(activity: InsertActivity): Promise<Activity> {
     const result = await db.insert(activities).values(activity).returning();
     return result[0];
+  }
+
+  // Visits
+  async getVisitSummary(visitId: string): Promise<ViewedUnitSummary[]> {
+    const result = await db
+      .select({
+        unitId: viewedUnits.unitId,
+        unitNumber: units.unitNumber,
+        timestamp: viewedUnits.timestamp,
+      })
+      .from(viewedUnits)
+      .innerJoin(units, eq(viewedUnits.unitId, units.id))
+      .where(eq(viewedUnits.visitId, visitId))
+      .orderBy(viewedUnits.timestamp);
+
+    return result;
+  }
+
+  async getVisitById(visitId: string): Promise<Visit | null> {
+    const result = await db
+      .select()
+      .from(visits)
+      .where(eq(visits.id, visitId))
+      .limit(1);
+
+    return result[0] || null;
   }
 }

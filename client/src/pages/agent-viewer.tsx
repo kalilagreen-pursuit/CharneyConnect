@@ -372,9 +372,50 @@ export default function AgentViewer() {
                 </Button>
               )}
               {activeVisitId && (
-                <Badge variant="default" className="px-3 py-1.5">
-                  Showing Active
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" className="px-3 py-1.5">
+                    <Eye className="mr-1 h-3 w-3" />
+                    Showing Active ({viewedUnits.length} viewed)
+                  </Badge>
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      console.log(`[${actionId}] Ending showing session: ${activeVisitId}`);
+                      try {
+                        // Trigger post-showing automation
+                        const response = await fetch('/api/automation/trigger-post-showing', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ visitId: activeVisitId }),
+                        });
+
+                        if (!response.ok) throw new Error('Failed to trigger automation');
+
+                        toast({
+                          title: "Showing Ended",
+                          description: `Follow-up task created for ${viewedUnits.length} viewed unit(s).`,
+                          duration: 3000,
+                        });
+
+                        // Clear the active session
+                        setActiveVisitId(null);
+                        queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
+                      } catch (error) {
+                        console.error(`[${actionId}] Error ending showing:`, error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to end showing. Please try again.",
+                          variant: "destructive",
+                          duration: 3000,
+                        });
+                      }
+                    }}
+                    data-testid="button-end-showing"
+                    className="uppercase font-black"
+                  >
+                    END SHOWING
+                  </Button>
+                </div>
               )}
               <Button
                 variant="outline"

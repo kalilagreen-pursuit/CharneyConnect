@@ -156,6 +156,7 @@ export class MemStorage implements IStorage {
   private leads: Map<string, Lead>;
   private dealLeads: Map<string, DealLead>;
   private activities: Map<string, Activity>;
+  private visits: Map<string, Visit>; // Added for visit management
 
   constructor() {
     this.units = new Map();
@@ -163,6 +164,7 @@ export class MemStorage implements IStorage {
     this.leads = new Map();
     this.dealLeads = new Map();
     this.activities = new Map();
+    this.visits = new Map(); // Initialize visits map
     this.seedData();
   }
 
@@ -938,6 +940,7 @@ export class MemStorage implements IStorage {
       startedAt: new Date(),
       endedAt: null,
     };
+    this.visits.set(id, newVisit); // Store the new visit
     console.log("[MemStorage] Creating mock visit:", newVisit);
     return newVisit;
   }
@@ -964,10 +967,9 @@ export class MemStorage implements IStorage {
 
   async getVisitById(visitId: string): Promise<Visit | undefined> {
     console.log(
-      `[MemStorage] Stub: Faking getVisitById for visitId: ${visitId}. Returning undefined.`,
+      `[MemStorage] Retrieving visit with ID: ${visitId}`,
     );
-    // For local dev, we can just return undefined as a placeholder.
-    return undefined;
+    return this.visits.get(visitId); // Return the visit from the map
   }
 }
 

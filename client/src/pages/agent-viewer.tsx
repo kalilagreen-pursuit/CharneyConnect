@@ -39,6 +39,18 @@ export default function AgentViewer() {
   const [activeVisitId, setActiveVisitId] = useState<string | null>(null);
   const [showStartShowingDialog, setShowStartShowingDialog] = useState(false);
   
+  // Fetch showing itinerary (viewed units in current session)
+  const { data: viewedUnits = [] } = useQuery<Array<{ unitId: string; unitNumber: string; timestamp: string }>>({
+    queryKey: [`/api/showings/${activeVisitId}/summary`],
+    enabled: !!activeVisitId,
+    staleTime: 0,
+  });
+
+  // Create a Set for quick lookup
+  const viewedUnitIds = useMemo(() => {
+    return new Set(viewedUnits.map(vu => vu.unitId));
+  }, [viewedUnits]);
+  
   // Get project context from agentContextStore
   const agentName = agentContextStore.getAgentName() || 'Agent';
   const agentId = agentContextStore.getAgentId() || 'agent-001';
@@ -417,9 +429,21 @@ export default function AgentViewer() {
                         <div className="text-xs text-muted-foreground uppercase">
                           {unit.building}
                         </div>
-                        <h3 className="text-xl font-black uppercase tracking-tight">
-                          Unit {unit.unitNumber}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-black uppercase tracking-tight">
+                            Unit {unit.unitNumber}
+                          </h3>
+                          {activeVisitId && viewedUnitIds.has(unit.id) && (
+                            <Badge 
+                              variant="outline" 
+                              className="bg-primary/10 text-primary border-primary"
+                              data-testid={`badge-viewed-${unit.unitNumber}`}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              VIEWED
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <Badge 
                         variant={getStatusBadgeVariant(unit.status)}
@@ -612,6 +636,16 @@ export default function AgentViewer() {
                                 <h3 className="text-xl font-black uppercase tracking-tight">
                                   Unit {unit.unitNumber}
                                 </h3>
+                                {activeVisitId && viewedUnitIds.has(unit.id) && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="bg-primary/10 text-primary border-primary text-xs"
+                                    data-testid={`badge-viewed-deal-${unit.unitNumber}`}
+                                  >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    VIEWED
+                                  </Badge>
+                                )}
                                 {/* Priority Indicators */}
                                 {('hasOverdueTasks' in unit || 'isHotLead' in unit || 'isStaleLead' in unit) && (
                                   <div className="flex items-center gap-1">

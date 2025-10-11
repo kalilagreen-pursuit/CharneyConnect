@@ -78,3 +78,43 @@ export const useUpdateTouredUnits = (leadId: string) => {
     },
   });
 };
+
+// Type for showing itinerary summary
+type ViewedUnitSummary = {
+  unitId: string;
+  unitNumber: string;
+  timestamp: string;
+};
+
+// Fetch showing itinerary (viewed units for active session)
+export const useShowingItinerary = (visitId: string | null) => {
+  return {
+    queryKey: [`/api/showings/${visitId}/summary`],
+    enabled: !!visitId, // Only fetch if we have an active visit
+    staleTime: 0, // Always fetch fresh data
+  };
+};
+
+// Mutation to log a unit view
+const logUnitView = async ({ visitId, unitId }: { visitId: string; unitId: string }) => {
+  const response = await apiRequest('POST', `/api/showings/${visitId}/log-view`, { unitId });
+  return response.json();
+};
+
+export const useLogUnitView = (visitId: string | null) => {
+  const queryClientInstance = queryClient;
+
+  return useMutation({
+    mutationFn: (unitId: string) => {
+      if (!visitId) throw new Error('No active visit session');
+      return logUnitView({ visitId, unitId });
+    },
+    onSuccess: () => {
+      // Invalidate the itinerary to show the newly logged unit
+      if (visitId) {
+        queryClientInstance.invalidateQueries({ queryKey: [`/api/showings/${visitId}/summary`] });
+      }
+      console.log('Unit view logged successfully');
+    },
+  });
+};

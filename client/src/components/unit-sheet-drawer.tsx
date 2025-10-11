@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { LogShowingForm } from "@/components/log-showing-form";
-import { apiRequest, useUpdateTouredUnits } from "@/lib/queryClient";
+import { apiRequest, useUpdateTouredUnits, useLogUnitView } from "@/lib/queryClient";
 import { agentContextStore } from "@/lib/localStores";
 import { useToast } from "@/hooks/use-toast";
 import { useTouredUnits } from "@/hooks/use-toured-units";
@@ -43,14 +43,24 @@ interface UnitSheetDrawerProps {
   onClose: () => void;
   onLogShowing: () => void;
   agentName?: string;
+  activeVisitId?: string | null;
 }
 
-export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName }: UnitSheetDrawerProps) {
+export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName, activeVisitId }: UnitSheetDrawerProps) {
   const [actionId] = useState(() => `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const [showProspectForm, setShowProspectForm] = useState(false);
   const [showLogShowingForm, setShowLogShowingForm] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const { toast } = useToast();
+  const logUnitViewMutation = useLogUnitView(activeVisitId);
+
+  // Auto-log unit view when drawer opens during active showing
+  useEffect(() => {
+    if (isOpen && unit && activeVisitId) {
+      console.log(`[${actionId}] Auto-logging unit view for Unit ${unit.unitNumber} in visit ${activeVisitId}`);
+      logUnitViewMutation.mutate(unit.id);
+    }
+  }, [isOpen, unit?.id, activeVisitId]);
 
   const leadContext = agentContextStore.useStore(); // Access lead context
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { queryClient, useStartShowing, useShowingItinerary } from "@/lib/queryClient";
+import { queryClient, useStartShowing, useEndShowing, useShowingItinerary } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -35,6 +35,7 @@ export default function AgentViewer() {
   const { unitUpdates, clearUnitUpdates} = useRealtime();
   const { toast } = useToast();
   const startShowingMutation = useStartShowing();
+  const endShowingMutation = useEndShowing();
   
   // Showing session state
   const [activeVisitId, setActiveVisitId] = useState<string | null>(null);
@@ -297,8 +298,8 @@ export default function AgentViewer() {
         projectId: currentProjectId,
       },
       {
-        onSuccess: (newVisit) => {
-          setActiveVisitId(newVisit.id);
+        onSuccess: (data) => {
+          setActiveVisitId(data.id);
           
           toast({
             title: "Showing Started",
@@ -309,7 +310,7 @@ export default function AgentViewer() {
           setShowStartShowingDialog(false);
           setSelectedLeadForShowing(null);
           
-          console.log(`[${actionId}] Showing session started: ${newVisit.id}`);
+          console.log(`[${actionId}] Showing session started: ${data.id}`);
         },
         onError: (error) => {
           console.error(`[${actionId}] Error starting showing:`, error);
@@ -379,41 +380,38 @@ export default function AgentViewer() {
                   </Badge>
                   <Button
                     variant="destructive"
-                    onClick={async () => {
+                    onClick={() => {
                       console.log(`[${actionId}] Ending showing session: ${activeVisitId}`);
-                      try {
-                        // Trigger post-showing automation
-                        const response = await fetch('/api/automation/trigger-post-showing', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ visitId: activeVisitId }),
-                        });
-
-                        if (!response.ok) throw new Error('Failed to trigger automation');
-
-                        toast({
-                          title: "Showing Ended",
-                          description: `Follow-up task created for ${viewedUnits.length} viewed unit(s).`,
-                          duration: 3000,
-                        });
-
-                        // Clear the active session
-                        setActiveVisitId(null);
-                        queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
-                      } catch (error) {
-                        console.error(`[${actionId}] Error ending showing:`, error);
-                        toast({
-                          title: "Error",
-                          description: "Failed to end showing. Please try again.",
-                          variant: "destructive",
-                          duration: 3000,
-                        });
-                      }
+                      endShowingMutation.mutate(activeVisitId, {
+                        onSuccess: () => {
+                          toast({
+                            title: "Showing Ended",
+                            description: `Follow-up task created for ${viewedUnits.length} viewed unit(s).`,
+                            duration: 3000,
+                          });
+                          
+                          // Clear the active session
+                          setActiveVisitId(null);
+                          queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
+                          
+                          console.log(`[${actionId}] Showing ended and automation triggered`);
+                        },
+                        onError: (error) => {
+                          console.error(`[${actionId}] Error ending showing:`, error);
+                          toast({
+                            title: "Error",
+                            description: "Failed to end showing. Please try again.",
+                            variant: "destructive",
+                            duration: 3000,
+                          });
+                        },
+                      });
                     }}
                     data-testid="button-end-showing"
                     className="uppercase font-black"
+                    disabled={endShowingMutation.isPending}
                   >
-                    END SHOWING
+                    {endShowingMutation.isPending ? 'PROCESSING...' : 'END SHOWING'}
                   </Button>
                 </div>
               )}

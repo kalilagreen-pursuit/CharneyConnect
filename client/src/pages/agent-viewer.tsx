@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit, AlertCircle, Zap, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit, AlertCircle, Zap, Clock, Calendar } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
 import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
 import { UnitWithDetails, UnitWithDealContext, Lead } from "@shared/schema";
@@ -33,6 +34,10 @@ export default function AgentViewer() {
   const [actionId] = useState(() => `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const { unitUpdates, clearUnitUpdates} = useRealtime();
   const { toast } = useToast();
+  
+  // Showing session state
+  const [activeVisitId, setActiveVisitId] = useState<string | null>(null);
+  const [showStartShowingDialog, setShowStartShowingDialog] = useState(false);
   
   // Get project context from agentContextStore
   const agentName = agentContextStore.getAgentName() || 'Agent';
@@ -256,6 +261,47 @@ export default function AgentViewer() {
     }
   };
 
+  const handleStartShowing = async (leadId: string) => {
+    console.log(`[${actionId}] Starting showing session for lead: ${leadId}`);
+    
+    try {
+      const response = await fetch('/api/showings/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId,
+          agentId,
+          projectId: currentProjectId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to start showing session');
+      }
+
+      const newVisit = await response.json();
+      setActiveVisitId(newVisit.id);
+      
+      toast({
+        title: "Showing Started",
+        description: "All unit views will now be tracked for this session.",
+        duration: 3000,
+      });
+      
+      setShowStartShowingDialog(false);
+      
+      console.log(`[${actionId}] Showing session started: ${newVisit.id}`);
+    } catch (error) {
+      console.error(`[${actionId}] Error starting showing:`, error);
+      toast({
+        title: "Error",
+        description: "Failed to start showing session. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -292,8 +338,24 @@ export default function AgentViewer() {
               <div className="text-sm text-muted-foreground">
                 {units.length} Units
               </div>
+              {!activeVisitId && (
+                <Button
+                  variant="default"
+                  onClick={() => setShowStartShowingDialog(true)}
+                  data-testid="button-start-showing"
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  START SHOWING
+                </Button>
+              )}
+              {activeVisitId && (
+                <Badge variant="default" className="px-3 py-1.5">
+                  Showing Active
+                </Badge>
+              )}
               <Button
-                variant="default"
+                variant="outline"
                 onClick={() => setLocation("/")}
                 data-testid="button-view-all-units"
               >
@@ -678,7 +740,36 @@ export default function AgentViewer() {
         }}
         onLogShowing={handleLogShowing}
         agentName={agentName}
+        activeVisitId={activeVisitId}
       />
+
+      {/* Start Showing Dialog */}
+      <Dialog open={showStartShowingDialog} onOpenChange={setShowStartShowingDialog}>
+        <DialogContent data-testid="dialog-start-showing">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black uppercase tracking-tight">
+              Start Showing Session
+            </DialogTitle>
+            <DialogDescription>
+              Select a lead to track unit views for this showing session.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="text-sm text-muted-foreground">
+              Available leads will be fetched here. For now, you can start a showing with a test lead.
+            </div>
+            
+            <Button
+              className="w-full uppercase font-black"
+              onClick={() => handleStartShowing('test-lead-id')}
+              data-testid="button-confirm-start-showing"
+            >
+              START SHOWING
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Lead Qualification Sheet */}
       {selectedLead && (

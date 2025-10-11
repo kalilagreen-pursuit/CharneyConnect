@@ -11,6 +11,7 @@ import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { LogShowingForm } from "@/components/log-showing-form";
 import { apiRequest, useLogUnitView } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { FloorplanViewer3D } from "@/components/FloorplanViewer3D";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
   available: {
@@ -39,12 +40,21 @@ interface UnitSheetDrawerProps {
   unit: UnitWithDetails | null;
   isOpen: boolean;
   onClose: () => void;
-  onLogShowing: () => void;
+  onLogShowing?: () => void;
   agentName?: string;
   activeVisitId?: string | null;
+  vizMode?: 'LIVE' | 'GALLERY';
 }
 
-export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName, activeVisitId }: UnitSheetDrawerProps) {
+export function UnitSheetDrawer({ 
+  unit, 
+  isOpen, 
+  onClose, 
+  onLogShowing, 
+  agentName,
+  activeVisitId = null,
+  vizMode = 'LIVE',
+}: UnitSheetDrawerProps) {
   const [actionId] = useState(() => `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const [showProspectForm, setShowProspectForm] = useState(false);
   const [showLogShowingForm, setShowLogShowingForm] = useState(false);
@@ -75,6 +85,7 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   const config = unit ? (statusConfig[unit.status as UnitStatus] || statusConfig.available) : statusConfig.available;
   const price = unit ? (typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price) : 0;
 
+  const viewedUnitIds = unit?.id ? [unit.id] : [];
 
   const handleAddProspect = () => {
     if (!unit) return;

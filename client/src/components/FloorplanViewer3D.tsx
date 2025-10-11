@@ -44,6 +44,7 @@ interface FloorplanViewer3DProps {
   prospectContext?: ProspectContext; // Prospect context for linking unit
   activeVisitId?: string | null; // Active showing session ID
   viewedUnitIds?: Set<string>; // Set of viewed unit IDs in current session
+  vizMode?: 'LIVE' | 'GALLERY'; // Visualization mode: LIVE 3D or PRE-CONSTRUCTION GALLERY
 }
 
 const PROJECTS: Project[] = [
@@ -71,6 +72,25 @@ const STATUS_COLORS: Record<string, number> = {
   sold: 0xe74c3c,
 };
 
+// Pre-construction gallery renderings by project
+const GALLERY_RENDERINGS: Record<string, string[]> = {
+  "2320eeb4-596b-437d-b4cb-830bdb3c3b01": [ // The Jackson
+    "/jacksonph.png",
+    "/jackson1br.png",
+    "/jackson2br.png",
+  ],
+  "f3ae960d-a0a9-4449-82fe-ffab7b01f3fa": [ // The Dime
+    "/dimeph.png",
+    "/dime1br.png",
+    "/dime2br.png",
+  ],
+  "6f9a358c-0fc6-41bd-bd5e-6234b68295cb": [ // Gowanus
+    "/gowanusph.png",
+    "/gowanus1br.png",
+    "/gowanus2br.png",
+  ],
+};
+
 export default function FloorplanViewer3D({
   projectId,
   unitNumber,
@@ -82,6 +102,7 @@ export default function FloorplanViewer3D({
   prospectContext,
   activeVisitId = null,
   viewedUnitIds = new Set(),
+  vizMode = 'LIVE',
 }: FloorplanViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -106,6 +127,7 @@ export default function FloorplanViewer3D({
   const [webglError, setWebglError] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [showProspectForm, setShowProspectForm] = useState(false);
+  const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
 
   const logUnitViewMutation = useLogUnitView(activeVisitId);
 
@@ -124,6 +146,7 @@ export default function FloorplanViewer3D({
       }
       unitMeshMapRef.current.clear();
       hideDetailsPanel();
+      setCurrentGalleryIndex(0); // Reset gallery to first image
 
       const loader = new GLTFLoader();
       loader.load(
@@ -770,11 +793,71 @@ export default function FloorplanViewer3D({
         />
       </div>
 
-      <canvas
-        ref={canvasRef}
-        className="w-full h-full block"
-        data-testid="canvas-3d-viewer"
-      />
+      {vizMode === 'LIVE' ? (
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full block"
+          data-testid="canvas-3d-viewer"
+        />
+      ) : (
+        // PRE-CONSTRUCTION GALLERY MODE
+        <div className="w-full h-full flex items-center justify-center bg-[#1a1a1a] relative">
+          {GALLERY_RENDERINGS[currentProject.id] && GALLERY_RENDERINGS[currentProject.id].length > 0 ? (
+            <>
+              <img
+                src={GALLERY_RENDERINGS[currentProject.id][currentGalleryIndex]}
+                alt={`${currentProject.name} Pre-Construction Rendering ${currentGalleryIndex + 1}`}
+                className="max-w-full max-h-full object-contain"
+                data-testid="gallery-rendering"
+              />
+              
+              {/* Gallery Navigation */}
+              <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-black/60 backdrop-blur-sm px-6 py-3 rounded-full">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentGalleryIndex((prev) => 
+                    prev === 0 ? GALLERY_RENDERINGS[currentProject.id].length - 1 : prev - 1
+                  )}
+                  data-testid="button-gallery-prev"
+                  className="text-white hover:text-primary"
+                >
+                  PREV
+                </Button>
+                <span className="text-white font-bold uppercase text-sm">
+                  {currentGalleryIndex + 1} / {GALLERY_RENDERINGS[currentProject.id].length}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentGalleryIndex((prev) => 
+                    prev === GALLERY_RENDERINGS[currentProject.id].length - 1 ? 0 : prev + 1
+                  )}
+                  data-testid="button-gallery-next"
+                  className="text-white hover:text-primary"
+                >
+                  NEXT
+                </Button>
+              </div>
+
+              {/* Gallery Info Overlay */}
+              <div className="absolute top-8 left-8 bg-black/60 backdrop-blur-sm px-6 py-4 rounded-lg">
+                <h3 className="text-white font-black uppercase text-xl mb-1">
+                  {currentProject.name}
+                </h3>
+                <p className="text-white/70 text-sm uppercase">
+                  Pre-Construction Rendering
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="text-center text-white">
+              <p className="text-xl font-bold uppercase mb-2">No Renderings Available</p>
+              <p className="text-sm text-white/70">Switch to LIVE 3D view to explore units</p>
+            </div>
+          )}
+        </div>
+      )}
       
       {selectedUnit && (
         <ProspectQuickAddForm

@@ -42,6 +42,9 @@ export default function AgentViewer() {
   const [showStartShowingDialog, setShowStartShowingDialog] = useState(false);
   const [selectedLeadForShowing, setSelectedLeadForShowing] = useState<string | null>(null);
 
+  // Visualization mode state (LIVE 3D vs PRE-CONSTRUCTION GALLERY)
+  const [isGalleryMode, setIsGalleryMode] = useState(false);
+
   // Fetch showing itinerary (viewed units in current session)
   const { data: viewedUnits = [] } = useShowingItinerary(activeVisitId);
 
@@ -448,18 +451,42 @@ export default function AgentViewer() {
       {/* Main Content: Unit Cards */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Project Selector Tabs */}
-        <div className="flex-shrink-0 flex items-center justify-center gap-3 p-4 bg-[#f6f1eb] border-b">
-          {PROJECTS.map((project) => (
+        <div className="flex-shrink-0 flex items-center justify-between gap-3 p-4 bg-[#f6f1eb] border-b">
+          <div className="flex items-center gap-3">
+            {PROJECTS.map((project) => (
+              <Button
+                key={project.id}
+                data-testid={`button-project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
+                variant={currentProjectId === project.id ? "default" : "outline"}
+                onClick={() => handleProjectChange(project.id)}
+                className="font-black uppercase tracking-tight"
+              >
+                {project.name}
+              </Button>
+            ))}
+          </div>
+          
+          {/* Visualization Mode Toggle */}
+          <div className="flex items-center gap-2 bg-background rounded-md p-1">
             <Button
-              key={project.id}
-              data-testid={`button-project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
-              variant={currentProjectId === project.id ? "default" : "outline"}
-              onClick={() => handleProjectChange(project.id)}
-              className="font-black uppercase tracking-tight"
+              variant={!isGalleryMode ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setIsGalleryMode(false)}
+              data-testid="button-viz-live"
+              className="uppercase font-bold"
             >
-              {project.name}
+              LIVE 3D
             </Button>
-          ))}
+            <Button
+              variant={isGalleryMode ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setIsGalleryMode(true)}
+              data-testid="button-viz-gallery"
+              className="uppercase font-bold"
+            >
+              PRE-CONSTRUCTION
+            </Button>
+          </div>
         </div>
 
         {/* Unit Cards Grid */}
@@ -841,6 +868,7 @@ export default function AgentViewer() {
         onLogShowing={handleLogShowing}
         agentName={agentName}
         activeVisitId={activeVisitId}
+        vizMode={isGalleryMode ? 'GALLERY' : 'LIVE'}
       />
 
       {/* Start Showing Dialog */}

@@ -55,3 +55,24 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Type for the toured units update payload
+type TouredUpdatePayload = {
+  toured_unit_ids: string[];
+};
+
+const updateTouredUnits = async ({ leadId, payload }: { leadId: string; payload: TouredUpdatePayload }) => {
+  const response = await apiRequest('PUT', `/api/leads/${leadId}/toured`, payload);
+  return response.json();
+};
+
+export const useUpdateTouredUnits = (leadId: string) => {
+  return {
+    mutationFn: (payload: TouredUpdatePayload) => updateTouredUnits({ leadId, payload }),
+    onSuccess: () => {
+      // Invalidate the specific lead query to refetch fresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/leads', leadId] });
+      console.log('Toured Units updated successfully on the backend.');
+    },
+  };
+};

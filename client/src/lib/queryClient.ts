@@ -1,4 +1,4 @@
-import { QueryClient, QueryFunction, useMutation } from "@tanstack/react-query";
+import { QueryClient, QueryFunction, useMutation, useQuery } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -93,7 +93,7 @@ const fetchItinerary = async (visitId: string): Promise<ViewedUnitSummary[]> => 
 };
 
 export const useShowingItinerary = (visitId: string | null) => {
-  return {
+  return useQuery<ViewedUnitSummary[]>({
     queryKey: [`/api/showings/${visitId}/summary`],
     queryFn: () => {
       if (!visitId) throw new Error('No active visit session');
@@ -101,7 +101,7 @@ export const useShowingItinerary = (visitId: string | null) => {
     },
     enabled: !!visitId, // Only fetch if we have an active visit
     staleTime: 0, // Always fetch fresh data
-  };
+  });
 };
 
 // Mutation to log a unit view
@@ -118,8 +118,45 @@ export const useLogUnitView = (visitId: string | null) => {
       if (!visitId) throw new Error('No active visit session');
       return logUnitView({ visitId, unitId });
     },
+    onMutate: async (unitId: string) => {
+      // Cancel outgoing refetches
+      await queryClientInstance.cancelQueries({ queryKey: [`/api/showings/${visitId}/summary`] });
+
+      // Snapshot previous value
+      const previousData = queryClientInstance.getQueryData<ViewedUnitSummary[]>([`/api/showings/${visitId}/summary`]);
+
+      // Optimistically update cache
+      if (visitId) {
+        queryClientInstance.setQueryData<ViewedUnitSummary[]>(
+          [`/api/showings/${visitId}/summary`],
+          (old = []) => {
+            // Check if unit already exists
+            if (old.some(item => item.unitId === unitId)) {
+              return old;
+            }
+            // Add new viewed unit
+            return [...old, {
+              unitId,
+              unitNumber: '', // Will be filled by server response
+              timestamp: new Date().toISOString(),
+            }];
+          }
+        );
+      }
+
+      return { previousData };
+    },
+    onError: (_err, _unitId, context) => {
+      // Rollback on error
+      if (context?.previousData && visitId) {
+        queryClientInstance.setQueryData(
+          [`/api/showings/${visitId}/summary`],
+          context.previousData
+        );
+      }
+    },
     onSuccess: () => {
-      // Invalidate the itinerary to show the newly logged unit
+      // Invalidate the itinerary to show the newly logged unit with server data
       if (visitId) {
         queryClientInstance.invalidateQueries({ queryKey: [`/api/showings/${visitId}/summary`] });
       }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { queryClient, useStartShowing } from "@/lib/queryClient";
+import { queryClient, useStartShowing, useShowingItinerary } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -42,11 +42,7 @@ export default function AgentViewer() {
   const [selectedLeadForShowing, setSelectedLeadForShowing] = useState<string | null>(null);
   
   // Fetch showing itinerary (viewed units in current session)
-  const { data: viewedUnits = [] } = useQuery<Array<{ unitId: string; unitNumber: string; timestamp: string }>>({
-    queryKey: [`/api/showings/${activeVisitId}/summary`],
-    enabled: !!activeVisitId,
-    staleTime: 0,
-  });
+  const { data: viewedUnits = [] } = useShowingItinerary(activeVisitId);
 
   // Create a Set for quick lookup
   const viewedUnitIds = useMemo(() => {

@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { LogShowingForm } from "@/components/log-showing-form";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, useLogUnitView } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
@@ -50,6 +50,15 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   const [showLogShowingForm, setShowLogShowingForm] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const { toast } = useToast();
+  const logUnitViewMutation = useLogUnitView(activeVisitId);
+
+  // Auto-log unit view when drawer opens during active showing
+  useEffect(() => {
+    if (isOpen && unit && activeVisitId) {
+      console.log(`[${actionId}] Auto-logging unit view for Unit ${unit.unitNumber} in visit ${activeVisitId}`);
+      logUnitViewMutation.mutate(unit.id);
+    }
+  }, [isOpen, unit?.id, activeVisitId]);
 
   const config = unit ? (statusConfig[unit.status as UnitStatus] || statusConfig.available) : statusConfig.available;
   const price = unit ? (typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price) : 0;

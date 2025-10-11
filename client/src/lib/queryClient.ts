@@ -79,8 +79,8 @@ export const useUpdateTouredUnits = (leadId: string) => {
   });
 };
 
-// Type for showing itinerary summary
-type ViewedUnitSummary = {
+// Type for showing itinerary summary (matches backend response from server/routes/showings.ts)
+export type ViewedUnitSummary = {
   unitId: string;
   unitNumber: string;
   timestamp: string;
@@ -94,13 +94,14 @@ const fetchItinerary = async (visitId: string): Promise<ViewedUnitSummary[]> => 
 
 export const useShowingItinerary = (visitId: string | null) => {
   return useQuery<ViewedUnitSummary[]>({
-    queryKey: [`/api/showings/${visitId}/summary`],
+    queryKey: ['/api/showings', visitId, 'summary'],
     queryFn: () => {
       if (!visitId) throw new Error('No active visit session');
       return fetchItinerary(visitId);
     },
     enabled: !!visitId, // Only fetch if we have an active visit
     staleTime: 0, // Always fetch fresh data
+    refetchInterval: 5000, // Auto-refresh every 5 seconds during active showing
   });
 };
 

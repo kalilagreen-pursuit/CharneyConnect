@@ -467,26 +467,12 @@ export default function AgentViewer() {
           </div>
           
           {/* Visualization Mode Toggle */}
-          <div className="flex items-center gap-2 bg-background rounded-md p-1">
-            <Button
-              variant={!isGalleryMode ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setIsGalleryMode(false)}
-              data-testid="button-viz-live"
-              className="uppercase font-bold"
-            >
-              LIVE 3D
-            </Button>
-            <Button
-              variant={isGalleryMode ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setIsGalleryMode(true)}
-              data-testid="button-viz-gallery"
-              className="uppercase font-bold"
-            >
-              PRE-CONSTRUCTION
-            </Button>
-          </div>
+          <Tabs value={isGalleryMode ? "gallery" : "live"} onValueChange={(v) => setIsGalleryMode(v === "gallery")}>
+            <TabsList>
+              <TabsTrigger value="live" data-testid="button-viz-live">Live Inventory Map</TabsTrigger>
+              <TabsTrigger value="gallery" data-testid="button-viz-gallery">Pre-Construction Gallery</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Unit Cards Grid */}

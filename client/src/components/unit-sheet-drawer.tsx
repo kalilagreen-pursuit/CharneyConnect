@@ -9,8 +9,9 @@ import { formatCurrency } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { LogShowingForm } from "@/components/log-showing-form";
-import { apiRequest, useLogUnitView } from "@/lib/queryClient";
+import { apiRequest, useLogUnitView, useUpdateTouredUnits } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useProspectContext } from "@/context/prospect-context";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
   available: {
@@ -50,15 +51,29 @@ export function UnitSheetDrawer({ unit, isOpen, onClose, onLogShowing, agentName
   const [showLogShowingForm, setShowLogShowingForm] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const { toast } = useToast();
+  const prospectContext = useProspectContext();
+  const updateTouredUnits = useUpdateTouredUnits(prospectContext?.leadId || '');
   const logUnitViewMutation = useLogUnitView(activeVisitId);
 
   // Auto-log unit view when drawer opens during active showing
   useEffect(() => {
-    if (isOpen && unit && activeVisitId) {
-      console.log(`[${actionId}] Auto-logging unit view for Unit ${unit.unitNumber} in visit ${activeVisitId}`);
-      logUnitViewMutation.mutate(unit.id);
+    if (isOpen && unit) {
+      console.log(`[${actionId}] Unit Sheet opened for Unit ${unit.unitNumber}`);
+
+      // Log the unit view if there's an active showing session
+      if (activeVisitId && unit.id) {
+        console.log(`[${actionId}] Logging unit view for showing session: ${activeVisitId}`);
+        logUnitViewMutation.mutate(unit.id, {
+          onSuccess: () => {
+            console.log(`[${actionId}] Unit view logged successfully from drawer`);
+          },
+          onError: (error) => {
+            console.error(`[${actionId}] Error logging unit view from drawer:`, error);
+          },
+        });
+      }
     }
-  }, [isOpen, unit?.id, activeVisitId]);
+  }, [isOpen, unit, actionId, activeVisitId]);
 
   const config = unit ? (statusConfig[unit.status as UnitStatus] || statusConfig.available) : statusConfig.available;
   const price = unit ? (typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price) : 0;

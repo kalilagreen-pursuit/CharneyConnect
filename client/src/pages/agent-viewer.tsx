@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { queryClient, useStartShowing, useEndShowing, useShowingItinerary } from "@/lib/queryClient";
+import { queryClient, useStartShowing, useEndShowing, useShowingItinerary, useLogUnitView } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -131,10 +131,27 @@ export default function AgentViewer() {
     return activeDeals.filter(deal => deal.dealStage === stageFilter);
   }, [activeDeals, stageFilter]);
 
+  // Import the log unit view mutation
+  const logUnitViewMutation = useLogUnitView(activeVisitId);
+
   // Handle unit selection from card
   const handleUnitSelect = (unitId: string) => {
     console.log(`[${actionId}] Unit selected: ${unitId}`);
     setSelectedUnitId(unitId);
+    
+    // Log the unit view if there's an active showing session
+    if (activeVisitId && !viewedUnitIds.has(unitId)) {
+      console.log(`[${actionId}] Logging unit view for showing session: ${activeVisitId}`);
+      logUnitViewMutation.mutate(unitId, {
+        onSuccess: () => {
+          console.log(`[${actionId}] Unit view logged successfully`);
+        },
+        onError: (error) => {
+          console.error(`[${actionId}] Error logging unit view:`, error);
+        },
+      });
+    }
+    
     // Switch to 3D viewer tab if coming from Active Deals
     if (activeTab === "active-deals") {
       setActiveTab("all-units");

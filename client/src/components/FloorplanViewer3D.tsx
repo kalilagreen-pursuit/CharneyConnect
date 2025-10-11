@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, UserPlus, Eye } from "lucide-react";
 import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { agentContextStore } from "@/lib/localStores";
+import { useLogUnitView } from "@/lib/queryClient";
 
 interface Project {
   id: string;
@@ -105,6 +106,8 @@ export default function FloorplanViewer3D({
   const [webglError, setWebglError] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [showProspectForm, setShowProspectForm] = useState(false);
+
+  const logUnitViewMutation = useLogUnitView(activeVisitId);
 
   const hideDetailsPanel = useCallback(() => {
     setShowPanel(false);
@@ -263,6 +266,19 @@ export default function FloorplanViewer3D({
             : undefined,
         });
         setShowPanel(true);
+        
+        // Log the unit view if there's an active showing session
+        if (activeVisitId && unit.id && !viewedUnitIds?.has(unit.id)) {
+          console.log(`[3D Viewer] Logging unit view for showing session: ${activeVisitId}`);
+          logUnitViewMutation.mutate(unit.id, {
+            onSuccess: () => {
+              console.log(`[3D Viewer] Unit view logged successfully`);
+            },
+            onError: (error) => {
+              console.error(`[3D Viewer] Error logging unit view:`, error);
+            },
+          });
+        }
       }
     } catch (error) {
       console.error("Error fetching unit details:", error);

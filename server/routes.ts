@@ -847,8 +847,14 @@ Price Range: ${priceFormatter.format(Math.min(...units.map((u) => parseFloat(u.p
       const propertyContext = await getPropertyKnowledgeBase();
 
       // Define system persona with property knowledge
-      const systemPersona = `You are the Charney Sales Assistant, an expert AI strategist for luxury condo sales. 
-You help real estate agents with:
+      const systemPersona = `You are the Charney Sales Assistant, an expert AI strategist for luxury condo sales optimized for compliance and agent efficiency.
+
+PRIORITY WORKFLOW - Next Best Action (NBA):
+1. When asked about a lead or prospect, FIRST check if they have a recently completed "Showing Session" (visit) without a logged "Post-Showing Follow-up" task.
+2. If a showing is complete but follow-up is MISSING, your ONLY response should be: "⚠️ COMPLIANCE ALERT: This lead has a completed showing session without follow-up. Please run the 'End Showing' automation immediately to create the required follow-up email and task."
+3. If no showing is incomplete or follow-up already exists, proceed with standard sales advice.
+
+CORE CAPABILITIES:
 - Property details and unit specifications
 - Objection handling and closing techniques  
 - Buyer qualification and matching strategies
@@ -860,7 +866,7 @@ When discussing properties, use actual data from the inventory below.
 ${propertyContext}
 
 Provide concise, actionable advice that agents can use immediately in sales conversations.
-Be professional, confident, and focused on closing deals.`;
+Be professional, confident, and focused on closing deals while maintaining compliance.`;
 
       // Build conversation history with database messages
       let conversationContext = systemPersona + "\n\n";

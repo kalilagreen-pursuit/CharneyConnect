@@ -172,23 +172,55 @@ type StartShowingPayload = {
   projectId: string;
 };
 
+type StartShowingResponse = {
+  id: string;
+  leadId: string;
+  agentId: string;
+  projectId: string;
+  startedAt: string;
+};
+
 // Mutation to start a showing session
-const startShowingSession = async (payload: StartShowingPayload) => {
+const startShowingSession = async (payload: StartShowingPayload): Promise<StartShowingResponse> => {
   const response = await apiRequest('POST', '/api/showings/start', payload);
   return response.json();
 };
 
 export const useStartShowing = () => {
-  const queryClientInstance = queryClient;
-
   return useMutation({
     mutationFn: (payload: StartShowingPayload) => startShowingSession(payload),
     onSuccess: (data) => {
-      console.log('Showing session started successfully:', data.id);
-      // Invalidate any relevant queries if needed
+      console.log('Showing session started:', data.id);
     },
     onError: (error) => {
       console.error('Failed to start showing session:', error);
+    },
+  });
+};
+
+// Type for ending a showing session and triggering automation
+type EndShowingPayload = {
+  visitId: string;
+};
+
+// Mutation to end showing and trigger post-showing automation
+const triggerPostShowingAutomation = async (visitId: string) => {
+  const response = await apiRequest('POST', '/api/automation/trigger-post-showing', { visitId });
+  return response.json();
+};
+
+export const useEndShowing = () => {
+  const queryClientInstance = queryClient;
+
+  return useMutation({
+    mutationFn: (visitId: string) => triggerPostShowingAutomation(visitId),
+    onSuccess: () => {
+      // Invalidate tasks to show the new follow-up task
+      queryClientInstance.invalidateQueries({ queryKey: ['/api/tasks'] });
+      console.log('Showing ended. Post-showing automation triggered.');
+    },
+    onError: (error) => {
+      console.error('Failed to end showing session:', error);
     },
   });
 };

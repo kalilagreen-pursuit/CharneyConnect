@@ -1,7 +1,10 @@
 import { storage } from "./storage";
 import type { Lead } from "@shared/schema";
 
-export async function handleLeadQualified(lead: Lead, agentId: string): Promise<void> {
+export async function handleLeadQualified(
+  lead: Lead,
+  agentId: string,
+): Promise<void> {
   const matchedUnits = await storage.getMatchingUnitsForLead(lead.id);
 
   await storage.createTask({
@@ -27,7 +30,10 @@ export async function handleLeadQualified(lead: Lead, agentId: string): Promise<
   }
 }
 
-export async function handleEngagementSpike(lead: Lead, agentId: string): Promise<void> {
+export async function handleEngagementSpike(
+  lead: Lead,
+  agentId: string,
+): Promise<void> {
   await storage.createTask({
     title: `URGENT: High Engagement from ${lead.name}`,
     description: `Lead is showing strong interest signals. Contact immediately to capitalize on engagement.`,
@@ -43,12 +49,15 @@ export async function handlePipelineStageChange(
   lead: Lead,
   oldStage: string,
   newStage: string,
-  agentId: string
+  agentId: string,
 ): Promise<void> {
   const normalizedOldStage = (oldStage || "").toLowerCase();
   const normalizedNewStage = (newStage || "").toLowerCase();
 
-  if (normalizedNewStage === "qualified" && normalizedOldStage !== "qualified") {
+  if (
+    normalizedNewStage === "qualified" &&
+    normalizedOldStage !== "qualified"
+  ) {
     await handleLeadQualified(lead, agentId);
   }
 
@@ -75,4 +84,30 @@ export async function handlePipelineStageChange(
       automationSource: "pipeline_stage_change",
     });
   }
+}
+// NEW: Add the business logic for the post-showing workflow
+export async function handlePostShowing(visit: Visit): Promise<void> {
+  const summary = await storage.getVisitSummary(visit.id);
+  if (summary.length === 0) {
+    console.log(
+      `No units viewed for visit ${visit.id}, skipping follow-up task.`,
+    );
+    return;
+  }
+
+  const unitNumbers = summary.map((u) => u.unitNumber).join(", ");
+  const taskTitle = `Follow up on showing for units: ${unitNumbers}`;
+  const taskDescription = `Client viewed ${summary.length} unit(s). Send a personalized follow-up email with the 'portal' link and floor plans for units ${unitNumbers}.`;
+
+  await storage.createTask({
+    leadId: visit.leadId,
+    agentId: visit.agentId,
+    title: taskTitle,
+    description: taskDescription,
+    priority: "high",
+    dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Due in 24 hours
+    automationSource: "post-showing-workflow",
+  });
+
+  console.log(`Successfully created post-showing task for visit ${visit.id}`);
 }

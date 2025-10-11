@@ -1,0 +1,33 @@
+rontend Implementation Plan for Charney CRM Archetype
+The plan prioritizes the new Toured Units feature and visual updates to ensure an impressive, high-value Demo Day experience.
+
+Step 1: Data Modeling & Hook Preparation
+
+Task	What We're Implementing	Where in the Architecture	Why
+1.1: Augment Local Lead State	Update the lead data structure used across the frontend to include the new toured_unit_ids array.	client/src/types/lead.ts (Type Definition)	Ensures the UI can read and display which units have been checked off for the current prospect.
+1.2: Create Toured Units Hook	A custom React hook to manage the state and actions (add/remove) for toured units locally before committing to the server.	client/src/hooks/use-toured-units.ts (Custom Hook)	Centralizes the logic for managing the list, keeping components clean and reusable across the Agent Viewer and follow-up task views.
+1.3: Define Toured Units Mutation	Define the function that calls the new backend API endpoint to update the database.	client/src/lib/queryClient.ts (TanStack Query)	Creates a performant, cached mutation (useMutation) to call PUT /api/v1/leads/:leadId/toured, including logic for optimistic UI updates.
+Step 2: Agent Viewer (/agent/viewer) UI Overhaul
+
+This phase integrates the core user action: checking off units during a tour.
+
+Task	What We're Implementing	Where in the Architecture	Why
+2.1: Implement Toured Units Check-off	Add a prominent "Add to Toured List" button/toggle to the unit details panel.	client/src/pages/agent/viewer/UnitDetailsPanel.tsx (Component)	Directly implements Andrew's critical request, enabling agents to log units shown in real-time during a tour.
+2.2: Unit Card Visual Status	Display a visual indicator (e.g., a small badge or icon) on a unit card if it has been added to the current prospect's toured list.	client/src/pages/agent/viewer/UnitCard.tsx (Component)	Provides immediate visual feedback to the agent on which units they've already covered, streamlining the in-building tour workflow.
+2.3: Integrate Architectural Renderings	Update the Three.js scene loader to fetch the high-quality architectural models and renderings for projects like 95 Rockwell and Court Square.	client/src/lib/three/SceneRenderer.ts (3D Logic)	Elevates the presentation (Pre-Construction Gallery Mode) and satisfies the luxury UX requirement using the provided assets.
+2.4: Implement Visualization Mode Toggle	Add a simple switch or button to toggle between the In-Building Tour (live unit map) and Pre-Construction Gallery (rendered view).	client/src/pages/agent/viewer/AgentViewer.tsx (Parent View)	Supports the two distinct sales workflows Andrew described.
+Step 3: Automated Follow-up and Task Integration
+
+This phase links the new workflow action to the automation features.
+
+Task	What We're Implementing	Where in the Architecture	Why
+3.1: NBA Task Display Logic	Implement logic within the task list component to display the new automated task.	client/src/components/TaskViews/AgentTaskList.tsx (Component)	Shows the "Send Toured Unit Follow-up" task if a lead has a non-empty toured_unit_ids list and no corresponding follow-up activity has been logged. This is the Next Best Action (NBA).
+3.2: Create Mock Buyer Portal Stub	Implement the simple HTML/React component that simulates the final client-facing portal.	client/src/pages/portal/BuyerPortalStub.tsx (New Route)	Creates the visual destination (/portal/:leadId) for the automated follow-up email link, fulfilling the high-end, personalized "personal world" requirement.
+3.3: Link Task to Automation API	When the agent clicks "Complete" on the NBA task, trigger the follow-up process.	client/src/components/TaskViews/TaskItem.tsx (Component)	Calls the new automation endpoint POST /api/v1/automation/toured-email to generate the email content (via LLM) and log the activity.
+Step 4: High-End UX Polish
+
+Final touches to align the entire experience with the luxury aesthetic.
+
+Task	What We're Implementing	Where in the Architecture	Why
+4.1: CSS Animation Refinement	Refine Tailwind CSS and Framer Motion usage for sleek, subtle animations.	client/src/components/.../Card.tsx (Base Components)	Ensures hover elevation, pulse effects, and state changes are high-quality, aligning with the "luxury aesthetic" mandate.
+4.2: Typography and Color Audit	Verify that all text uses the Franklin Gothic font and strict Charney brand colors based on the provided style guide.	client/tailwind.config.ts (Configuration)	Enforces the brand consistency required for the sales gallery experience.

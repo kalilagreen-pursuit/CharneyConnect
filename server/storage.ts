@@ -1,13 +1,32 @@
-import { 
-  type UnitWithDetails, type UnitWithDealContext, type InsertUnit, type UnitStatus, type UnitUpdateRequest,
-  type Contact, type InsertContact,
-  type Lead, type InsertLead, type DealLead, type InsertDeal, type LeadWithDetails,
-  type Activity, type InsertActivity,
-  type Task, type InsertTask, type TaskWithLead,
-  type LeadEngagement, type InsertLeadEngagement, type LeadWithEngagement,
-  type AiConversation, type InsertAiConversation,
-  type AiMessage, type InsertAiMessage,
-  type AiFeedback, type InsertAiFeedback
+import {
+  type UnitWithDetails,
+  type UnitWithDealContext,
+  type InsertUnit,
+  type UnitStatus,
+  type UnitUpdateRequest,
+  type Contact,
+  type InsertContact,
+  type Lead,
+  type InsertLead,
+  type DealLead,
+  type InsertDeal,
+  type LeadWithDetails,
+  type Activity,
+  type InsertActivity,
+  type Task,
+  type InsertTask,
+  type TaskWithLead,
+  type LeadEngagement,
+  type InsertLeadEngagement,
+  type LeadWithEngagement,
+  type AiConversation,
+  type InsertAiConversation,
+  type AiMessage,
+  type InsertAiMessage,
+  type AiFeedback,
+  type InsertAiFeedback,
+  type Visit,
+  type ViewedUnit,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -15,49 +34,64 @@ export interface IStorage {
   // Units
   getAllUnits(): Promise<UnitWithDetails[]>;
   getUnitById(id: string): Promise<UnitWithDetails | undefined>;
-  getUnitsByAgentId(agentId: string, projectId?: string, showAllProjectUnits?: boolean): Promise<UnitWithDetails[]>;
-  getActiveDealsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDealContext[]>;
+  getUnitsByAgentId(
+    agentId: string,
+    projectId?: string,
+    showAllProjectUnits?: boolean,
+  ): Promise<UnitWithDetails[]>;
+  getActiveDealsByAgentId(
+    agentId: string,
+    projectId?: string,
+  ): Promise<UnitWithDealContext[]>;
   createUnit(unit: InsertUnit): Promise<UnitWithDetails>;
-  updateUnitStatus(id: string, status: UnitStatus): Promise<UnitWithDetails | undefined>;
-  updateUnitPrice(id: string, price: number): Promise<UnitWithDetails | undefined>;
-  
+  updateUnitStatus(
+    id: string,
+    status: UnitStatus,
+  ): Promise<UnitWithDetails | undefined>;
+  updateUnitPrice(
+    id: string,
+    price: number,
+  ): Promise<UnitWithDetails | undefined>;
+
   // Contacts
   getAllContacts(): Promise<Contact[]>;
   getContactById(id: string): Promise<Contact | undefined>;
   createContact(contact: InsertContact): Promise<Contact>;
   searchContacts(query: string): Promise<Contact[]>;
-  
+
   // Brokers (using contacts with contactType = 'broker')
   getAllBrokers(): Promise<Contact[]>;
   getBrokerById(id: string): Promise<Contact | undefined>;
   createBroker(broker: any): Promise<Contact>;
-  
+
   // Leads (from public.leads table)
   getAllLeads(): Promise<Lead[]>;
   getLeadById(id: string): Promise<Lead | undefined>;
   createLead(lead: InsertLead): Promise<Lead>;
   updateLead(id: string, lead: Partial<InsertLead>): Promise<Lead | undefined>;
-  
+
   // Deal-based leads (legacy)
   getAllDealLeads(): Promise<LeadWithDetails[]>;
   getDealLeadById(id: string): Promise<LeadWithDetails | undefined>;
   createDealLead(lead: InsertDeal): Promise<DealLead>;
-  
+
   // Activities
   getActivitiesByLeadId(leadId: string): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
-  
+
   // Projects
-  getProjectCounts(): Promise<Array<{
-    id: string;
-    name: string;
-    address: string;
-    totalUnits: number;
-    available: number;
-    reserved: number;
-    sold: number;
-  }>>;
-  
+  getProjectCounts(): Promise<
+    Array<{
+      id: string;
+      name: string;
+      address: string;
+      totalUnits: number;
+      available: number;
+      reserved: number;
+      sold: number;
+    }>
+  >;
+
   // Tasks
   getAllTasks(): Promise<Task[]>;
   getTasksByLeadId(leadId: string): Promise<Task[]>;
@@ -65,30 +99,52 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: string, task: Partial<InsertTask>): Promise<Task | undefined>;
   completeTask(id: string): Promise<Task | undefined>;
-  
+
   // Lead Engagement
   getLeadEngagementByLeadId(leadId: string): Promise<LeadEngagement[]>;
-  createLeadEngagement(engagement: InsertLeadEngagement): Promise<LeadEngagement>;
+  createLeadEngagement(
+    engagement: InsertLeadEngagement,
+  ): Promise<LeadEngagement>;
   calculateLeadScore(leadId: string): Promise<number>;
   detectEngagementSpike(leadId: string): Promise<boolean>;
-  
+
   // Unit Matching
   getMatchingUnitsForLead(leadId: string): Promise<UnitWithDetails[]>;
-  
+
   // Unit Leads
-  getLeadsByUnit(projectId: string, unitNumber: string): Promise<LeadWithDetails[]>;
-  
+  getLeadsByUnit(
+    projectId: string,
+    unitNumber: string,
+  ): Promise<LeadWithDetails[]>;
+
   // AI Conversations
-  createConversation(conversation: InsertAiConversation): Promise<AiConversation>;
-  getConversationByConversationId(conversationId: string): Promise<AiConversation | undefined>;
+  createConversation(
+    conversation: InsertAiConversation,
+  ): Promise<AiConversation>;
+  getConversationByConversationId(
+    conversationId: string,
+  ): Promise<AiConversation | undefined>;
   getConversationsByAgentId(agentId: string): Promise<AiConversation[]>;
-  updateConversationTitle(conversationId: string, title: string): Promise<AiConversation | undefined>;
+  updateConversationTitle(
+    conversationId: string,
+    title: string,
+  ): Promise<AiConversation | undefined>;
   touchConversation(conversationId: string): Promise<void>;
-  
+
   // AI Messages
   createMessage(message: InsertAiMessage): Promise<AiMessage>;
   getMessagesByConversationId(conversationId: string): Promise<AiMessage[]>;
-  
+
+  // NEW: Showing Session (Visit) Management
+  createVisit(
+    visitData: Pick<Visit, "leadId" | "agentId" | "projectId">,
+  ): Promise<Visit>;
+  logUnitView(visitId: string, unitId: string): Promise<ViewedUnit>;
+  getVisitSummary(visitId: string): Promise<UnitWithDetails[]>;
+
+  // NEW: Add the signature for the new function
+  getVisitById(visitId: string): Promise<Visit | undefined>;
+
   // AI Feedback
   createFeedback(feedback: InsertAiFeedback): Promise<AiFeedback>;
   getFeedbackByMessageId(messageId: string): Promise<AiFeedback | undefined>;
@@ -113,60 +169,306 @@ export class MemStorage implements IStorage {
   private seedData() {
     // Seed Units with full UnitWithDetails structure
     const unitsData: UnitWithDetails[] = [
-      { id: randomUUID(), unitNumber: "101", floor: 1, bedrooms: 1, bathrooms: 1, squareFeet: 650, price: "425000", status: "available", building: "Tower A", projectId: "1", floorPlanId: "1", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "102", floor: 1, bedrooms: 1, bathrooms: 1, squareFeet: 680, price: "445000", status: "available", building: "Tower A", projectId: "1", floorPlanId: "1", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "201", floor: 2, bedrooms: 2, bathrooms: 2, squareFeet: 950, price: "625000", status: "on_hold", building: "Tower A", projectId: "1", floorPlanId: "2", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "202", floor: 2, bedrooms: 2, bathrooms: 2, squareFeet: 980, price: "645000", status: "contract", building: "Tower A", projectId: "1", floorPlanId: "2", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "301", floor: 3, bedrooms: 2, bathrooms: 2, squareFeet: 1050, price: "695000", status: "available", building: "Tower A", projectId: "1", floorPlanId: "2", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "302", floor: 3, bedrooms: 2, bathrooms: 2, squareFeet: 1080, price: "715000", status: "sold", building: "Tower A", projectId: "1", floorPlanId: "2", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "401", floor: 4, bedrooms: 3, bathrooms: 2.5, squareFeet: 1450, price: "895000", status: "available", building: "Tower B", projectId: "2", floorPlanId: "3", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "402", floor: 4, bedrooms: 3, bathrooms: 2.5, squareFeet: 1480, price: "915000", status: "on_hold", building: "Tower B", projectId: "2", floorPlanId: "3", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "501", floor: 5, bedrooms: 3, bathrooms: 3, squareFeet: 1650, price: "1025000", status: "contract", building: "Tower B", projectId: "2", floorPlanId: "4", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "502", floor: 5, bedrooms: 3, bathrooms: 3, squareFeet: 1680, price: "1045000", status: "available", building: "Tower B", projectId: "2", floorPlanId: "4", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "601", floor: 6, bedrooms: 3, bathrooms: 3, squareFeet: 1750, price: "1125000", status: "sold", building: "Tower B", projectId: "2", floorPlanId: "4", notes: null, createdAt: new Date() },
-      { id: randomUUID(), unitNumber: "PH1", floor: 7, bedrooms: 4, bathrooms: 4, squareFeet: 2500, price: "1750000", status: "available", building: "Tower B", projectId: "2", floorPlanId: "5", notes: null, createdAt: new Date() },
+      {
+        id: randomUUID(),
+        unitNumber: "101",
+        floor: 1,
+        bedrooms: 1,
+        bathrooms: 1,
+        squareFeet: 650,
+        price: "425000",
+        status: "available",
+        building: "Tower A",
+        projectId: "1",
+        floorPlanId: "1",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "102",
+        floor: 1,
+        bedrooms: 1,
+        bathrooms: 1,
+        squareFeet: 680,
+        price: "445000",
+        status: "available",
+        building: "Tower A",
+        projectId: "1",
+        floorPlanId: "1",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "201",
+        floor: 2,
+        bedrooms: 2,
+        bathrooms: 2,
+        squareFeet: 950,
+        price: "625000",
+        status: "on_hold",
+        building: "Tower A",
+        projectId: "1",
+        floorPlanId: "2",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "202",
+        floor: 2,
+        bedrooms: 2,
+        bathrooms: 2,
+        squareFeet: 980,
+        price: "645000",
+        status: "contract",
+        building: "Tower A",
+        projectId: "1",
+        floorPlanId: "2",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "301",
+        floor: 3,
+        bedrooms: 2,
+        bathrooms: 2,
+        squareFeet: 1050,
+        price: "695000",
+        status: "available",
+        building: "Tower A",
+        projectId: "1",
+        floorPlanId: "2",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "302",
+        floor: 3,
+        bedrooms: 2,
+        bathrooms: 2,
+        squareFeet: 1080,
+        price: "715000",
+        status: "sold",
+        building: "Tower A",
+        projectId: "1",
+        floorPlanId: "2",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "401",
+        floor: 4,
+        bedrooms: 3,
+        bathrooms: 2.5,
+        squareFeet: 1450,
+        price: "895000",
+        status: "available",
+        building: "Tower B",
+        projectId: "2",
+        floorPlanId: "3",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "402",
+        floor: 4,
+        bedrooms: 3,
+        bathrooms: 2.5,
+        squareFeet: 1480,
+        price: "915000",
+        status: "on_hold",
+        building: "Tower B",
+        projectId: "2",
+        floorPlanId: "3",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "501",
+        floor: 5,
+        bedrooms: 3,
+        bathrooms: 3,
+        squareFeet: 1650,
+        price: "1025000",
+        status: "contract",
+        building: "Tower B",
+        projectId: "2",
+        floorPlanId: "4",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "502",
+        floor: 5,
+        bedrooms: 3,
+        bathrooms: 3,
+        squareFeet: 1680,
+        price: "1045000",
+        status: "available",
+        building: "Tower B",
+        projectId: "2",
+        floorPlanId: "4",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "601",
+        floor: 6,
+        bedrooms: 3,
+        bathrooms: 3,
+        squareFeet: 1750,
+        price: "1125000",
+        status: "sold",
+        building: "Tower B",
+        projectId: "2",
+        floorPlanId: "4",
+        notes: null,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        unitNumber: "PH1",
+        floor: 7,
+        bedrooms: 4,
+        bathrooms: 4,
+        squareFeet: 2500,
+        price: "1750000",
+        status: "available",
+        building: "Tower B",
+        projectId: "2",
+        floorPlanId: "5",
+        notes: null,
+        createdAt: new Date(),
+      },
     ];
 
-    unitsData.forEach(unit => {
+    unitsData.forEach((unit) => {
       this.units.set(unit.id, unit);
     });
 
     // Seed Contacts
     const contactsData: InsertContact[] = [
-      { firstName: "Sarah", lastName: "Chen", email: "sarah.chen@email.com", phone: "(555) 123-4567", contactType: "buyer" },
-      { firstName: "Michael", lastName: "Rodriguez", email: "m.rodriguez@email.com", phone: "(555) 234-5678", contactType: "buyer" },
-      { firstName: "Emily", lastName: "Thompson", email: "emily.t@email.com", phone: "(555) 345-6789", contactType: "buyer" },
-      { firstName: "David", lastName: "Kim", email: "david.kim@email.com", phone: "(555) 456-7890", contactType: "buyer" },
-      { firstName: "Jessica", lastName: "Martinez", email: "j.martinez@email.com", phone: "(555) 567-8901", contactType: "buyer" },
-      { firstName: "Robert", lastName: "Williams", email: "r.williams@realty.com", phone: "(555) 111-2222", contactType: "broker" },
-      { firstName: "Amanda", lastName: "Johnson", email: "a.johnson@realty.com", phone: "(555) 222-3333", contactType: "broker" },
-      { firstName: "James", lastName: "Brown", email: "j.brown@realty.com", phone: "(555) 333-4444", contactType: "broker" },
+      {
+        firstName: "Sarah",
+        lastName: "Chen",
+        email: "sarah.chen@email.com",
+        phone: "(555) 123-4567",
+        contactType: "buyer",
+      },
+      {
+        firstName: "Michael",
+        lastName: "Rodriguez",
+        email: "m.rodriguez@email.com",
+        phone: "(555) 234-5678",
+        contactType: "buyer",
+      },
+      {
+        firstName: "Emily",
+        lastName: "Thompson",
+        email: "emily.t@email.com",
+        phone: "(555) 345-6789",
+        contactType: "buyer",
+      },
+      {
+        firstName: "David",
+        lastName: "Kim",
+        email: "david.kim@email.com",
+        phone: "(555) 456-7890",
+        contactType: "buyer",
+      },
+      {
+        firstName: "Jessica",
+        lastName: "Martinez",
+        email: "j.martinez@email.com",
+        phone: "(555) 567-8901",
+        contactType: "buyer",
+      },
+      {
+        firstName: "Robert",
+        lastName: "Williams",
+        email: "r.williams@realty.com",
+        phone: "(555) 111-2222",
+        contactType: "broker",
+      },
+      {
+        firstName: "Amanda",
+        lastName: "Johnson",
+        email: "a.johnson@realty.com",
+        phone: "(555) 222-3333",
+        contactType: "broker",
+      },
+      {
+        firstName: "James",
+        lastName: "Brown",
+        email: "j.brown@realty.com",
+        phone: "(555) 333-4444",
+        contactType: "broker",
+      },
     ];
 
-    contactsData.forEach(contact => {
+    contactsData.forEach((contact) => {
       const id = randomUUID();
-      const contactWithDefaults: Contact = { 
-        ...contact, 
-        id, 
+      const contactWithDefaults: Contact = {
+        ...contact,
+        id,
         createdAt: new Date(),
-        consentGivenAt: null
+        consentGivenAt: null,
       };
       this.contacts.set(id, contactWithDefaults);
     });
 
     // Seed Leads (public.leads table format)
     const leadsData: InsertLead[] = [
-      { name: "Sarah Chen", email: "sarah.chen@email.com", status: "qualified", value: 625000, phone: "(555) 123-4567" },
-      { name: "Michael Rodriguez", email: "m.rodriguez@email.com", status: "negotiating", value: 645000, phone: "(555) 234-5678" },
-      { name: "Emily Thompson", email: "emily.t@email.com", status: "contacted", value: 895000, phone: "(555) 345-6789" },
-      { name: "David Kim", email: "david.kim@email.com", status: "qualified", value: 1750000, phone: "(555) 456-7890" },
-      { name: "Jessica Martinez", email: "j.martinez@email.com", status: "new", value: 695000, phone: "(555) 567-8901" },
+      {
+        name: "Sarah Chen",
+        email: "sarah.chen@email.com",
+        status: "qualified",
+        value: 625000,
+        phone: "(555) 123-4567",
+      },
+      {
+        name: "Michael Rodriguez",
+        email: "m.rodriguez@email.com",
+        status: "negotiating",
+        value: 645000,
+        phone: "(555) 234-5678",
+      },
+      {
+        name: "Emily Thompson",
+        email: "emily.t@email.com",
+        status: "contacted",
+        value: 895000,
+        phone: "(555) 345-6789",
+      },
+      {
+        name: "David Kim",
+        email: "david.kim@email.com",
+        status: "qualified",
+        value: 1750000,
+        phone: "(555) 456-7890",
+      },
+      {
+        name: "Jessica Martinez",
+        email: "j.martinez@email.com",
+        status: "new",
+        value: 695000,
+        phone: "(555) 567-8901",
+      },
     ];
 
-    leadsData.forEach(lead => {
+    leadsData.forEach((lead) => {
       const id = randomUUID();
-      const leadWithDefaults: Lead = { 
-        ...lead, 
+      const leadWithDefaults: Lead = {
+        ...lead,
         id,
         value: lead.value ?? null,
         phone: lead.phone ?? null,
@@ -177,10 +479,10 @@ export class MemStorage implements IStorage {
         targetLocations: null,
         timeFrameToBuy: null,
         leadScore: 0,
-        pipelineStage: 'new',
+        pipelineStage: "new",
         agentId: null,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
       this.leads.set(id, leadWithDefaults);
     });
@@ -198,48 +500,61 @@ export class MemStorage implements IStorage {
     return this.units.get(id);
   }
 
-  async getUnitsByAgentId(agentId: string, projectId?: string, showAllProjectUnits?: boolean): Promise<UnitWithDetails[]> {
+  async getUnitsByAgentId(
+    agentId: string,
+    projectId?: string,
+    showAllProjectUnits?: boolean,
+  ): Promise<UnitWithDetails[]> {
     // MemStorage doesn't have deals, return all units (optionally filtered by projectId)
     const allUnits = await this.getAllUnits();
     if (projectId) {
-      return allUnits.filter(unit => unit.projectId === projectId);
+      return allUnits.filter((unit) => unit.projectId === projectId);
     }
     return allUnits;
   }
 
-  async getActiveDealsByAgentId(agentId: string, projectId?: string): Promise<UnitWithDealContext[]> {
+  async getActiveDealsByAgentId(
+    agentId: string,
+    projectId?: string,
+  ): Promise<UnitWithDealContext[]> {
     // MemStorage doesn't have deals, return empty array
     return [];
   }
 
   async createUnit(insertUnit: InsertUnit): Promise<UnitWithDetails> {
     const id = randomUUID();
-    const unit: UnitWithDetails = { 
-      ...insertUnit, 
+    const unit: UnitWithDetails = {
+      ...insertUnit,
       id,
       bedrooms: 0,
       bathrooms: 0,
       squareFeet: 0,
       building: "Unknown",
-      createdAt: new Date()
+      createdAt: new Date(),
     } as UnitWithDetails;
     this.units.set(id, unit);
     return unit;
   }
 
-  async updateUnitStatus(id: string, status: UnitStatus): Promise<UnitWithDetails | undefined> {
+  async updateUnitStatus(
+    id: string,
+    status: UnitStatus,
+  ): Promise<UnitWithDetails | undefined> {
     const unit = this.units.get(id);
     if (!unit) return undefined;
-    
+
     const updatedUnit = { ...unit, status };
     this.units.set(id, updatedUnit);
     return updatedUnit;
   }
 
-  async updateUnitPrice(id: string, price: number): Promise<UnitWithDetails | undefined> {
+  async updateUnitPrice(
+    id: string,
+    price: number,
+  ): Promise<UnitWithDetails | undefined> {
     const unit = this.units.get(id);
     if (!unit) return undefined;
-    
+
     const updatedUnit = { ...unit, price: price.toString() };
     this.units.set(id, updatedUnit);
     return updatedUnit;
@@ -256,11 +571,11 @@ export class MemStorage implements IStorage {
 
   async createContact(insertContact: InsertContact): Promise<Contact> {
     const id = randomUUID();
-    const contact: Contact = { 
-      ...insertContact, 
-      id, 
+    const contact: Contact = {
+      ...insertContact,
+      id,
       createdAt: new Date(),
-      consentGivenAt: insertContact.consentGivenAt ?? null
+      consentGivenAt: insertContact.consentGivenAt ?? null,
     };
     this.contacts.set(id, contact);
     return contact;
@@ -269,32 +584,35 @@ export class MemStorage implements IStorage {
   async searchContacts(query: string): Promise<Contact[]> {
     const allContacts = Array.from(this.contacts.values());
     const lowerQuery = query.toLowerCase();
-    return allContacts.filter(contact => 
-      contact.firstName.toLowerCase().includes(lowerQuery) ||
-      contact.lastName.toLowerCase().includes(lowerQuery) ||
-      contact.email.toLowerCase().includes(lowerQuery) ||
-      (contact.phone && contact.phone.toLowerCase().includes(lowerQuery))
+    return allContacts.filter(
+      (contact) =>
+        contact.firstName.toLowerCase().includes(lowerQuery) ||
+        contact.lastName.toLowerCase().includes(lowerQuery) ||
+        contact.email.toLowerCase().includes(lowerQuery) ||
+        (contact.phone && contact.phone.toLowerCase().includes(lowerQuery)),
     );
   }
 
   // Brokers (using contacts table)
   async getAllBrokers(): Promise<Contact[]> {
-    return Array.from(this.contacts.values()).filter(c => c.contactType === 'broker');
+    return Array.from(this.contacts.values()).filter(
+      (c) => c.contactType === "broker",
+    );
   }
 
   async getBrokerById(id: string): Promise<Contact | undefined> {
     const contact = this.contacts.get(id);
-    return contact?.contactType === 'broker' ? contact : undefined;
+    return contact?.contactType === "broker" ? contact : undefined;
   }
 
   async createBroker(insertBroker: any): Promise<Contact> {
     const id = randomUUID();
-    const contact: Contact = { 
+    const contact: Contact = {
       ...insertBroker,
       id,
-      contactType: 'broker',
+      contactType: "broker",
       createdAt: new Date(),
-      consentGivenAt: null
+      consentGivenAt: null,
     };
     this.contacts.set(id, contact);
     return contact;
@@ -311,8 +629,8 @@ export class MemStorage implements IStorage {
 
   async createLead(insertLead: InsertLead): Promise<Lead> {
     const id = randomUUID();
-    const lead: Lead = { 
-      ...insertLead, 
+    const lead: Lead = {
+      ...insertLead,
       id,
       value: insertLead.value ?? null,
       phone: insertLead.phone ?? null,
@@ -323,19 +641,22 @@ export class MemStorage implements IStorage {
       targetLocations: insertLead.targetLocations ?? null,
       timeFrameToBuy: insertLead.timeFrameToBuy ?? null,
       leadScore: insertLead.leadScore ?? 0,
-      pipelineStage: insertLead.pipelineStage ?? 'new',
+      pipelineStage: insertLead.pipelineStage ?? "new",
       agentId: insertLead.agentId ?? null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
     this.leads.set(id, lead);
     return lead;
   }
 
-  async updateLead(id: string, updateData: Partial<InsertLead>): Promise<Lead | undefined> {
+  async updateLead(
+    id: string,
+    updateData: Partial<InsertLead>,
+  ): Promise<Lead | undefined> {
     const lead = this.leads.get(id);
     if (!lead) return undefined;
-    
+
     const updatedLead = { ...lead, ...updateData, updatedAt: new Date() };
     this.leads.set(id, updatedLead);
     return updatedLead;
@@ -343,9 +664,9 @@ export class MemStorage implements IStorage {
 
   // Deal-based leads (legacy)
   async getAllDealLeads(): Promise<LeadWithDetails[]> {
-    return Array.from(this.dealLeads.values()).map(deal => ({
+    return Array.from(this.dealLeads.values()).map((deal) => ({
       ...deal,
-      activities: []
+      activities: [],
     }));
   }
 
@@ -354,7 +675,7 @@ export class MemStorage implements IStorage {
     if (!deal) return undefined;
     return {
       ...deal,
-      activities: []
+      activities: [],
     };
   }
 
@@ -362,8 +683,8 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const contact = await this.getContactById(insertDeal.buyerContactId);
     if (!contact) throw new Error("Contact not found");
-    
-    const deal: DealLead = { 
+
+    const deal: DealLead = {
       id,
       createdAt: new Date(),
       unitId: insertDeal.unitId,
@@ -376,7 +697,7 @@ export class MemStorage implements IStorage {
       contact,
       activities: [],
       status: insertDeal.dealStage,
-      score: 0
+      score: 0,
     };
     this.dealLeads.set(id, deal);
     return deal;
@@ -385,7 +706,7 @@ export class MemStorage implements IStorage {
   // Activities
   async getActivitiesByLeadId(leadId: string): Promise<Activity[]> {
     return Array.from(this.activities.values()).filter(
-      activity => activity.dealId === leadId
+      (activity) => activity.dealId === leadId,
     );
   }
 
@@ -395,96 +716,106 @@ export class MemStorage implements IStorage {
     this.activities.set(id, activity);
     return activity;
   }
-  
+
   // Projects
   async getProjectCounts() {
     const units = Array.from(this.units.values());
-    const projectMap = new Map<string, {
-      id: number;
-      name: string;
-      address: string;
-      units: UnitWithDetails[];
-    }>();
+    const projectMap = new Map<
+      string,
+      {
+        id: number;
+        name: string;
+        address: string;
+        units: UnitWithDetails[];
+      }
+    >();
 
-    units.forEach(unit => {
+    units.forEach((unit) => {
       const projectKey = unit.building;
       if (!projectMap.has(projectKey)) {
         projectMap.set(projectKey, {
           id: parseInt(unit.projectId) || 0,
           name: unit.building,
           address: `${unit.building} Address`,
-          units: []
+          units: [],
         });
       }
       projectMap.get(projectKey)!.units.push(unit);
     });
 
-    return Array.from(projectMap.values()).map(project => ({
+    return Array.from(projectMap.values()).map((project) => ({
       id: project.id.toString(),
       name: project.name,
       address: project.address,
       totalUnits: project.units.length,
-      available: project.units.filter(u => u.status === 'available').length,
-      reserved: project.units.filter(u => u.status === 'on_hold' || u.status === 'contract').length,
-      sold: project.units.filter(u => u.status === 'sold').length,
+      available: project.units.filter((u) => u.status === "available").length,
+      reserved: project.units.filter(
+        (u) => u.status === "on_hold" || u.status === "contract",
+      ).length,
+      sold: project.units.filter((u) => u.status === "sold").length,
     }));
   }
-  
+
   // Tasks (stub implementations for MemStorage)
   async getAllTasks(): Promise<Task[]> {
     return [];
   }
-  
+
   async getTasksByLeadId(leadId: string): Promise<Task[]> {
     return [];
   }
-  
+
   async getTasksByAgentId(agentId: string): Promise<Task[]> {
     return [];
   }
-  
+
   async createTask(task: InsertTask): Promise<Task> {
     const id = randomUUID();
     const newTask: Task = {
       ...task,
       id,
       description: task.description ?? null,
-      status: task.status ?? 'pending',
-      priority: task.priority ?? 'medium',
+      status: task.status ?? "pending",
+      priority: task.priority ?? "medium",
       dueDate: task.dueDate ?? null,
       completedAt: task.completedAt ?? null,
       automationSource: task.automationSource ?? null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
     return newTask;
   }
-  
-  async updateTask(id: string, task: Partial<InsertTask>): Promise<Task | undefined> {
+
+  async updateTask(
+    id: string,
+    task: Partial<InsertTask>,
+  ): Promise<Task | undefined> {
     return undefined;
   }
-  
+
   async completeTask(id: string): Promise<Task | undefined> {
     return undefined;
   }
-  
+
   // Lead Engagement (stub implementations for MemStorage)
   async getLeadEngagementByLeadId(leadId: string): Promise<LeadEngagement[]> {
     return [];
   }
-  
-  async createLeadEngagement(engagement: InsertLeadEngagement): Promise<LeadEngagement> {
+
+  async createLeadEngagement(
+    engagement: InsertLeadEngagement,
+  ): Promise<LeadEngagement> {
     const id = randomUUID();
     const newEngagement: LeadEngagement = {
       ...engagement,
       id,
       eventMetadata: engagement.eventMetadata ?? null,
       scoreImpact: engagement.scoreImpact ?? 0,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
     return newEngagement;
   }
-  
+
   async calculateLeadScore(leadId: string): Promise<number> {
     return 0;
   }
@@ -492,81 +823,93 @@ export class MemStorage implements IStorage {
   async detectEngagementSpike(leadId: string): Promise<boolean> {
     return false;
   }
-  
+
   // Unit Matching
   async getMatchingUnitsForLead(leadId: string): Promise<UnitWithDetails[]> {
     const lead = this.leads.get(leadId);
     if (!lead) return [];
-    
+
     const allUnits = Array.from(this.units.values());
-    
-    return allUnits.filter(unit => {
-      if (unit.status !== 'available') return false;
-      
+
+    return allUnits.filter((unit) => {
+      if (unit.status !== "available") return false;
+
       if (lead.targetPriceMin && lead.targetPriceMax) {
         const price = parseFloat(unit.price);
         const minPrice = parseFloat(lead.targetPriceMin);
         const maxPrice = parseFloat(lead.targetPriceMax);
-        
+
         if (isNaN(price) || isNaN(minPrice) || isNaN(maxPrice)) return false;
         if (price < minPrice || price > maxPrice) return false;
       }
-      
+
       if (lead.targetLocations && lead.targetLocations.length > 0) {
         if (!lead.targetLocations.includes(unit.building)) return false;
       }
-      
+
       return true;
     });
   }
-  
+
   // Unit Leads
-  async getLeadsByUnit(projectId: string, unitNumber: string): Promise<LeadWithDetails[]> {
+  async getLeadsByUnit(
+    projectId: string,
+    unitNumber: string,
+  ): Promise<LeadWithDetails[]> {
     return [];
   }
-  
+
   // AI Conversations (stub implementations for MemStorage)
-  async createConversation(conversation: InsertAiConversation): Promise<AiConversation> {
+  async createConversation(
+    conversation: InsertAiConversation,
+  ): Promise<AiConversation> {
     const id = randomUUID();
     return {
       id,
       ...conversation,
       title: conversation.title ?? null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
   }
-  
-  async getConversationByConversationId(conversationId: string): Promise<AiConversation | undefined> {
+
+  async getConversationByConversationId(
+    conversationId: string,
+  ): Promise<AiConversation | undefined> {
     return undefined;
   }
-  
+
   async getConversationsByAgentId(agentId: string): Promise<AiConversation[]> {
     return [];
   }
-  
-  async updateConversationTitle(conversationId: string, title: string): Promise<AiConversation | undefined> {
+
+  async updateConversationTitle(
+    conversationId: string,
+    title: string,
+  ): Promise<AiConversation | undefined> {
     return undefined;
   }
-  
+
   async touchConversation(conversationId: string): Promise<void> {
     // Stub: MemStorage doesn't persist
   }
-  
+
   // AI Messages (stub implementations for MemStorage)
   async createMessage(message: InsertAiMessage): Promise<AiMessage> {
     const id = randomUUID();
     return {
       id,
       ...message,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
   }
-  
-  async getMessagesByConversationId(conversationId: string): Promise<AiMessage[]> {
+
+  async getMessagesByConversationId(
+    conversationId: string,
+  ): Promise<AiMessage[]> {
     return [];
   }
-  
+
   // AI Feedback (stub implementations for MemStorage)
   async createFeedback(feedback: InsertAiFeedback): Promise<AiFeedback> {
     const id = randomUUID();
@@ -574,16 +917,63 @@ export class MemStorage implements IStorage {
       id,
       ...feedback,
       comment: feedback.comment ?? null,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
   }
-  
-  async getFeedbackByMessageId(messageId: string): Promise<AiFeedback | undefined> {
+
+  async getFeedbackByMessageId(
+    messageId: string,
+  ): Promise<AiFeedback | undefined> {
+    return undefined;
+  }
+
+  // NEW: Showing Session (Visit) stubs for MemStorage
+  async createVisit(
+    visitData: Pick<Visit, "leadId" | "agentId" | "projectId">,
+  ): Promise<Visit> {
+    const id = randomUUID();
+    const newVisit: Visit = {
+      id,
+      ...visitData,
+      startedAt: new Date(),
+      endedAt: null,
+    };
+    console.log("[MemStorage] Creating mock visit:", newVisit);
+    return newVisit;
+  }
+
+  async logUnitView(visitId: string, unitId: string): Promise<ViewedUnit> {
+    const id = randomUUID();
+    const newView: ViewedUnit = {
+      id,
+      visitId,
+      unitId,
+      viewedAt: new Date(),
+    };
+    console.log("[MemStorage] Logging mock unit view:", newView);
+    return newView;
+  }
+
+  async getVisitSummary(visitId: string): Promise<UnitWithDetails[]> {
+    console.log(
+      `[MemStorage] Stub: Faking getVisitSummary for visitId: ${visitId}. Returning empty array.`,
+    );
+    // For the MVP's local dev mode, returning an empty array is sufficient to fulfill the contract.
+    return [];
+  }
+
+  async getVisitById(visitId: string): Promise<Visit | undefined> {
+    console.log(
+      `[MemStorage] Stub: Faking getVisitById for visitId: ${visitId}. Returning undefined.`,
+    );
+    // For local dev, we can just return undefined as a placeholder.
     return undefined;
   }
 }
 
-import { PostgresStorage } from './postgres-storage';
+import { PostgresStorage } from "./postgres-storage";
 
 // Use PostgresStorage with Supabase database
-export const storage = process.env.DATABASE_URL ? new PostgresStorage() : new MemStorage();
+export const storage = process.env.DATABASE_URL
+  ? new PostgresStorage()
+  : new MemStorage();

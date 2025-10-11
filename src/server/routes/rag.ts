@@ -44,7 +44,7 @@ async function findMatchingDocuments(query: string) {
 }
 
 // --- API ENDPOINT FOR GENERATION ---
-router.post("/rag/ask", async (req, res) => {
+router.post("/ask", async (req, res) => {
   const { question } = req.body;
 
   if (!question) {

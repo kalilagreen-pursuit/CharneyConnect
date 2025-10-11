@@ -1,11 +1,24 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, numeric, uuid } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  varchar,
+  integer,
+  timestamp,
+  numeric,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Unit Status enum - maps to existing status values
-export const unitStatuses = ["available", "on_hold", "contract", "sold"] as const;
-export type UnitStatus = typeof unitStatuses[number];
+export const unitStatuses = [
+  "available",
+  "on_hold",
+  "contract",
+  "sold",
+] as const;
+export type UnitStatus = (typeof unitStatuses)[number];
 
 // Projects table (existing)
 export const projects = pgTable("Projects", {
@@ -99,6 +112,36 @@ export const activities = pgTable("Activities", {
 
 export type Activity = typeof activities.$inferSelect;
 
+// NEW: Table to track a "Showing Session" or a Visit
+export const visits = pgTable("visits", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  leadId: uuid("lead_id")
+    .notNull()
+    .references(() => leads.id),
+  agentId: text("agent_id").notNull(),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id),
+  startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+});
+
+export type Visit = typeof visits.$inferSelect;
+
+// NEW: Join table to log each unit viewed during a specific visit
+export const viewedUnits = pgTable("viewed_units", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  visitId: uuid("visit_id")
+    .notNull()
+    .references(() => visits.id),
+  unitId: uuid("unit_id")
+    .notNull()
+    .references(() => units.id),
+  viewedAt: timestamp("viewed_at", { withTimezone: true }).defaultNow(),
+});
+
+export type ViewedUnit = typeof viewedUnits.$inferSelect;
+
 // Extended types for CRM frontend (Deal-based, legacy)
 export type DealLead = Deal & {
   contact: Contact;
@@ -133,17 +176,34 @@ export type UnitWithDealContext = UnitWithDetails & {
 };
 
 // Insert schemas
-export const insertUnitSchema = createInsertSchema(units).omit({ id: true, createdAt: true });
+export const insertUnitSchema = createInsertSchema(units).omit({
+  id: true,
+  createdAt: true,
+});
 export type InsertUnit = z.infer<typeof insertUnitSchema>;
 
-export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, createdAt: true });
+export const insertContactSchema = createInsertSchema(contacts).omit({
+  id: true,
+  createdAt: true,
+});
 export type InsertContact = z.infer<typeof insertContactSchema>;
 
-export const insertDealSchema = createInsertSchema(deals).omit({ id: true, createdAt: true });
+export const insertDealSchema = createInsertSchema(deals).omit({
+  id: true,
+  createdAt: true,
+});
 
 // Pipeline stages for lead qualification
-export const pipelineStages = ["new", "contacted", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"] as const;
-export type PipelineStage = typeof pipelineStages[number];
+export const pipelineStages = [
+  "new",
+  "contacted",
+  "qualified",
+  "proposal",
+  "negotiation",
+  "closed_won",
+  "closed_lost",
+] as const;
+export type PipelineStage = (typeof pipelineStages)[number];
 
 // Leads table (public.leads) - CRM lead management with qualification
 export const leads = pgTable("leads", {
@@ -160,37 +220,47 @@ export const leads = pgTable("leads", {
   targetLocations: text("target_locations").array(),
   timeFrameToBuy: text("time_frame_to_buy"),
   leadScore: integer("lead_score").notNull().default(0),
-  pipelineStage: text("pipeline_stage").notNull().default('new'),
+  pipelineStage: text("pipeline_stage").notNull().default("new"),
   agentId: text("agent_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export type Lead = typeof leads.$inferSelect;
-export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, createdAt: true, updatedAt: true }).extend({
-  company: z.string().optional(),
-  value: z.number().optional(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  targetPriceMin: z.string().optional(),
-  targetPriceMax: z.string().optional(),
-  targetLocations: z.array(z.string()).optional(),
-  timeFrameToBuy: z.string().optional(),
-  leadScore: z.number().optional(),
-  pipelineStage: z.string().optional(),
-});
+export const insertLeadSchema = createInsertSchema(leads)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    company: z.string().optional(),
+    value: z.number().optional(),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    targetPriceMin: z.string().optional(),
+    targetPriceMax: z.string().optional(),
+    targetLocations: z.array(z.string()).optional(),
+    timeFrameToBuy: z.string().optional(),
+    leadScore: z.number().optional(),
+    pipelineStage: z.string().optional(),
+  });
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type InsertDeal = z.infer<typeof insertDealSchema>;
 
-export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true });
+export const insertActivitySchema = createInsertSchema(activities).omit({
+  id: true,
+  createdAt: true,
+});
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 
 // Task priorities and statuses
 export const taskPriorities = ["low", "medium", "high", "urgent"] as const;
-export type TaskPriority = typeof taskPriorities[number];
+export type TaskPriority = (typeof taskPriorities)[number];
 
-export const taskStatuses = ["pending", "in_progress", "completed", "cancelled"] as const;
-export type TaskStatus = typeof taskStatuses[number];
+export const taskStatuses = [
+  "pending",
+  "in_progress",
+  "completed",
+  "cancelled",
+] as const;
+export type TaskStatus = (typeof taskStatuses)[number];
 
 // Tasks table for agent task management
 export const tasks = pgTable("tasks", {
@@ -199,8 +269,8 @@ export const tasks = pgTable("tasks", {
   agentId: text("agent_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
-  priority: text("priority").notNull().default('medium'),
-  status: text("status").notNull().default('pending'),
+  priority: text("priority").notNull().default("medium"),
+  status: text("status").notNull().default("pending"),
   dueDate: timestamp("due_date"),
   completedAt: timestamp("completed_at"),
   automationSource: text("automation_source"),
@@ -209,17 +279,28 @@ export const tasks = pgTable("tasks", {
 });
 
 export type Task = typeof tasks.$inferSelect;
-export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, updatedAt: true }).extend({
-  description: z.string().optional(),
-  dueDate: z.date().optional(),
-  completedAt: z.date().optional(),
-  automationSource: z.string().optional(),
-});
+export const insertTaskSchema = createInsertSchema(tasks)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    description: z.string().optional(),
+    dueDate: z.date().optional(),
+    completedAt: z.date().optional(),
+    automationSource: z.string().optional(),
+  });
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 
 // Engagement event types
-export const engagementEventTypes = ["email_open", "email_click", "website_visit", "document_view", "form_submit", "phone_call", "meeting_scheduled", "meeting_attended"] as const;
-export type EngagementEventType = typeof engagementEventTypes[number];
+export const engagementEventTypes = [
+  "email_open",
+  "email_click",
+  "website_visit",
+  "document_view",
+  "form_submit",
+  "phone_call",
+  "meeting_scheduled",
+  "meeting_attended",
+] as const;
+export type EngagementEventType = (typeof engagementEventTypes)[number];
 
 // Lead Engagement table for tracking interactions and scoring
 export const leadEngagement = pgTable("lead_engagement", {
@@ -232,9 +313,11 @@ export const leadEngagement = pgTable("lead_engagement", {
 });
 
 export type LeadEngagement = typeof leadEngagement.$inferSelect;
-export const insertLeadEngagementSchema = createInsertSchema(leadEngagement).omit({ id: true, createdAt: true }).extend({
-  eventMetadata: z.string().optional(),
-});
+export const insertLeadEngagementSchema = createInsertSchema(leadEngagement)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    eventMetadata: z.string().optional(),
+  });
 export type InsertLeadEngagement = z.infer<typeof insertLeadEngagementSchema>;
 
 // Extended types for frontend display
@@ -260,35 +343,46 @@ export const aiConversations = pgTable("ai_conversations", {
 });
 
 export type AiConversation = typeof aiConversations.$inferSelect;
-export const insertAiConversationSchema = createInsertSchema(aiConversations).omit({ id: true, createdAt: true, updatedAt: true }).extend({
-  title: z.string().optional(),
-});
+export const insertAiConversationSchema = createInsertSchema(aiConversations)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    title: z.string().optional(),
+  });
 export type InsertAiConversation = z.infer<typeof insertAiConversationSchema>;
 
 // AI Messages table - stores individual messages in conversations
 export const aiMessages = pgTable("ai_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
-  conversationId: text("conversation_id").notNull().references(() => aiConversations.conversationId, { onDelete: "cascade" }),
+  conversationId: text("conversation_id")
+    .notNull()
+    .references(() => aiConversations.conversationId, { onDelete: "cascade" }),
   role: text("role").notNull(), // 'user' or 'assistant'
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export type AiMessage = typeof aiMessages.$inferSelect;
-export const insertAiMessageSchema = createInsertSchema(aiMessages).omit({ id: true, createdAt: true });
+export const insertAiMessageSchema = createInsertSchema(aiMessages).omit({
+  id: true,
+  createdAt: true,
+});
 export type InsertAiMessage = z.infer<typeof insertAiMessageSchema>;
 
 // AI Feedback table - stores thumbs up/down feedback
 export const aiFeedback = pgTable("ai_feedback", {
   id: uuid("id").primaryKey().defaultRandom(),
-  messageId: uuid("message_id").notNull().references(() => aiMessages.id, { onDelete: "cascade" }),
+  messageId: uuid("message_id")
+    .notNull()
+    .references(() => aiMessages.id, { onDelete: "cascade" }),
   feedbackType: text("feedback_type").notNull(), // 'positive' or 'negative'
   comment: text("comment"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export type AiFeedback = typeof aiFeedback.$inferSelect;
-export const insertAiFeedbackSchema = createInsertSchema(aiFeedback).omit({ id: true, createdAt: true }).extend({
-  comment: z.string().optional(),
-});
+export const insertAiFeedbackSchema = createInsertSchema(aiFeedback)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    comment: z.string().optional(),
+  });
 export type InsertAiFeedback = z.infer<typeof insertAiFeedbackSchema>;

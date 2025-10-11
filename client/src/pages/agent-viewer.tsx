@@ -496,7 +496,7 @@ export default function AgentViewer() {
                   data-unit-id={unit.id}
                   data-testid={`card-unit-${unit.unitNumber}`}
                   className={cn(
-                    "p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.01]",
+                    "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] border border-transparent hover:border-indigo-600",
                     selectedUnitId === unit.id && "ring-2 ring-primary"
                   )}
                   onClick={() => handleUnitSelect(unit.id)}
@@ -698,7 +698,7 @@ export default function AgentViewer() {
                           data-unit-id={unit.id}
                           data-testid={`card-deal-${unit.unitNumber}`}
                           className={cn(
-                            "p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.01] border-l-4",
+                            "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] border-l-4 border-transparent hover:border-indigo-600",
                             stageBorderColor,
                             selectedUnitId === unit.id && "ring-2 ring-primary"
                           )}

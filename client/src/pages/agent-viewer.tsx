@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, useStartShowing } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -34,10 +34,12 @@ export default function AgentViewer() {
   const [actionId] = useState(() => `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const { unitUpdates, clearUnitUpdates} = useRealtime();
   const { toast } = useToast();
+  const startShowingMutation = useStartShowing();
   
   // Showing session state
   const [activeVisitId, setActiveVisitId] = useState<string | null>(null);
   const [showStartShowingDialog, setShowStartShowingDialog] = useState(false);
+  const [selectedLeadForShowing, setSelectedLeadForShowing] = useState<string | null>(null);
   
   // Fetch showing itinerary (viewed units in current session)
   const { data: viewedUnits = [] } = useQuery<Array<{ unitId: string; unitNumber: string; timestamp: string }>>({
@@ -80,6 +82,12 @@ export default function AgentViewer() {
       return response.json();
     },
     enabled: activeTab === "active-deals", // Only fetch when active deals tab is selected
+  });
+
+  // Fetch all leads for showing session selection
+  const { data: allLeads = [] } = useQuery<Lead[]>({
+    queryKey: ["/api/leads"],
+    enabled: showStartShowingDialog, // Only fetch when dialog is open
   });
 
   // Listen for realtime updates and invalidate cache
@@ -273,45 +281,51 @@ export default function AgentViewer() {
     }
   };
 
-  const handleStartShowing = async (leadId: string) => {
-    console.log(`[${actionId}] Starting showing session for lead: ${leadId}`);
-    
-    try {
-      const response = await fetch('/api/showings/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          leadId,
-          agentId,
-          projectId: currentProjectId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to start showing session');
-      }
-
-      const newVisit = await response.json();
-      setActiveVisitId(newVisit.id);
-      
+  const handleStartShowing = () => {
+    if (!selectedLeadForShowing) {
       toast({
-        title: "Showing Started",
-        description: "All unit views will now be tracked for this session.",
-        duration: 3000,
-      });
-      
-      setShowStartShowingDialog(false);
-      
-      console.log(`[${actionId}] Showing session started: ${newVisit.id}`);
-    } catch (error) {
-      console.error(`[${actionId}] Error starting showing:`, error);
-      toast({
-        title: "Error",
-        description: "Failed to start showing session. Please try again.",
+        title: "No Lead Selected",
+        description: "Please select a lead to start the showing session.",
         variant: "destructive",
         duration: 3000,
       });
+      return;
     }
+
+    console.log(`[${actionId}] Starting showing session for lead: ${selectedLeadForShowing}`);
+    
+    startShowingMutation.mutate(
+      {
+        leadId: selectedLeadForShowing,
+        agentId,
+        projectId: currentProjectId,
+      },
+      {
+        onSuccess: (newVisit) => {
+          setActiveVisitId(newVisit.id);
+          
+          toast({
+            title: "Showing Started",
+            description: "All unit views will now be tracked for this session.",
+            duration: 3000,
+          });
+          
+          setShowStartShowingDialog(false);
+          setSelectedLeadForShowing(null);
+          
+          console.log(`[${actionId}] Showing session started: ${newVisit.id}`);
+        },
+        onError: (error) => {
+          console.error(`[${actionId}] Error starting showing:`, error);
+          toast({
+            title: "Error",
+            description: "Failed to start showing session. Please try again.",
+            variant: "destructive",
+            duration: 3000,
+          });
+        },
+      }
+    );
   };
 
   if (isLoading) {
@@ -790,17 +804,39 @@ export default function AgentViewer() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="text-sm text-muted-foreground">
-              Available leads will be fetched here. For now, you can start a showing with a test lead.
-            </div>
-            
-            <Button
-              className="w-full uppercase font-black"
-              onClick={() => handleStartShowing('test-lead-id')}
-              data-testid="button-confirm-start-showing"
-            >
-              START SHOWING
-            </Button>
+            {allLeads.length > 0 ? (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Lead</label>
+                  <select
+                    className="w-full px-3 py-2 border rounded-md bg-background"
+                    value={selectedLeadForShowing || ''}
+                    onChange={(e) => setSelectedLeadForShowing(e.target.value)}
+                    data-testid="select-lead-for-showing"
+                  >
+                    <option value="">-- Select a lead --</option>
+                    {allLeads.map((lead) => (
+                      <option key={lead.id} value={lead.id}>
+                        {lead.firstName} {lead.lastName} - {lead.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <Button
+                  className="w-full uppercase font-black"
+                  onClick={handleStartShowing}
+                  disabled={!selectedLeadForShowing || startShowingMutation.isPending}
+                  data-testid="button-confirm-start-showing"
+                >
+                  {startShowingMutation.isPending ? 'STARTING...' : 'START SHOWING'}
+                </Button>
+              </>
+            ) : (
+              <div className="text-sm text-muted-foreground text-center py-4">
+                No leads available. Please qualify a lead first.
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

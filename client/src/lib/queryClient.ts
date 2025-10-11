@@ -127,3 +127,31 @@ export const useLogUnitView = (visitId: string | null) => {
     },
   });
 };
+
+// Type for starting a showing session
+type StartShowingPayload = {
+  leadId: string;
+  agentId: string;
+  projectId: string;
+};
+
+// Mutation to start a showing session
+const startShowingSession = async (payload: StartShowingPayload) => {
+  const response = await apiRequest('POST', '/api/showings/start', payload);
+  return response.json();
+};
+
+export const useStartShowing = () => {
+  const queryClientInstance = queryClient;
+
+  return useMutation({
+    mutationFn: (payload: StartShowingPayload) => startShowingSession(payload),
+    onSuccess: (data) => {
+      console.log('Showing session started successfully:', data.id);
+      // Invalidate any relevant queries if needed
+    },
+    onError: (error) => {
+      console.error('Failed to start showing session:', error);
+    },
+  });
+};

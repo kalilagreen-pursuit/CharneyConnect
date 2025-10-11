@@ -1,0 +1,64 @@
+2. Implement State and Controls in AgentViewer.tsx (2A.1 & 2A.3)
+
+Instruct the Replit Assistant to modify client/src/pages/agent/viewer/AgentViewer.tsx:
+
+TypeScript
+// client/src/pages/agent/viewer/AgentViewer.tsx
+
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useStartShowing, useEndShowing } from '@/lib/queryClient'; // Import new hooks
+
+// ... Inside the AgentViewer functional component ...
+// Assuming you have access to the currently selected lead/prospect ID:
+const selectedLeadId = 'mock-lead-123'; // Replace with actual context/state
+
+const [activeVisitId, setActiveVisitId] = useState<string | null>(null);
+
+const startShowingMutation = useStartShowing();
+const endShowingMutation = useEndShowing();
+
+const handleStartShowing = () => {
+  if (!selectedLeadId) return; // Guard against no prospect selected
+  startShowingMutation.mutate(selectedLeadId, {
+    onSuccess: (data) => {
+      setActiveVisitId(data.visitId);
+    },
+  });
+};
+
+const handleEndShowing = () => {
+  if (!activeVisitId) return;
+  
+  // Trigger the automation and reset the session state
+  endShowingMutation.mutate(activeVisitId, {
+    onSuccess: () => {
+      setActiveVisitId(null); 
+    }
+  });
+};
+
+// ... In the JSX render, insert this control group, possibly near the navigation or header:
+
+<div className="p-4 bg-background border-b flex justify-end">
+  {activeVisitId ? (
+    <Button 
+      onClick={handleEndShowing} 
+      variant="destructive"
+      isLoading={endShowingMutation.isPending}
+    >
+      {endShowingMutation.isPending ? 'Processing...' : 'End Showing & Trigger Follow-up'}
+    </Button>
+  ) : (
+    <Button 
+      onClick={handleStartShowing} 
+      variant="default"
+      isLoading={startShowingMutation.isPending}
+      disabled={!selectedLeadId || startShowingMutation.isPending}
+    >
+      {startShowingMutation.isPending ? 'Starting...' : 'Start Showing'}
+    </Button>
+  )}
+</div>
+
+{/* NOTE: You must now pass activeVisitId down to any component that needs it, like the 3D viewer or UnitSheetDrawer. */}

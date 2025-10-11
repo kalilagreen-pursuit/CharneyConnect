@@ -226,7 +226,9 @@ export const leads = pgTable("leads", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export type Lead = typeof leads.$inferSelect;
+export type Lead = typeof leads.$inferSelect & {
+  toured_unit_ids?: string[]; // Array of Unit IDs checked off by the agent
+};
 export const insertLeadSchema = createInsertSchema(leads)
   .omit({ id: true, createdAt: true, updatedAt: true })
   .extend({
@@ -240,6 +242,7 @@ export const insertLeadSchema = createInsertSchema(leads)
     timeFrameToBuy: z.string().optional(),
     leadScore: z.number().optional(),
     pipelineStage: z.string().optional(),
+    toured_unit_ids: z.array(z.string()).optional(),
   });
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type InsertDeal = z.infer<typeof insertDealSchema>;

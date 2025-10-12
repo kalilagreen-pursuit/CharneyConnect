@@ -225,3 +225,21 @@ export const useEndShowing = () => {
     },
   });
 };
+
+// Fetch client details with preferences
+const fetchClientDetails = async (clientId: string) => {
+  const response = await apiRequest('GET', `/api/leads/${clientId}`, undefined);
+  return response.json();
+};
+
+export const useClientDetails = (clientId: string | null) => {
+  return useQuery({
+    queryKey: ['/api/leads', clientId],
+    queryFn: () => {
+      if (!clientId) throw new Error('No client ID provided');
+      return fetchClientDetails(clientId);
+    },
+    enabled: !!clientId,
+    staleTime: Infinity, // Client details rarely change during a session
+  });
+};

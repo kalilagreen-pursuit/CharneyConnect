@@ -305,7 +305,13 @@ export class PostgresStorage implements IStorage {
 
   // Leads (from public.leads table)
   async getAllLeads(): Promise<Lead[]> {
-    return db.select().from(leads);
+    try {
+      const result = await db.select().from(leads);
+      return result;
+    } catch (error) {
+      console.error("Error in getAllLeads:", error);
+      throw error;
+    }
   }
 
   async getLeadById(id: string): Promise<Lead | undefined> {

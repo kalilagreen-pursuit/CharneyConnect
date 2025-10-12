@@ -7,6 +7,7 @@ import {
   timestamp,
   numeric,
   uuid,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -208,27 +209,22 @@ export type PipelineStage = (typeof pipelineStages)[number];
 // Leads table (public.leads) - CRM lead management with qualification
 export const leads = pgTable("leads", {
   id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
-  company: text("company"),
-  status: text("status").notNull(),
-  value: integer("value"),
-  phone: text("phone"),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
+  company: varchar("company", { length: 255 }),
   address: text("address"),
-  targetPriceMin: numeric("target_price_min"),
-  targetPriceMax: numeric("target_price_max"),
+  value: decimal("value", { precision: 12, scale: 2 }),
+  status: varchar("status", { length: 50 }).notNull().default("new"),
+  targetPriceMin: varchar("target_price_min", { length: 50 }),
+  targetPriceMax: varchar("target_price_max", { length: 50 }),
   targetLocations: text("target_locations").array(),
-  targetBedrooms: integer("target_bedrooms"),
-  targetBathrooms: numeric("target_bathrooms"),
-  targetSqftMin: integer("target_sqft_min"),
-  targetSqftMax: integer("target_sqft_max"),
-  desiredViews: text("desired_views").array(),
-  timeFrameToBuy: text("time_frame_to_buy"),
-  leadScore: integer("lead_score").notNull().default(0),
-  pipelineStage: text("pipeline_stage").notNull().default("new"),
-  agentId: text("agent_id"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  timeFrameToBuy: varchar("time_frame_to_buy", { length: 50 }),
+  leadScore: integer("lead_score").default(0),
+  pipelineStage: varchar("pipeline_stage", { length: 50 }).default("new"),
+  agentId: varchar("agent_id", { length: 50 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Lead = typeof leads.$inferSelect & {

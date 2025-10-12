@@ -439,7 +439,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Leads endpoints
   app.get("/api/leads", async (req, res) => {
     try {
-      const leads = await storage.getAllLeads();
+      const { agentId, projectId } = req.query;
+      
+      let leads = await storage.getAllLeads();
+      
+      // Apply filtering based on agentId (if provided)
+      if (agentId) {
+        leads = leads.filter(lead => lead.agentId === agentId);
+      }
+      
+      // Apply filtering based on projectId (if provided)
+      // Note: This assumes leads have a projectId or target location that matches
+      if (projectId) {
+        leads = leads.filter(lead => {
+          // Check if targetLocations array includes the project name
+          if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
+            return lead.targetLocations.some(loc => loc === projectId);
+          }
+          return false;
+        });
+      }
+      
       res.json(leads);
     } catch (error) {
       console.error("Error fetching leads:", error);

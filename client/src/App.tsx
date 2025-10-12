@@ -24,7 +24,9 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/leads" component={Leads} />
       <Route path="/agent" component={AgentDashboard} />
-      <Route path="/agent/viewer/:clientId?" component={AgentViewer} />
+      <Route path="/agent/viewer/:clientId?">
+        {(params) => <AgentViewer clientId={params.clientId} />}
+      </Route>
       <Route path="/manager" component={ManagerView} />
       <Route path="/unit/:projectId/:unitNumber/leads" component={UnitLeads} />
       <Route path="/portal/:leadId" component={BuyerPortalStub} />

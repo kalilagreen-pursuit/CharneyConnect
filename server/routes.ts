@@ -468,22 +468,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[API] Leads after status filter: ${leads.length}`);
       }
 
-      // 3. Filter by Project ID (DEMO FIX: Relaxed to ensure leads load)
+      // 3. Filter by Project ID
       if (projectId) {
-        // DEMO MODE: Only filter by project if the lead has valid targetLocations
-        // This allows leads without targetLocations to still appear in the list
-        console.warn(`[API][DEMO MODE] Relaxed projectId filter for: ${projectId}`);
+        // First, get the project name from the UUID
+        const projectCounts = await storage.getProjectCounts();
+        const project = projectCounts.find(p => p.id === projectId);
+        const projectName = project?.name;
         
-        leads = leads.filter((lead) => {
-          // If lead has targetLocations, check if it includes the project
-          if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
-            return lead.targetLocations.some((loc) => loc === projectId);
-          }
-          // If lead has no targetLocations, include it anyway (DEMO FIX)
-          return true;
-        });
-        
-        console.log(`[API] Leads after relaxed projectId filter: ${leads.length}`);
+        if (projectName) {
+          leads = leads.filter((lead) => {
+            if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
+              return lead.targetLocations.some((loc) => 
+                loc.toLowerCase() === projectName.toLowerCase()
+              );
+            }
+            return false;
+          });
+          console.log(`[API] Leads after projectId filter (${projectName}): ${leads.length}`);
+        } else {
+          console.warn(`[API] Project not found for ID: ${projectId}`);
+        }
       }
 
       console.log(`[API] Final leads returned: ${leads.length}`);

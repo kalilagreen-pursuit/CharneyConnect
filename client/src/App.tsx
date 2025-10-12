@@ -23,10 +23,9 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/leads" component={Leads} />
-      <Route path="/agent/select" component={AgentSelect} />
+      <Route path="/agent" component={AgentDashboard} />
       <Route path="/agent/dashboard" component={AgentDashboard} />
-      <Route path="/agent/project-select" component={ProjectSelect} />
-      <Route path="/agent/viewer" component={AgentViewer} />
+      <Route path="/agent/viewer/:clientId?" component={AgentViewer} />
       <Route path="/manager" component={ManagerView} />
       <Route path="/unit/:projectId/:unitNumber/leads" component={UnitLeads} />
       <Route path="/portal/:leadId" component={BuyerPortalStub} />

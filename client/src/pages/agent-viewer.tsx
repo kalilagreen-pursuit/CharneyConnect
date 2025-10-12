@@ -96,6 +96,17 @@ export default function AgentViewer() {
   // Lead search state
   const [leadSearchQuery, setLeadSearchQuery] = useState("");
 
+  // Filtered leads based on search query
+  const filteredLeadsForShowing = useMemo(() => {
+    if (!leadSearchQuery.trim()) return allLeads;
+    const query = leadSearchQuery.toLowerCase();
+    return allLeads.filter((lead) => {
+      const fullName = `${lead.firstName} ${lead.lastName}`.toLowerCase();
+      const email = lead.email?.toLowerCase() || '';
+      return fullName.includes(query) || email.includes(query);
+    });
+  }, [allLeads, leadSearchQuery]);
+
   // Active lead for preference matching (from active showing session)
   const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
   const { data: activeLead = null, isLoading: isLeadLoading } = useQuery<Lead | null>({
@@ -1056,20 +1067,15 @@ export default function AgentViewer() {
                     data-testid="select-lead-for-showing"
                   >
                     <option value="">-- Select a lead --</option>
-                    {allLeads
-                      .filter((lead) => {
-                        if (!leadSearchQuery) return true;
-                        const query = leadSearchQuery.toLowerCase();
-                        const fullName = `${lead.firstName} ${lead.lastName}`.toLowerCase();
-                        const email = lead.email?.toLowerCase() || '';
-                        return fullName.includes(query) || email.includes(query);
-                      })
-                      .map((lead) => (
-                        <option key={lead.id} value={lead.id}>
-                          {lead.firstName} {lead.lastName} - {lead.email}
-                        </option>
-                      ))}
+                    {filteredLeadsForShowing.map((lead) => (
+                      <option key={lead.id} value={lead.id}>
+                        {lead.firstName} {lead.lastName} - {lead.email}
+                      </option>
+                    ))}
                   </select>
+                  {leadSearchQuery && filteredLeadsForShowing.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No leads match your search.</p>
+                  )}
                 </div>
 
                 <Button

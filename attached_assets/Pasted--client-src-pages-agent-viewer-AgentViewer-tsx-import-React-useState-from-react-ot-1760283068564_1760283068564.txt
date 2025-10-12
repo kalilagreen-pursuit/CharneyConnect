@@ -1,0 +1,45 @@
+// client/src/pages/agent/viewer/AgentViewer.tsx
+
+import React, { useState } from 'react';
+// ... other imports
+import { useClientDetails } from '@/lib/queryClient'; // Import the new hook
+
+// ... Inside the AgentViewer component:
+// We assume the activeClientId is available, likely from the URL params or state
+const activeClientId = 'andrew-k-id'; // Replace with actual URL param/state access
+
+// Fetch client data
+const { data: activeClient, isLoading: isClientLoading } = useClientDetails(activeClientId);
+
+// ... Inside the Sidebar JSX:
+<div className="w-64 bg-white border-r p-4 flex-shrink-0">
+    <h3 className="text-xl font-bold mb-1">Agent: SARAH CHEN</h3>
+    <p className="text-sm text-gray-500 mb-4">SENIOR SALES AGENT</p>
+
+    <h4 className="text-lg font-bold mb-4 border-b pb-2">Client Context</h4>
+    
+    {isClientLoading && <p>Loading Client...</p>}
+
+    {activeClient ? (
+        <>
+            <p className="font-semibold text-indigo-700 text-xl">{activeClient.name}</p>
+            <p className="text-sm text-gray-600 mb-4">Lead Score: {activeClient.lead_score || 'High'}</p>
+
+            <h5 className="font-medium mt-4">Preferences</h5>
+            <ul className="list-disc pl-5 text-sm">
+                <li>Min Beds: **{activeClient.preferences.min_beds}**</li>
+                <li>Max Price: **${(activeClient.preferences.max_price / 1000).toFixed(0)}K**</li>
+                <li>Views: **{activeClient.preferences.desired_views.join(', ')}**</li>
+            </ul>
+            
+            {/* The Session Status div remains: */}
+            <div className="p-3 bg-indigo-50 border-l-4 border-indigo-700 mt-6">
+                <p className="text-sm font-medium">Session Status:</p>
+                <p className="text-lg font-bold">{activeVisitId ? 'ACTIVE' : 'INACTIVE'}</p>
+                {/* Toured Units count will be displayed here */}
+            </div>
+        </>
+    ) : (
+        <p className="text-sm text-red-500">No active client selected.</p>
+    )}
+</div>

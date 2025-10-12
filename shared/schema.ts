@@ -33,6 +33,23 @@ export const projects = pgTable("Projects", {
 
 export type Project = typeof projects.$inferSelect;
 
+// Agents table
+export const agents = pgTable("agents", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  role: varchar("role", { length: 100 }),
+  phone: varchar("phone", { length: 50 }),
+  avatarUrl: text("avatar_url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type Agent = typeof agents.$inferSelect;
+export const insertAgentSchema = createInsertSchema(agents).omit({
+  createdAt: true,
+});
+export type InsertAgent = z.infer<typeof insertAgentSchema>;
+
 // FloorPlans table (existing)
 export const floorPlans = pgTable("FloorPlans", {
   id: uuid("id").primaryKey().defaultRandom(),

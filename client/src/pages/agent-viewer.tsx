@@ -69,23 +69,24 @@ export default function AgentViewer() {
 
   // Fetch units specific to this agent and project
   const { data: units = [], isLoading } = useQuery<UnitWithDetails[]>({
-    queryKey: ["/api/agents", agentId, "units", projectId],
+    queryKey: ["/api/agents", agentId, "units", currentProjectId],
     queryFn: async () => {
-      const response = await fetch(`/api/agents/${agentId}/units?projectId=${projectId}`);
+      const response = await fetch(`/api/agents/${agentId}/units?projectId=${currentProjectId}`);
       if (!response.ok) throw new Error('Failed to fetch agent units');
       return response.json();
     },
+    enabled: !!agentId && !!currentProjectId, // Only fetch when both IDs are available
   });
 
   // Fetch active deals for this agent and project
   const { data: activeDeals = [], isLoading: isLoadingDeals } = useQuery<UnitWithDealContext[]>({
-    queryKey: ["/api/agents", agentId, "active-deals", projectId],
+    queryKey: ["/api/agents", agentId, "active-deals", currentProjectId],
     queryFn: async () => {
-      const response = await fetch(`/api/agents/${agentId}/active-deals?projectId=${projectId}`);
+      const response = await fetch(`/api/agents/${agentId}/active-deals?projectId=${currentProjectId}`);
       if (!response.ok) throw new Error('Failed to fetch active deals');
       return response.json();
     },
-    enabled: activeTab === "active-deals", // Only fetch when active deals tab is selected
+    enabled: activeTab === "active-deals" && !!agentId && !!currentProjectId, // Only fetch when active deals tab is selected and IDs are available
   });
 
   // Fetch leads for showing session selection using new query hook
@@ -132,11 +133,11 @@ export default function AgentViewer() {
   useEffect(() => {
     if (unitUpdates.size > 0 && !showUnitSheet) {
       console.log(`[${actionId}] Received ${unitUpdates.size} realtime unit updates - invalidating cache`);
-      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "active-deals", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", currentProjectId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "active-deals", currentProjectId] });
       clearUnitUpdates();
     }
-  }, [unitUpdates, actionId, agentId, projectId, clearUnitUpdates, showUnitSheet]);
+  }, [unitUpdates, actionId, agentId, currentProjectId, clearUnitUpdates, showUnitSheet]);
 
   // Get selected unit object
   const selectedUnit = useMemo(() => {

@@ -1,21 +1,19 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
 import { agentContextStore } from '@/lib/localStores';
-
-const AGENTS = [
-  { id: 'agent-001', name: 'Sarah Chen', role: 'Senior Sales Agent' },
-  { id: 'agent-002', name: 'Michael Rodriguez', role: 'Sales Agent' },
-  { id: 'agent-003', name: 'Emily Park', role: 'Sales Agent' },
-  { id: 'agent-004', name: 'David Thompson', role: 'Junior Sales Agent' },
-  { id: 'agent-005', name: 'Jessica Williams', role: 'Sales Agent' },
-];
+import type { Agent } from '@shared/schema';
 
 export default function AgentSelect() {
   const [, setLocation] = useLocation();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+
+  const { data: agents = [], isLoading } = useQuery<Agent[]>({
+    queryKey: ['/api/agents'],
+  });
 
   const handleSelectAgent = (agentId: string, agentName: string) => {
     setSelectedAgent(agentId);
@@ -38,30 +36,40 @@ export default function AgentSelect() {
           <p className="text-muted-foreground">Choose your agent profile to continue</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {AGENTS.map((agent) => (
-            <Card
-              key={agent.id}
-              className={`cursor-pointer transition-all hover-elevate active-elevate-2 ${
-                selectedAgent === agent.id ? 'ring-2 ring-primary' : ''
-              }`}
-              onClick={() => handleSelectAgent(agent.id, agent.name)}
-              data-testid={`card-agent-${agent.id}`}
-            >
-              <CardHeader>
-                <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                    <User className="h-8 w-8 text-muted-foreground" />
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading agents...</p>
+          </div>
+        ) : agents.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No agents available</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {agents.map((agent) => (
+              <Card
+                key={agent.id}
+                className={`cursor-pointer transition-all hover-elevate active-elevate-2 ${
+                  selectedAgent === agent.id ? 'ring-2 ring-primary' : ''
+                }`}
+                onClick={() => handleSelectAgent(agent.id, agent.name)}
+                data-testid={`card-agent-${agent.id}`}
+              >
+                <CardHeader>
+                  <div className="flex items-center gap-4">
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                      <User className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl uppercase">{agent.name}</CardTitle>
+                      <CardDescription className="uppercase text-sm">{agent.role || 'Sales Agent'}</CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-xl uppercase">{agent.name}</CardTitle>
-                    <CardDescription className="uppercase text-sm">{agent.role}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        )}
 
         <div className="mt-8 text-center">
           <Button

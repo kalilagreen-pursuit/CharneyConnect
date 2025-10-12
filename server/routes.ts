@@ -452,30 +452,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Leads endpoints
   app.get("/api/leads", async (req, res) => {
     try {
-      const { agentId, projectId } = req.query;
+      const { agentId, projectId, status } = req.query;
 
       let leads = await storage.getAllLeads();
 
-      // Apply filtering based on agentId (if provided)
+      // 1. Filter by Agent ID (MUST be preserved, critical for the workflow)
       if (agentId) {
         leads = leads.filter((lead) => lead.agentId === agentId);
+        console.log(`[API] Leads after agentId filter: ${leads.length}`);
       }
 
-      // Apply filtering based on projectId (if provided)
-      // Note: This assumes leads have a projectId or target location that matches
+      // 2. Filter by Status (MUST be preserved for "qualified")
+      if (status) {
+        leads = leads.filter((lead) => lead.status === status);
+        console.log(`[API] Leads after status filter: ${leads.length}`);
+      }
+
+      // 3. Filter by Project ID (DEMO FIX: Relaxed to ensure leads load)
       if (projectId) {
+        // DEMO MODE: Only filter by project if the lead has valid targetLocations
+        // This allows leads without targetLocations to still appear in the list
+        console.warn(`[API][DEMO MODE] Relaxed projectId filter for: ${projectId}`);
+        
         leads = leads.filter((lead) => {
-          // Check if targetLocations array includes the project name
+          // If lead has targetLocations, check if it includes the project
           if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
             return lead.targetLocations.some((loc) => loc === projectId);
           }
-          return false;
+          // If lead has no targetLocations, include it anyway (DEMO FIX)
+          return true;
         });
-      }
-      if (req.query.status) {
-        leads = leads.filter((lead) => lead.status === req.query.status);
+        
+        console.log(`[API] Leads after relaxed projectId filter: ${leads.length}`);
       }
 
+      console.log(`[API] Final leads returned: ${leads.length}`);
       res.json(leads);
     } catch (error) {
       console.error("Error fetching leads:", error);

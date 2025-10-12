@@ -30,23 +30,22 @@ export function Header() {
               const isActive = location === item.path;
               
               return (
-                <Link key={item.path} href={item.path}>
-                  <Button
-                    variant={isActive ? "default" : "ghost"}
-                    size="default"
-                    className={cn(
-                      "gap-2 uppercase font-bold tracking-wide text-xs",
-                      isActive && "text-foreground"
-                    )}
-                    data-testid={item.testId}
-                    asChild
-                  >
-                    <a>
-                      <Icon className="h-4 w-4" />
-                      {item.label}
-                    </a>
-                  </Button>
-                </Link>
+                <Button
+                  key={item.path}
+                  variant={isActive ? "default" : "ghost"}
+                  size="default"
+                  className={cn(
+                    "gap-2 uppercase font-bold tracking-wide text-xs",
+                    isActive && "text-foreground"
+                  )}
+                  data-testid={item.testId}
+                  asChild
+                >
+                  <Link href={item.path}>
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                </Button>
               );
             })}
           </nav>

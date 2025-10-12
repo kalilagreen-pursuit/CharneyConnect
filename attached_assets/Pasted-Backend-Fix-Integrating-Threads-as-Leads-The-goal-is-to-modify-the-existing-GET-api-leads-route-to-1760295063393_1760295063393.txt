@@ -1,0 +1,64 @@
+Backend Fix: Integrating Threads as Leads
+The goal is to modify the existing GET /api/leads route to check for data in the threads table if the primary leads table is empty, or to merge them. For simplicity and to quickly populate the system, we'll modify storage.getAllLeads() to also look at threads.
+
+1. Update storage.getAllLeads() to Query threads
+
+Instruct the Replit Assistant to modify the backend storage function (likely in server/storage.ts or a related file) to fetch data from the threads table as well.
+
+This requires assuming the structure of the threads table (e.g., that it has a clientName and id that can be mapped to a Lead object).
+
+TypeScript
+// server/storage.ts (Modifying or extending getAllLeads)
+
+import { supabase } from './supabaseClient'; // Assuming Supabase client is imported
+
+async function fetchLeadsFromThreads(): Promise<Lead[]> {
+  console.log("LEADS EMPTY: Fetching potential leads from 'threads' table...");
+  
+  // Fetch threads data
+  const { data: threadsData, error } = await supabase
+    .from('threads')
+    .select('id, clientName, clientEmail') // Select necessary fields
+    .limit(10); // Limit to a manageable number for seeding
+
+  if (error) {
+    console.error("Error fetching threads for leads:", error);
+    return [];
+  }
+
+  // Map the thread data to the expected Lead structure
+  const threadLeads: Lead[] = threadsData.map(thread => ({
+    id: `thread-${thread.id}`, // Create a unique ID
+    name: thread.clientName || `Thread Prospect ${thread.id}`,
+    email: thread.clientEmail || `prospect${thread.id}@example.com`,
+    agentId: 'agent-001', // Assign to Sarah Chen for immediate visibility
+    projectId: 'THE JACKSON', // Assign to the active project for visibility
+    status: 'qualified', // Make them qualified so they show up in the dialog
+    // Add required default preferences for the search matching to work (Task 3.1)
+    preferences: { min_beds: 2, max_price: 1500000, desired_views: ['City'] },
+    // ... other required lead fields ...
+  }));
+
+  return threadLeads;
+}
+
+
+export async function getAllLeads(): Promise<Lead[]> {
+  // 1. Try to fetch from the primary leads table
+  let leads: Lead[] = []; // result from primary leads table query
+
+  // NOTE: Replace the above line with your actual Supabase leads query if available
+  // Example: const { data: primaryLeads } = await supabase.from('leads').select('*');
+  // leads = primaryLeads || [];
+  
+  // 2. If the primary table is empty, supplement with leads from threads
+  if (leads.length === 0) {
+    const threadLeads = await fetchLeadsFromThreads();
+    leads = [...leads, ...threadLeads];
+    
+    // Optional: Write the thread leads back to the 'leads' table for persistence 
+    // const { error: insertError } = await supabase.from('leads').insert(threadLeads);
+  }
+  
+  return leads;
+}

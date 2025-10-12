@@ -377,105 +377,9 @@ export default function AgentViewer() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleBack}
-                data-testid="button-back"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-black uppercase tracking-tight" data-testid="text-viewer-title">
-                  {projectName}
-                </h1>
-                <p className="text-sm text-muted-foreground" data-testid="text-agent-name">
-                  Agent: {agentName} • {agentRole}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-muted-foreground">
-                {units.length} Units
-              </div>
-              {!activeVisitId && (
-                <Button
-                  variant="default"
-                  onClick={() => setShowStartShowingDialog(true)}
-                  data-testid="button-start-showing"
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  START SHOWING
-                </Button>
-              )}
-              {activeVisitId && (
-                <div className="flex items-center gap-2">
-                  <Badge variant="default" className="px-3 py-1.5">
-                    <Eye className="mr-1 h-3 w-3" />
-                    Showing Active ({viewedUnits.length} viewed)
-                  </Badge>
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      console.log(`[${actionId}] Ending showing session: ${activeVisitId}`);
-                      endShowingMutation.mutate(activeVisitId, {
-                        onSuccess: () => {
-                          toast({
-                            title: "Showing Ended",
-                            description: `Follow-up task created for ${viewedUnits.length} viewed unit(s).`,
-                            duration: 3000,
-                          });
-
-                          // Clear the active session and lead
-                          setActiveVisitId(null);
-                          setActiveLeadId(null);
-                          queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
-
-                          console.log(`[${actionId}] Showing ended and automation triggered`);
-                        },
-                        onError: (error) => {
-                          console.error(`[${actionId}] Error ending showing:`, error);
-                          toast({
-                            title: "Error",
-                            description: "Failed to end showing. Please try again.",
-                            variant: "destructive",
-                            duration: 3000,
-                          });
-                        },
-                      });
-                    }}
-                    data-testid="button-end-showing"
-                    className="uppercase font-black"
-                    disabled={endShowingMutation.isPending}
-                  >
-                    {endShowingMutation.isPending ? 'PROCESSING...' : 'END SHOWING'}
-                  </Button>
-                </div>
-              )}
-              <Button
-                variant="outline"
-                onClick={() => setLocation("/")}
-                data-testid="button-view-all-units"
-              >
-                <LayoutGrid className="mr-2 h-4 w-4" />
-                VIEW ALL UNITS
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content: Sidebar + Unit Cards */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Client Context Sidebar - Always visible */}
-        <div className="w-80 bg-card border-r p-6 flex-shrink-0 overflow-y-auto">
+    <div className="flex h-screen overflow-hidden">
+      {/* 1. Left Sidebar - Client Context */}
+      <div className="w-80 bg-card border-r p-6 flex-shrink-0 overflow-y-auto">
           <h3 className="text-xl font-black uppercase mb-1">Agent: {agentName}</h3>
           <p className="text-sm text-muted-foreground mb-4">{agentRole}</p>
 
@@ -551,8 +455,103 @@ export default function AgentViewer() {
           )}
         </div>
 
-        {/* Unit Cards Section */}
+        {/* 2. Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleBack}
+                    data-testid="button-back"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                  <div>
+                    <h1 className="text-xl font-black uppercase tracking-tight" data-testid="text-viewer-title">
+                      {projectName}
+                    </h1>
+                    <p className="text-sm text-muted-foreground" data-testid="text-agent-name">
+                      Agent: {agentName} • {agentRole}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-muted-foreground">
+                    {units.length} Units
+                  </div>
+                  {!activeVisitId && (
+                    <Button
+                      variant="default"
+                      onClick={() => setShowStartShowingDialog(true)}
+                      data-testid="button-start-showing"
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      START SHOWING
+                    </Button>
+                  )}
+                  {activeVisitId && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default" className="px-3 py-1.5">
+                        <Eye className="mr-1 h-3 w-3" />
+                        Showing Active ({viewedUnits.length} viewed)
+                      </Badge>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          console.log(`[${actionId}] Ending showing session: ${activeVisitId}`);
+                          endShowingMutation.mutate(activeVisitId, {
+                            onSuccess: () => {
+                              toast({
+                                title: "Showing Ended",
+                                description: `Follow-up task created for ${viewedUnits.length} viewed unit(s).`,
+                                duration: 3000,
+                              });
+
+                              setActiveVisitId(null);
+                              setActiveLeadId(null);
+                              queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
+
+                              console.log(`[${actionId}] Showing ended and automation triggered`);
+                            },
+                            onError: (error) => {
+                              console.error(`[${actionId}] Error ending showing:`, error);
+                              toast({
+                                title: "Error",
+                                description: "Failed to end showing. Please try again.",
+                                variant: "destructive",
+                                duration: 3000,
+                              });
+                            },
+                          });
+                        }}
+                        data-testid="button-end-showing"
+                        className="uppercase font-black"
+                        disabled={endShowingMutation.isPending}
+                      >
+                        {endShowingMutation.isPending ? 'PROCESSING...' : 'END SHOWING'}
+                      </Button>
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => setLocation("/")}
+                    data-testid="button-view-all-units"
+                  >
+                    <LayoutGrid className="mr-2 h-4 w-4" />
+                    VIEW ALL UNITS
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Unit Cards Section */}
+          <div className="flex-1 flex flex-col overflow-hidden">
         {/* Project Selector Tabs */}
         <div className="flex-shrink-0 flex items-center justify-between gap-3 p-4 bg-[#f6f1eb] border-b">
           <div className="flex items-center gap-3">

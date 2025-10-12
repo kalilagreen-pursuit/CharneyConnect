@@ -95,7 +95,7 @@ export default function AgentViewer() {
 
   // Active lead for preference matching (from active showing session)
   const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
-  const { data: activeLead = null } = useQuery<Lead | null>({
+  const { data: activeLead = null, isLoading: isLeadLoading } = useQuery<Lead | null>({
     queryKey: ["/api/leads", activeLeadId],
     enabled: !!activeLeadId,
     queryFn: async () => {
@@ -472,8 +472,73 @@ export default function AgentViewer() {
         </div>
       </div>
 
-      {/* Main Content: Unit Cards */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main Content: Sidebar + Unit Cards */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Client Context Sidebar */}
+        {activeLeadId && (
+          <div className="w-64 bg-card border-r p-4 flex-shrink-0 overflow-y-auto">
+            <h3 className="text-xl font-black uppercase mb-1">Agent: {agentName}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{agentRole}</p>
+
+            <h4 className="text-lg font-black uppercase mb-4 border-b pb-2">Client Context</h4>
+            
+            {isLeadLoading && <p className="text-sm text-muted-foreground">Loading Client...</p>}
+
+            {activeLead ? (
+              <>
+                <p className="font-bold text-primary text-xl mb-1" data-testid="sidebar-client-name">
+                  {activeLead.firstName} {activeLead.lastName}
+                </p>
+                <p className="text-sm text-muted-foreground mb-4" data-testid="sidebar-client-stage">
+                  Stage: {activeLead.stage?.replace(/_/g, ' ').toUpperCase() || 'N/A'}
+                </p>
+
+                {activeLead.preferences && (
+                  <>
+                    <h5 className="font-bold uppercase text-sm mt-4 mb-2">Preferences</h5>
+                    <ul className="space-y-1 text-sm">
+                      <li data-testid="sidebar-min-beds">
+                        <span className="text-muted-foreground">Min Beds:</span>{' '}
+                        <span className="font-semibold">{activeLead.preferences.min_beds || 'N/A'}</span>
+                      </li>
+                      <li data-testid="sidebar-max-price">
+                        <span className="text-muted-foreground">Max Price:</span>{' '}
+                        <span className="font-semibold">
+                          {activeLead.preferences.max_price 
+                            ? `$${(activeLead.preferences.max_price / 1000).toFixed(0)}K` 
+                            : 'N/A'}
+                        </span>
+                      </li>
+                      <li data-testid="sidebar-desired-views">
+                        <span className="text-muted-foreground">Views:</span>{' '}
+                        <span className="font-semibold">
+                          {activeLead.preferences.desired_views?.join(', ') || 'N/A'}
+                        </span>
+                      </li>
+                    </ul>
+                  </>
+                )}
+                
+                <div className="p-3 bg-primary/10 border-l-4 border-primary mt-6 rounded" data-testid="sidebar-session-status">
+                  <p className="text-sm font-medium uppercase">Session Status:</p>
+                  <p className="text-lg font-black">{activeVisitId ? 'ACTIVE' : 'INACTIVE'}</p>
+                  {activeVisitId && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {viewedUnits.length} unit{viewedUnits.length !== 1 ? 's' : ''} viewed
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              !isLeadLoading && (
+                <p className="text-sm text-destructive">No active client selected.</p>
+              )
+            )}
+          </div>
+        )}
+
+        {/* Unit Cards Section */}
+        <div className="flex-1 flex flex-col overflow-hidden">
         {/* Project Selector Tabs */}
         <div className="flex-shrink-0 flex items-center justify-between gap-3 p-4 bg-[#f6f1eb] border-b">
           <div className="flex items-center gap-3">
@@ -913,6 +978,7 @@ export default function AgentViewer() {
               </TabsContent>
             </Tabs>
           </div>
+        </div>
         </div>
       </div>
 

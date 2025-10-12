@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { LogShowingForm } from "@/components/log-showing-form";
-import { apiRequest, useLogUnitView } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
@@ -59,7 +59,6 @@ export function UnitSheetDrawer({
   const [showLogShowingForm, setShowLogShowingForm] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const { toast } = useToast();
-  const logUnitViewMutation = useLogUnitView(activeVisitId);
 
   // Auto-log unit view when drawer opens during active showing
   useEffect(() => {
@@ -69,14 +68,8 @@ export function UnitSheetDrawer({
       // Log the unit view if there's an active showing session
       if (activeVisitId && unit.id) {
         console.log(`[${actionId}] Logging unit view for showing session: ${activeVisitId}`);
-        logUnitViewMutation.mutate(unit.id, {
-          onSuccess: () => {
-            console.log(`[${actionId}] Unit view logged successfully from drawer`);
-          },
-          onError: (error) => {
-            console.error(`[${actionId}] Error logging unit view from drawer:`, error);
-          },
-        });
+        // TODO: Re-implement unit view logging without hook call inside component
+        // This should be handled at a higher level (agent-viewer.tsx) when unit is selected
       }
     }
   }, [isOpen, unit, actionId, activeVisitId]);

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users, Calendar, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { agentContextStore } from "@/lib/localStores";
+import { usePendingTaskCount } from "@/lib/queryClient";
 import type { Lead, UnitWithDetails } from "@shared/schema";
 
 // Hardcoded agent context for Demo Day
@@ -26,12 +27,14 @@ export default function AgentDashboard() {
     queryKey: ["/api/units"],
   });
 
+  // Fetch pending task count for the agent
+  const { data: taskData, isLoading: isTaskCountLoading } = usePendingTaskCount(AGENT_ID);
+  const pendingTaskCount = taskData?.count ?? 0;
+
   // Calculate dynamic stats
   const activeClient = leads.find(lead => lead.stage === "qualified") || leads[0];
   const activeClientName = activeClient?.name || "No Active Client";
-  const followUpTasks = leads.filter(lead => 
-    lead.stage === "qualified" || lead.stage === "nurturing"
-  ).length;
+  const followUpTasks = pendingTaskCount; // Use real-time task count
 
   // Project summaries
   const projectStats = units.reduce((acc, unit) => {
@@ -124,10 +127,15 @@ export default function AgentDashboard() {
                   🎯 START SHOWING SESSION
                 </Button>
                 <Link href="/leads">
-                  <Button variant="outline" className="w-full uppercase font-black" data-testid="button-follow-ups">
+                  <Button 
+                    variant="outline" 
+                    className="w-full uppercase font-black" 
+                    data-testid="button-follow-ups"
+                    disabled={isTaskCountLoading}
+                  >
                     <AlertCircle className="mr-2 h-4 w-4" />
-                    FOLLOW-UP TASKS
-                    {followUpTasks > 0 && (
+                    {isTaskCountLoading ? 'LOADING TASKS...' : 'FOLLOW-UP TASKS'}
+                    {!isTaskCountLoading && followUpTasks > 0 && (
                       <Badge variant="destructive" className="ml-2">
                         {followUpTasks}
                       </Badge>

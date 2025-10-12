@@ -53,8 +53,9 @@ export default function AgentViewer() {
     return new Set(viewedUnits.map(vu => vu.unitId));
   }, [viewedUnits]);
 
-  // Get project context from agentContextStore
-  const agentName = agentContextStore.getAgentName() || 'Agent';
+  // Hardcoded agent context for Demo Day
+  const agentName = "SARAH CHEN";
+  const agentRole = "SENIOR SALES AGENT";
   const agentId = agentContextStore.getAgentId() || 'agent-001';
   const [currentProjectId, setCurrentProjectId] = useState(() => agentContextStore.getProjectId() || PROJECTS[0].id);
   const currentProject = PROJECTS.find(p => p.id === currentProjectId) || PROJECTS[0];
@@ -373,7 +374,7 @@ export default function AgentViewer() {
                   {projectName}
                 </h1>
                 <p className="text-sm text-muted-foreground" data-testid="text-agent-name">
-                  Agent: {agentName}
+                  Agent: {agentName} • {agentRole}
                 </p>
               </div>
             </div>

@@ -1,0 +1,71 @@
+// client/src/pages/AgentDashboard.tsx
+
+import React from 'react';
+import { Link } from 'wouter'; 
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+// We'll use Sarah Chen's name for the visual context
+const activeAgentName = "SARAH CHEN"; 
+
+// Assume this data is dynamically loaded based on Sarah Chen's ID
+const activeClientName = "Andrew K."; 
+const activeClientTouredCount = 4; 
+const followUpCount = 3; 
+
+const AgentDashboard: React.FC = () => {
+  return (
+    <div className="min-h-screen p-8 bg-gray-50">
+      <h1 className="text-3xl font-bold mb-1">Welcome Back, {activeAgentName}</h1>
+      <p className="text-sm text-gray-600 mb-8">SENIOR SALES AGENT</p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* Active Client Context */}
+        <Card className="shadow-lg bg-white">
+          <CardHeader>
+            <CardTitle>Active Client</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-indigo-700">Client: {activeClientName}</p>
+            <p className="text-sm text-gray-500 mt-1">Toured Units: {activeClientTouredCount}</p>
+            <Link href={`/agent/viewer/${activeClientName.replace(/\s/g, '-')}-id`}>
+                <Button className="mt-4 w-full">Go to Client Viewer</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions Card */}
+        <Card className="shadow-lg bg-white">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Link href="/agent/viewer/new">
+                <Button className="w-full mb-3">🎯 Start New Showing Session</Button>
+            </Link>
+            <Link href="/tasks">
+                <Button variant="outline" className="w-full">📧 View Follow-up Tasks ({followUpCount})</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Unit & Project Summary */}
+        <Card className="shadow-lg bg-white">
+          <CardHeader>
+            <CardTitle>Project Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>95 Rockwell: 24 units remaining</p>
+            <p>Court Square: Pre-Leasing Waitlist: 15</p>
+            <Link href="/units">
+                <Button variant="link" className="p-0 mt-2">Browse All Inventory</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default AgentDashboard;

@@ -244,6 +244,34 @@ export const useClientDetails = (clientId: string | null) => {
   });
 };
 
+// Type for lead list
+type LeadList = Array<{
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status?: string;
+  pipelineStage?: string;
+}>;
+
+// Fetch leads available for showing sessions
+const fetchLeadsForShowing = async (agentId: string): Promise<LeadList> => {
+  const response = await apiRequest('GET', `/api/leads?agentId=${agentId}`, undefined);
+  return response.json();
+};
+
+export const useLeadsForShowing = (agentId: string | null) => {
+  return useQuery<LeadList>({
+    queryKey: ['/api/leads/showing', agentId],
+    queryFn: () => {
+      if (!agentId) throw new Error('No agent ID provided');
+      return fetchLeadsForShowing(agentId);
+    },
+    enabled: !!agentId,
+    staleTime: 30000, // Cache for 30 seconds
+  });
+};
+
 // Type for task count response
 type TaskCountResponse = { count: number };
 

@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { queryClient, useStartShowing, useEndShowing, useShowingItinerary, useLogUnitView } from "@/lib/queryClient";
+import { queryClient, useStartShowing, useEndShowing, useShowingItinerary, useLogUnitView, useLeadsForShowing } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit, AlertCircle, Zap, Clock, Calendar, CheckCircle, Star } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit, AlertCircle, Zap, Clock, Calendar, CheckCircle, Star, Search } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
 import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
 import { UnitWithDetails, UnitWithDealContext, Lead } from "@shared/schema";
@@ -87,11 +88,13 @@ export default function AgentViewer() {
     enabled: activeTab === "active-deals", // Only fetch when active deals tab is selected
   });
 
-  // Fetch all leads for showing session selection
-  const { data: allLeads = [] } = useQuery<Lead[]>({
-    queryKey: ["/api/leads"],
-    enabled: showStartShowingDialog, // Only fetch when dialog is open
-  });
+  // Fetch leads for showing session selection using new query hook
+  const { data: allLeads = [], isLoading: isLoadingLeads } = useLeadsForShowing(
+    showStartShowingDialog ? agentId : null
+  );
+
+  // Lead search state
+  const [leadSearchQuery, setLeadSearchQuery] = useState("");
 
   // Active lead for preference matching (from active showing session)
   const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
@@ -1023,8 +1026,27 @@ export default function AgentViewer() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {allLeads.length > 0 ? (
+            {isLoadingLeads ? (
+              <div className="text-sm text-muted-foreground text-center py-4">
+                Loading leads...
+              </div>
+            ) : allLeads.length > 0 ? (
               <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Search Leads</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search by name or email..."
+                      value={leadSearchQuery}
+                      onChange={(e) => setLeadSearchQuery(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-search-leads"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Select Lead</label>
                   <select
@@ -1034,11 +1056,19 @@ export default function AgentViewer() {
                     data-testid="select-lead-for-showing"
                   >
                     <option value="">-- Select a lead --</option>
-                    {allLeads.map((lead) => (
-                      <option key={lead.id} value={lead.id}>
-                        {lead.firstName} {lead.lastName} - {lead.email}
-                      </option>
-                    ))}
+                    {allLeads
+                      .filter((lead) => {
+                        if (!leadSearchQuery) return true;
+                        const query = leadSearchQuery.toLowerCase();
+                        const fullName = `${lead.firstName} ${lead.lastName}`.toLowerCase();
+                        const email = lead.email?.toLowerCase() || '';
+                        return fullName.includes(query) || email.includes(query);
+                      })
+                      .map((lead) => (
+                        <option key={lead.id} value={lead.id}>
+                          {lead.firstName} {lead.lastName} - {lead.email}
+                        </option>
+                      ))}
                   </select>
                 </div>
 

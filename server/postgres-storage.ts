@@ -41,10 +41,29 @@ import {
   type InsertAiMessage,
   type AiFeedback,
   type InsertAiFeedback,
+  agents,
+  type Agent,
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
 export class PostgresStorage implements IStorage {
+  // Agents
+  async getAllAgents(): Promise<Agent[]> {
+    const result = await db.select().from(agents);
+    return result;
+  }
+
+  async getAgentById(id: string): Promise<Agent | undefined> {
+    const result = await db
+      .select()
+      .from(agents)
+      .where(eq(agents.id, id))
+      .limit(1);
+    
+    if (result.length === 0) return undefined;
+    return result[0];
+  }
+
   // Units - join with FloorPlans and Projects to get full data
   async getAllUnits(): Promise<UnitWithDetails[]> {
     const result = await db

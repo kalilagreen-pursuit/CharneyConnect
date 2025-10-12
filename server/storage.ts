@@ -31,6 +31,10 @@ import {
 import { randomUUID } from "crypto";
 
 export interface IStorage {
+  // Agents
+  getAllAgents(): Promise<import("@shared/schema").Agent[]>;
+  getAgentById(id: string): Promise<import("@shared/schema").Agent | undefined>;
+
   // Units
   getAllUnits(): Promise<UnitWithDetails[]>;
   getUnitById(id: string): Promise<UnitWithDetails | undefined>;
@@ -491,6 +495,15 @@ export class MemStorage implements IStorage {
 
     // Seed Activities (using deal IDs - for legacy support, we'll skip this for now)
     // Activities are linked to deals, not public.leads
+  }
+
+  // Agents
+  async getAllAgents(): Promise<import("@shared/schema").Agent[]> {
+    return [];
+  }
+
+  async getAgentById(id: string): Promise<import("@shared/schema").Agent | undefined> {
+    return undefined;
   }
 
   // Units

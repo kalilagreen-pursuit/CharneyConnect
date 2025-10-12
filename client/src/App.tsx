@@ -10,6 +10,7 @@ import { RealtimeProvider } from "@/contexts/RealtimeContext";
 import Dashboard from "@/pages/dashboard";
 import Leads from "@/pages/leads";
 import AgentSelect from "@/pages/agent-select";
+import AgentDashboard from "@/pages/AgentDashboard";
 import ProjectSelect from "@/pages/project-select";
 import AgentViewer from "@/pages/agent-viewer";
 import ManagerView from "@/pages/manager-view";
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/leads" component={Leads} />
       <Route path="/agent/select" component={AgentSelect} />
+      <Route path="/agent/dashboard" component={AgentDashboard} />
       <Route path="/agent/project-select" component={ProjectSelect} />
       <Route path="/agent/viewer" component={AgentViewer} />
       <Route path="/manager" component={ManagerView} />

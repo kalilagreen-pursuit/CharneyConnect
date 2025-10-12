@@ -293,3 +293,55 @@ export const usePendingTaskCount = (agentId: string | null) => {
     staleTime: 5000, // Low staleTime ensures count updates after 'End Showing'
   });
 };
+
+// Type for creating a quick lead
+type CreateQuickLeadPayload = {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+};
+
+type CreateQuickLeadResponse = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+};
+
+// Create a quick lead and automatically qualify them
+const createQuickLead = async (
+  agentId: string,
+  projectId: string,
+  payload: CreateQuickLeadPayload
+): Promise<CreateQuickLeadResponse> => {
+  const response = await apiRequest('POST', '/api/leads', {
+    name: `${payload.firstName} ${payload.lastName}`,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
+    email: payload.email,
+    phone: payload.phone,
+    status: 'qualified',
+    pipelineStage: 'qualified',
+    agentId,
+    projectId,
+  });
+  return response.json();
+};
+
+export const useCreateQuickLead = (agentId: string, projectId: string) => {
+  const queryClientInstance = queryClient;
+
+  return useMutation({
+    mutationFn: (data: CreateQuickLeadPayload) => createQuickLead(agentId, projectId, data),
+    onSuccess: (newLead) => {
+      // Invalidate the leads query so the newly created and qualified lead appears in the list
+      queryClientInstance.invalidateQueries({ queryKey: ['leadsForShowing', agentId, projectId] });
+      console.log(`New lead ${newLead.id} created and qualified.`);
+    },
+    onError: (error) => {
+      console.error('Error creating quick lead:', error);
+    },
+  });
+};

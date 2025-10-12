@@ -16,6 +16,7 @@ import { useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { getMatchedUnitsWithScores, getMatchIndicatorClass, getMatchBadge } from "@/lib/preference-matcher";
+import { matchUnitToClient } from "@/lib/match-units";
 
 const PROJECTS = [
   { id: "2320eeb4-596b-437d-b4cb-830bdb3c3b01", name: "THE JACKSON" },
@@ -518,15 +519,23 @@ export default function AgentViewer() {
                     const matchIndicator = unitMatch ? getMatchIndicatorClass(unitMatch.matchScore) : "";
                     const matchBadge = unitMatch ? getMatchBadge(unitMatch.matchScore) : null;
                     
+                    // Use simpler match utility for visual highlighting
+                    const simpleMatch = activeLead ? matchUnitToClient(unit, activeLead) : null;
+                    const highlightClass = simpleMatch?.isMatch 
+                      ? "border-4 border-green-500 shadow-xl" 
+                      : "border border-transparent";
+                    
                     return (
                 <Card
                   key={unit.id}
                   data-unit-id={unit.id}
                   data-testid={`card-unit-${unit.unitNumber}`}
+                  title={simpleMatch?.reason || ""}
                   className={cn(
-                    "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] border border-transparent hover:border-indigo-600",
+                    "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] hover:border-indigo-600 relative",
                     selectedUnitId === unit.id && "ring-2 ring-primary",
-                    matchIndicator
+                    matchIndicator,
+                    highlightClass
                   )}
                   onClick={() => handleUnitSelect(unit.id)}
                 >
@@ -597,6 +606,15 @@ export default function AgentViewer() {
                     <div className="text-xs text-muted-foreground">
                       Floor {unit.floor}
                     </div>
+
+                    {/* Recommendation Badge for Strong Matches */}
+                    {simpleMatch?.isMatch && simpleMatch.score >= 3 && (
+                      <div className="absolute top-2 right-2">
+                        <span className="text-xs font-bold text-white bg-green-500 rounded-full px-2 py-1 shadow-md">
+                          RECOMMENDED
+                        </span>
+                      </div>
+                    )}
 
                     {/* Match Reasons */}
                     {unitMatch && unitMatch.matchReasons.length > 0 && (

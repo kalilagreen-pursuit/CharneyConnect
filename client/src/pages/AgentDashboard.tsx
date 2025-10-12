@@ -58,7 +58,7 @@ export default function AgentDashboard() {
   const handleGoToViewer = () => {
     // Store agent context
     agentContextStore.setAgent(AGENT_ID, AGENT_NAME.split(' ')[0] + ' ' + AGENT_NAME.split(' ')[1]);
-    setLocation("/agent/project-select");
+    setLocation("/agent/viewer");
   };
 
   return (
@@ -101,12 +101,14 @@ export default function AgentDashboard() {
                     </div>
                   )}
                 </div>
-                <Link href={`/leads`}>
-                  <Button className="w-full uppercase font-black" data-testid="button-view-client">
-                    View Client Details
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
+                <Button 
+                  className="w-full uppercase font-black" 
+                  data-testid="button-view-client"
+                  onClick={handleGoToViewer}
+                >
+                  View Client Details
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </CardContent>
             </Card>
 

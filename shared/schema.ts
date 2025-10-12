@@ -218,6 +218,11 @@ export const leads = pgTable("leads", {
   targetPriceMin: numeric("target_price_min"),
   targetPriceMax: numeric("target_price_max"),
   targetLocations: text("target_locations").array(),
+  targetBedrooms: integer("target_bedrooms"),
+  targetBathrooms: numeric("target_bathrooms"),
+  targetSqftMin: integer("target_sqft_min"),
+  targetSqftMax: integer("target_sqft_max"),
+  desiredViews: text("desired_views").array(),
   timeFrameToBuy: text("time_frame_to_buy"),
   leadScore: integer("lead_score").notNull().default(0),
   pipelineStage: text("pipeline_stage").notNull().default("new"),
@@ -229,6 +234,20 @@ export const leads = pgTable("leads", {
 export type Lead = typeof leads.$inferSelect & {
   toured_unit_ids?: string[]; // Array of Unit IDs checked off by the agent
 };
+
+// Client preferences interface for type safety
+export interface ClientPreferences {
+  targetPriceMin?: number;
+  targetPriceMax?: number;
+  targetLocations?: string[];
+  targetBedrooms?: number;
+  targetBathrooms?: number;
+  targetSqftMin?: number;
+  targetSqftMax?: number;
+  desiredViews?: string[];
+  timeFrameToBuy?: string;
+}
+
 export const insertLeadSchema = createInsertSchema(leads)
   .omit({ id: true, createdAt: true, updatedAt: true })
   .extend({
@@ -239,6 +258,11 @@ export const insertLeadSchema = createInsertSchema(leads)
     targetPriceMin: z.string().optional(),
     targetPriceMax: z.string().optional(),
     targetLocations: z.array(z.string()).optional(),
+    targetBedrooms: z.number().optional(),
+    targetBathrooms: z.number().optional(),
+    targetSqftMin: z.number().optional(),
+    targetSqftMax: z.number().optional(),
+    desiredViews: z.array(z.string()).optional(),
     timeFrameToBuy: z.string().optional(),
     leadScore: z.number().optional(),
     pipelineStage: z.string().optional(),

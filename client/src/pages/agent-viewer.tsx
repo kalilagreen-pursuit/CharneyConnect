@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit, AlertCircle, Zap, Clock, Calendar, CheckCircle } from "lucide-react";
+import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit, AlertCircle, Zap, Clock, Calendar, CheckCircle, Star } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
 import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
 import { UnitWithDetails, UnitWithDealContext, Lead } from "@shared/schema";
@@ -15,6 +15,7 @@ import { agentContextStore } from "@/lib/localStores";
 import { useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { getMatchedUnitsWithScores, getMatchIndicatorClass, getMatchBadge } from "@/lib/preference-matcher";
 
 const PROJECTS = [
   { id: "2320eeb4-596b-437d-b4cb-830bdb3c3b01", name: "THE JACKSON" },
@@ -90,6 +91,25 @@ export default function AgentViewer() {
     queryKey: ["/api/leads"],
     enabled: showStartShowingDialog, // Only fetch when dialog is open
   });
+
+  // Active lead for preference matching (from active showing session)
+  const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
+  const { data: activeLead = null } = useQuery<Lead | null>({
+    queryKey: ["/api/leads", activeLeadId],
+    enabled: !!activeLeadId,
+    queryFn: async () => {
+      if (!activeLeadId) return null;
+      const response = await fetch(`/api/leads/${activeLeadId}`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+  });
+
+  // Calculate unit matches based on active lead preferences
+  const unitMatches = useMemo(() => {
+    if (!activeLead || !units || units.length === 0) return new Map();
+    return getMatchedUnitsWithScores(units, activeLead);
+  }, [units, activeLead]);
 
   // Listen for realtime updates and invalidate cache
   // Defer updates if unit drawer is open to prevent data loss
@@ -321,10 +341,11 @@ export default function AgentViewer() {
       {
         onSuccess: (data) => {
           setActiveVisitId(data.id);
+          setActiveLeadId(selectedLeadForShowing); // Set active lead for preference matching
 
           toast({
             title: "Showing Started",
-            description: "All unit views will now be tracked for this session.",
+            description: "All unit views will now be tracked for this session. Units matching preferences are highlighted.",
             duration: 3000,
           });
 
@@ -411,8 +432,9 @@ export default function AgentViewer() {
                             duration: 3000,
                           });
 
-                          // Clear the active session
+                          // Clear the active session and lead
                           setActiveVisitId(null);
+                          setActiveLeadId(null);
                           queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", projectId] });
 
                           console.log(`[${actionId}] Showing ended and automation triggered`);
@@ -491,14 +513,20 @@ export default function AgentViewer() {
 
               <TabsContent value="all-units" className="mt-0">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {units.map(unit => (
+                  {units.map(unit => {
+                    const unitMatch = unitMatches.get(unit.id);
+                    const matchIndicator = unitMatch ? getMatchIndicatorClass(unitMatch.matchScore) : "";
+                    const matchBadge = unitMatch ? getMatchBadge(unitMatch.matchScore) : null;
+                    
+                    return (
                 <Card
                   key={unit.id}
                   data-unit-id={unit.id}
                   data-testid={`card-unit-${unit.unitNumber}`}
                   className={cn(
                     "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] border border-transparent hover:border-indigo-600",
-                    selectedUnitId === unit.id && "ring-2 ring-primary"
+                    selectedUnitId === unit.id && "ring-2 ring-primary",
+                    matchIndicator
                   )}
                   onClick={() => handleUnitSelect(unit.id)}
                 >
@@ -521,6 +549,16 @@ export default function AgentViewer() {
                             >
                               <Eye className="h-3 w-3 mr-1" />
                               VIEWED
+                            </Badge>
+                          )}
+                          {matchBadge && (
+                            <Badge 
+                              variant={matchBadge.variant}
+                              className="bg-green-500 text-white uppercase text-xs"
+                              data-testid={`badge-match-${unit.unitNumber}`}
+                            >
+                              <Star className="h-3 w-3 mr-1 fill-white" />
+                              {matchBadge.label}
                             </Badge>
                           )}
                         </div>
@@ -560,6 +598,22 @@ export default function AgentViewer() {
                       Floor {unit.floor}
                     </div>
 
+                    {/* Match Reasons */}
+                    {unitMatch && unitMatch.matchReasons.length > 0 && (
+                      <div className="pt-2 border-t">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">
+                          Match Reasons ({unitMatch.matchScore}% match)
+                        </div>
+                        <ul className="text-xs space-y-0.5">
+                          {unitMatch.matchReasons.slice(0, 3).map((reason, idx) => (
+                            <li key={idx} className="text-muted-foreground flex items-center gap-1">
+                              <span className="text-green-500">✓</span> {reason}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     {/* View Details Button */}
                     <Button
                       size="sm"
@@ -575,7 +629,8 @@ export default function AgentViewer() {
                     </Button>
                   </div>
                 </Card>
-              ))}
+                    );
+                  })}
                 </div>
 
                 {units.length === 0 && (

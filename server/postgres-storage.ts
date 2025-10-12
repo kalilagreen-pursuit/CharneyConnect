@@ -49,19 +49,36 @@ import type { IStorage } from "./storage";
 export class PostgresStorage implements IStorage {
   // Agents
   async getAllAgents(): Promise<Agent[]> {
-    const result = await db.select().from(agents);
-    return result;
+    try {
+      console.log("Fetching agents from database...");
+      const result = await db.select().from(agents);
+      console.log(`Successfully fetched ${result.length} agents from database`);
+      
+      if (result.length === 0) {
+        console.warn("Database query returned zero agents. Check if agents table has data.");
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error fetching agents from database:", error);
+      throw error;
+    }
   }
 
   async getAgentById(id: string): Promise<Agent | undefined> {
-    const result = await db
-      .select()
-      .from(agents)
-      .where(eq(agents.id, id))
-      .limit(1);
-    
-    if (result.length === 0) return undefined;
-    return result[0];
+    try {
+      const result = await db
+        .select()
+        .from(agents)
+        .where(eq(agents.id, id))
+        .limit(1);
+      
+      if (result.length === 0) return undefined;
+      return result[0];
+    } catch (error) {
+      console.error(`Error fetching agent ${id} from database:`, error);
+      throw error;
+    }
   }
 
   // Units - join with FloorPlans and Projects to get full data

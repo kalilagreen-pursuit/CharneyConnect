@@ -1,0 +1,102 @@
+// client/src/components/StartShowingDialog.tsx (Revised Structure)
+
+import React, { useState, useMemo } from 'react';
+// ... other imports ...
+
+const StartShowingDialog: React.FC<StartShowingDialogProps> = ({ agentId, projectId, onSelectLead }) => {
+  
+  // State for search and new lead form (simplified)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isCreating, setIsCreating] = useState(false); // New state to show/hide the inline form
+  const [newLeadData, setNewLeadData] = useState({ name: '', email: '' });
+  
+  const { data: leads = [], isLoading } = useLeadsForShowing(agentId, projectId);
+  const createMutation = useCreateQuickLead(agentId, projectId);
+
+  // Implement the search filtering logic (using useMemo)
+  const filteredLeads = useMemo(() => {
+    // ... (existing filtering logic using leads and searchTerm) ...
+    if (!searchTerm) return leads;
+    return leads.filter(lead => 
+      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) // Add email search if applicable
+    );
+  }, [leads, searchTerm]);
+
+  // Handle form submission (remains the same)
+  const handleCreateSubmit = () => { /* ... existing logic ... */ };
+
+  // --- JSX RENDER ---
+  
+  return (
+    <div className="p-4">
+      <h3 className="text-lg font-semibold mb-4">Select Existing or Create New Prospect</h3>
+      
+      {/* 1. Search Field (ALWAYS VISIBLE) */}
+      <Input 
+        placeholder="Search qualified leads by name or email..." 
+        value={searchTerm} 
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="mb-4"
+        disabled={isLoading || isCreating}
+      />
+
+      {isLoading && <p>Loading qualified leads...</p>}
+      
+      {/* 2. Display List or No Results */}
+      {!isLoading && !isCreating && (
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+              {filteredLeads.length > 0 ? (
+                  // Display search results
+                  filteredLeads.map(lead => (
+                      <Button 
+                          key={lead.id} 
+                          variant="outline" 
+                          className="w-full justify-start"
+                          onClick={() => onSelectLead(lead.id)}
+                      >
+                          {lead.name}
+                      </Button>
+                  ))
+              ) : (
+                  // No results found: Prompt to create a new lead
+                  <div className="text-center p-4 border border-dashed rounded-lg bg-gray-50">
+                      <p className="text-gray-600 mb-3">No matching leads found for **{searchTerm || 'this project'}**.</p>
+                      <Button 
+                          onClick={() => {setSearchTerm(''); setIsCreating(true);}} // Clear search and show form
+                          variant="default"
+                      >
+                          + CREATE NEW LEAD FOR THIS SESSION
+                      </Button>
+                  </div>
+              )}
+          </div>
+      )}
+
+      {/* 3. Inline Creation Form (Conditional visibility) */}
+      {isCreating && (
+          <div className="mt-4 p-4 border rounded-lg bg-indigo-50">
+              <h4 className="text-md font-semibold mb-3">Quick Add Prospect</h4>
+              <Input 
+                  placeholder="Full Name (Required)" 
+                  value={newLeadData.name}
+                  onChange={(e) => setNewLeadData(p => ({ ...p, name: e.target.value }))}
+                  className="mb-3"
+              />
+              {/* ... other form fields ... */}
+              <div className="flex justify-between mt-4">
+                  <Button variant="outline" onClick={() => setIsCreating(false)} disabled={createMutation.isPending}>
+                      ← Back to Search
+                  </Button>
+                  <Button 
+                      onClick={handleCreateSubmit} 
+                      // ... (existing disabled/isLoading props) ...
+                  >
+                      Save & Start Showing
+                  </Button>
+              </div>
+          </div>
+      )}
+    </div>
+  );
+};

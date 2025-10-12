@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Bed, Bath, Maximize2, Eye, LayoutGrid, Edit, AlertCircle, Zap, Clock, Calendar, CheckCircle, Star, Search } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
 import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
+import { StartShowingDialog } from "@/components/StartShowingDialog";
 import { UnitWithDetails, UnitWithDealContext, Lead } from "@shared/schema";
 import { agentContextStore } from "@/lib/localStores";
 import { useRealtime } from "@/contexts/RealtimeContext";
@@ -89,34 +90,8 @@ export default function AgentViewer() {
     enabled: activeTab === "active-deals" && !!agentId && !!currentProjectId, // Only fetch when active deals tab is selected and IDs are available
   });
 
-  // Fetch leads for showing session selection using new query hook
-  // Always provide both IDs when dialog is open to ensure proper filtering
-  const { data: allLeads = [], isLoading: isLoadingLeads } = useLeadsForShowing(
-    showStartShowingDialog ? agentId : null,
-    showStartShowingDialog ? currentProjectId : null
-  );
-
-  console.log('[AgentViewer] Leads query context:', {
-    showStartShowingDialog,
-    agentId,
-    currentProjectId,
-    isLoadingLeads,
-    leadsCount: allLeads.length
-  });
-
-  // Lead search state
+  // Lead search state (still needed for dialog state management)
   const [leadSearchQuery, setLeadSearchQuery] = useState("");
-
-  // Filtered leads based on search query
-  const filteredLeadsForShowing = useMemo(() => {
-    if (!leadSearchQuery.trim()) return allLeads;
-    const query = leadSearchQuery.toLowerCase();
-    return allLeads.filter((lead) => {
-      const fullName = `${lead.firstName} ${lead.lastName}`.toLowerCase();
-      const email = lead.email?.toLowerCase() || '';
-      return fullName.includes(query) || email.includes(query);
-    });
-  }, [allLeads, leadSearchQuery]);
 
   // Active lead for preference matching (from active showing session)
   const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
@@ -346,21 +321,17 @@ export default function AgentViewer() {
   };
 
   const handleStartShowing = () => {
+    const actionId = `start-showing-${Date.now()}`;
+
     if (!selectedLeadForShowing) {
-      toast({
-        title: "No Lead Selected",
-        description: "Please select a lead to start the showing session.",
-        variant: "destructive",
-        duration: 3000,
-      });
+      console.error(`[${actionId}] No lead selected`);
       return;
     }
 
     console.log(`[${actionId}] Starting showing session`, {
       leadId: selectedLeadForShowing,
       agentId,
-      projectId: currentProjectId,
-      availableLeads: allLeads.length
+      projectId: currentProjectId
     });
 
     startShowingMutation.mutate(
@@ -372,7 +343,7 @@ export default function AgentViewer() {
       {
         onSuccess: (data) => {
           setActiveVisitId(data.id);
-          setActiveLeadId(selectedLeadForShowing); // Set active lead for preference matching
+          setActiveLeadId(selectedLeadForShowing);
 
           toast({
             title: "Showing Started",
@@ -382,6 +353,7 @@ export default function AgentViewer() {
 
           setShowStartShowingDialog(false);
           setSelectedLeadForShowing(null);
+          setLeadSearchQuery("");
 
           console.log(`[${actionId}] Showing session started: ${data.id}`);
         },
@@ -414,7 +386,7 @@ export default function AgentViewer() {
           <p className="text-sm text-muted-foreground mb-4">{agentRole}</p>
 
           <h4 className="text-lg font-black uppercase mb-4 border-b pb-2">Client Context</h4>
-          
+
           {activeLeadId ? (
             <>
               {isLeadLoading && <p className="text-sm text-muted-foreground">Loading Client...</p>}
@@ -439,8 +411,8 @@ export default function AgentViewer() {
                         <li data-testid="sidebar-max-price">
                           <span className="text-muted-foreground">Max Price:</span>{' '}
                           <span className="font-semibold">
-                            {activeLead.preferences.max_price 
-                              ? `$${(activeLead.preferences.max_price / 1000).toFixed(0)}K` 
+                            {activeLead.preferences.max_price
+                              ? `$${(activeLead.preferences.max_price / 1000).toFixed(0)}K`
                               : 'N/A'}
                           </span>
                         </li>
@@ -453,7 +425,7 @@ export default function AgentViewer() {
                       </ul>
                     </>
                   )}
-                  
+
                   <div className="p-3 bg-primary/10 border-l-4 border-primary mt-6 rounded" data-testid="sidebar-session-status">
                     <p className="text-sm font-medium uppercase">Session Status:</p>
                     <p className="text-lg font-black">{activeVisitId ? 'ACTIVE' : 'INACTIVE'}</p>
@@ -476,7 +448,7 @@ export default function AgentViewer() {
                 <p className="text-sm text-muted-foreground mb-2">No active showing session</p>
                 <p className="text-xs text-muted-foreground">Click "START SHOWING" to begin tracking a client session</p>
               </div>
-              
+
               <div className="p-3 bg-primary/10 border-l-4 border-primary rounded" data-testid="sidebar-session-status">
                 <p className="text-sm font-medium uppercase">Session Status:</p>
                 <p className="text-lg font-black">INACTIVE</p>
@@ -537,7 +509,7 @@ export default function AgentViewer() {
                           endShowingMutation.mutate(activeVisitId, {
                             onSuccess: () => {
                               toast({
-                                title: "Showing Ended",
+                                title: "ShowingEnded",
                                 description: `Follow-up task created for ${viewedUnits.length} viewed unit(s).`,
                                 duration: 3000,
                               });
@@ -597,7 +569,7 @@ export default function AgentViewer() {
               </Button>
             ))}
           </div>
-          
+
           {/* Visualization Mode Toggle */}
           <Tabs value={isGalleryMode ? "gallery" : "live"} onValueChange={(v) => setIsGalleryMode(v === "gallery")}>
             <TabsList>
@@ -626,13 +598,13 @@ export default function AgentViewer() {
                     const unitMatch = unitMatches.get(unit.id);
                     const matchIndicator = unitMatch ? getMatchIndicatorClass(unitMatch.matchScore) : "";
                     const matchBadge = unitMatch ? getMatchBadge(unitMatch.matchScore) : null;
-                    
+
                     // Use simpler match utility for visual highlighting
                     const simpleMatch = activeLead ? matchUnitToClient(unit, activeLead) : null;
-                    const highlightClass = simpleMatch?.isMatch 
-                      ? "border-4 border-green-500 shadow-xl" 
+                    const highlightClass = simpleMatch?.isMatch
+                      ? "border-4 border-green-500 shadow-xl"
                       : "border border-transparent";
-                    
+
                     return (
                 <Card
                   key={unit.id}
@@ -659,8 +631,8 @@ export default function AgentViewer() {
                             Unit {unit.unitNumber}
                           </h3>
                           {activeVisitId && viewedUnitIds.has(unit.id) && (
-                            <Badge 
-                              variant="outline" 
+                            <Badge
+                              variant="outline"
                               className="bg-primary/10 text-primary border-primary"
                               data-testid={`badge-viewed-${unit.unitNumber}`}
                             >
@@ -669,7 +641,7 @@ export default function AgentViewer() {
                             </Badge>
                           )}
                           {matchBadge && (
-                            <Badge 
+                            <Badge
                               variant={matchBadge.variant}
                               className="bg-green-500 text-white uppercase text-xs"
                               data-testid={`badge-match-${unit.unitNumber}`}
@@ -680,7 +652,7 @@ export default function AgentViewer() {
                           )}
                         </div>
                       </div>
-                      <Badge 
+                      <Badge
                         variant={getStatusBadgeVariant(unit.status)}
                         data-testid={`badge-status-${unit.unitNumber}`}
                         className="uppercase text-xs"
@@ -898,7 +870,7 @@ export default function AgentViewer() {
                                   Unit {unit.unitNumber}
                                 </h3>
                                 {activeVisitId && viewedUnitIds.has(unit.id) && (
-                                  <Badge 
+                                  <Badge
                                     variant="outline"
                                     className="bg-green-500/10 text-green-600 border-green-500"
                                     data-testid={`badge-viewed-deal-${unit.unitNumber}`}
@@ -930,14 +902,14 @@ export default function AgentViewer() {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1 items-end">
-                              <Badge 
+                              <Badge
                                 variant={getStatusBadgeVariant(unit.status)}
                                 data-testid={`badge-status-${unit.unitNumber}`}
                                 className="uppercase text-xs"
                               >
                                 {formatStatus(unit.status)}
                               </Badge>
-                              <Badge 
+                              <Badge
                                 variant={stageBadgeVariant}
                                 data-testid={`badge-stage-${unit.unitNumber}`}
                                 className="uppercase text-xs"
@@ -1041,79 +1013,22 @@ export default function AgentViewer() {
       />
 
       {/* Start Showing Dialog */}
-      <Dialog open={showStartShowingDialog} onOpenChange={setShowStartShowingDialog}>
-        <DialogContent data-testid="dialog-start-showing">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black uppercase tracking-tight">
-              Start Showing Session
-            </DialogTitle>
-            <DialogDescription>
-              Select a lead to track unit views for this showing session.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {isLoadingLeads ? (
-              <div className="text-sm text-muted-foreground text-center py-4">
-                Loading leads...
-              </div>
-            ) : allLeads.length > 0 ? (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Search Leads</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search by name or email..."
-                      value={leadSearchQuery}
-                      onChange={(e) => setLeadSearchQuery(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-search-leads"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Select Lead</label>
-                  <select
-                    className="w-full px-3 py-2 border rounded-md bg-background"
-                    value={selectedLeadForShowing || ''}
-                    onChange={(e) => setSelectedLeadForShowing(e.target.value)}
-                    data-testid="select-lead-for-showing"
-                  >
-                    <option value="">-- Select a lead --</option>
-                    {filteredLeadsForShowing.map((lead) => (
-                      <option key={lead.id} value={lead.id}>
-                        {lead.firstName} {lead.lastName} - {lead.email}
-                      </option>
-                    ))}
-                  </select>
-                  {leadSearchQuery && filteredLeadsForShowing.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No leads match your search.</p>
-                  )}
-                </div>
-
-                <Button
-                  className="w-full uppercase font-black"
-                  onClick={handleStartShowing}
-                  disabled={!selectedLeadForShowing || startShowingMutation.isPending}
-                  data-testid="button-confirm-start-showing"
-                >
-                  {startShowingMutation.isPending ? 'STARTING...' : 'START SHOWING'}
-                </Button>
-              </>
-            ) : (
-              <div className="text-sm text-muted-foreground text-center py-4">
-                <p className="font-semibold mb-2">No qualified leads available</p>
-                <p className="text-xs">Project: {currentProject.name}</p>
-                <p className="text-xs">Agent: {agentName}</p>
-                <p className="text-xs mt-2">Please qualify a lead for this project first on the Leads page.</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <StartShowingDialog
+        isOpen={showStartShowingDialog}
+        onClose={() => {
+          setShowStartShowingDialog(false);
+          setSelectedLeadForShowing(null);
+          setLeadSearchQuery("");
+        }}
+        agentId={agentId}
+        projectId={currentProjectId}
+        onSelectLead={(leadId) => {
+          setSelectedLeadForShowing(leadId);
+          handleStartShowing();
+        }}
+        projectName={currentProject.name}
+        agentName={agentName}
+      />
 
       {/* Lead Qualification Sheet */}
       {selectedLead && (

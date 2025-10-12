@@ -47,6 +47,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // --- YOUR EXISTING API ENDPOINTS (PRESERVED) ---
 
+  // Agents endpoints
+  app.get("/api/agents", async (req, res) => {
+    try {
+      const agents = await storage.getAllAgents();
+      res.json(agents);
+    } catch (error) {
+      console.error("Error fetching agents:", error);
+      res.status(500).json({ error: "Failed to fetch agents" });
+    }
+  });
+
+  app.get("/api/agents/:id", async (req, res) => {
+    try {
+      const agent = await storage.getAgentById(req.params.id);
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      res.json(agent);
+    } catch (error) {
+      console.error("Error fetching agent:", error);
+      res.status(500).json({ error: "Failed to fetch agent" });
+    }
+  });
+
   // Units endpoints
   app.get("/api/units", async (req, res) => {
     try {

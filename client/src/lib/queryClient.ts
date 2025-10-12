@@ -255,19 +255,20 @@ type LeadList = Array<{
 }>;
 
 // Fetch leads available for showing sessions
-const fetchLeadsForShowing = async (agentId: string): Promise<LeadList> => {
-  const response = await apiRequest('GET', `/api/leads?agentId=${agentId}`, undefined);
+const fetchLeadsForShowing = async (agentId: string, projectId: string): Promise<LeadList> => {
+  const response = await apiRequest('GET', `/api/leads?agentId=${agentId}&projectId=${projectId}`, undefined);
   return response.json();
 };
 
-export const useLeadsForShowing = (agentId: string | null) => {
+export const useLeadsForShowing = (agentId: string | null, projectId: string | null) => {
   return useQuery<LeadList>({
-    queryKey: ['/api/leads/showing', agentId],
+    queryKey: ['/api/leads/showing', agentId, projectId],
     queryFn: () => {
       if (!agentId) throw new Error('No agent ID provided');
-      return fetchLeadsForShowing(agentId);
+      if (!projectId) throw new Error('No project ID provided');
+      return fetchLeadsForShowing(agentId, projectId);
     },
-    enabled: !!agentId,
+    enabled: !!agentId && !!projectId,
     staleTime: 30000, // Cache for 30 seconds
   });
 };

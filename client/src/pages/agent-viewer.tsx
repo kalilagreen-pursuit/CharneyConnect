@@ -90,7 +90,8 @@ export default function AgentViewer() {
 
   // Fetch leads for showing session selection using new query hook
   const { data: allLeads = [], isLoading: isLoadingLeads } = useLeadsForShowing(
-    showStartShowingDialog ? agentId : null
+    showStartShowingDialog ? agentId : null,
+    showStartShowingDialog ? currentProjectId : null
   );
 
   // Lead search state

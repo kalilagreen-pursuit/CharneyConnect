@@ -24,7 +24,6 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/leads" component={Leads} />
       <Route path="/agent" component={AgentDashboard} />
-      <Route path="/agent/dashboard" component={AgentDashboard} />
       <Route path="/agent/viewer/:clientId?" component={AgentViewer} />
       <Route path="/manager" component={ManagerView} />
       <Route path="/unit/:projectId/:unitNumber/leads" component={UnitLeads} />

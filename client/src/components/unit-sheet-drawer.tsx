@@ -11,7 +11,6 @@ import { ProspectQuickAddForm } from "@/components/prospect-quick-add-form";
 import { LogShowingForm } from "@/components/log-showing-form";
 import { apiRequest, useLogUnitView } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { FloorplanViewer3D } from "@/components/FloorplanViewer3D";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
   available: {

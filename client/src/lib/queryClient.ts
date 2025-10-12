@@ -1,4 +1,9 @@
-import { QueryClient, QueryFunction, useMutation, useQuery } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryFunction,
+  useMutation,
+  useQuery,
+} from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -61,8 +66,18 @@ type TouredUpdatePayload = {
   toured_unit_ids: string[];
 };
 
-const updateTouredUnits = async ({ leadId, payload }: { leadId: string; payload: TouredUpdatePayload }) => {
-  const response = await apiRequest('PUT', `/api/leads/${leadId}/toured`, payload);
+const updateTouredUnits = async ({
+  leadId,
+  payload,
+}: {
+  leadId: string;
+  payload: TouredUpdatePayload;
+}) => {
+  const response = await apiRequest(
+    "PUT",
+    `/api/leads/${leadId}/toured`,
+    payload,
+  );
   return response.json();
 };
 
@@ -70,11 +85,14 @@ export const useUpdateTouredUnits = (leadId: string) => {
   const queryClientInstance = queryClient;
 
   return useMutation({
-    mutationFn: (payload: TouredUpdatePayload) => updateTouredUnits({ leadId, payload }),
+    mutationFn: (payload: TouredUpdatePayload) =>
+      updateTouredUnits({ leadId, payload }),
     onSuccess: () => {
       // Invalidate the specific lead query to refetch fresh data
-      queryClientInstance.invalidateQueries({ queryKey: ['/api/leads', leadId] });
-      console.log('Toured Units updated successfully on the backend.');
+      queryClientInstance.invalidateQueries({
+        queryKey: ["/api/leads", leadId],
+      });
+      console.log("Toured Units updated successfully on the backend.");
     },
   });
 };
@@ -87,16 +105,22 @@ export type ViewedUnitSummary = {
 };
 
 // Fetch showing itinerary (viewed units for active session)
-const fetchItinerary = async (visitId: string): Promise<ViewedUnitSummary[]> => {
-  const response = await apiRequest('GET', `/api/showings/${visitId}/summary`, undefined);
+const fetchItinerary = async (
+  visitId: string,
+): Promise<ViewedUnitSummary[]> => {
+  const response = await apiRequest(
+    "GET",
+    `/api/showings/${visitId}/summary`,
+    undefined,
+  );
   return response.json();
 };
 
 export const useShowingItinerary = (visitId: string | null) => {
   return useQuery<ViewedUnitSummary[]>({
-    queryKey: ['/api/showings', visitId, 'summary'],
+    queryKey: ["/api/showings", visitId, "summary"],
     queryFn: () => {
-      if (!visitId) throw new Error('No active visit session');
+      if (!visitId) throw new Error("No active visit session");
       return fetchItinerary(visitId);
     },
     enabled: !!visitId, // Only fetch if we have an active visit
@@ -106,8 +130,18 @@ export const useShowingItinerary = (visitId: string | null) => {
 };
 
 // Mutation to log a unit view
-const logUnitView = async ({ visitId, unitId }: { visitId: string; unitId: string }) => {
-  const response = await apiRequest('POST', `/api/showings/${visitId}/log-view`, { unitId });
+const logUnitView = async ({
+  visitId,
+  unitId,
+}: {
+  visitId: string;
+  unitId: string;
+}) => {
+  const response = await apiRequest(
+    "POST",
+    `/api/showings/${visitId}/log-view`,
+    { unitId },
+  );
   return response.json();
 };
 
@@ -116,15 +150,19 @@ export const useLogUnitView = (visitId: string | null) => {
 
   return useMutation({
     mutationFn: (unitId: string) => {
-      if (!visitId) throw new Error('No active visit session');
+      if (!visitId) throw new Error("No active visit session");
       return logUnitView({ visitId, unitId });
     },
     onMutate: async (unitId: string) => {
       // Cancel outgoing refetches
-      await queryClientInstance.cancelQueries({ queryKey: [`/api/showings/${visitId}/summary`] });
+      await queryClientInstance.cancelQueries({
+        queryKey: [`/api/showings/${visitId}/summary`],
+      });
 
       // Snapshot previous value
-      const previousData = queryClientInstance.getQueryData<ViewedUnitSummary[]>([`/api/showings/${visitId}/summary`]);
+      const previousData = queryClientInstance.getQueryData<
+        ViewedUnitSummary[]
+      >([`/api/showings/${visitId}/summary`]);
 
       // Optimistically update cache
       if (visitId) {
@@ -132,16 +170,19 @@ export const useLogUnitView = (visitId: string | null) => {
           [`/api/showings/${visitId}/summary`],
           (old = []) => {
             // Check if unit already exists
-            if (old.some(item => item.unitId === unitId)) {
+            if (old.some((item) => item.unitId === unitId)) {
               return old;
             }
             // Add new viewed unit
-            return [...old, {
-              unitId,
-              unitNumber: '', // Will be filled by server response
-              timestamp: new Date().toISOString(),
-            }];
-          }
+            return [
+              ...old,
+              {
+                unitId,
+                unitNumber: "", // Will be filled by server response
+                timestamp: new Date().toISOString(),
+              },
+            ];
+          },
         );
       }
 
@@ -152,16 +193,18 @@ export const useLogUnitView = (visitId: string | null) => {
       if (context?.previousData && visitId) {
         queryClientInstance.setQueryData(
           [`/api/showings/${visitId}/summary`],
-          context.previousData
+          context.previousData,
         );
       }
     },
     onSuccess: () => {
       // Invalidate the itinerary to show the newly logged unit with server data
       if (visitId) {
-        queryClientInstance.invalidateQueries({ queryKey: [`/api/showings/${visitId}/summary`] });
+        queryClientInstance.invalidateQueries({
+          queryKey: [`/api/showings/${visitId}/summary`],
+        });
       }
-      console.log('Unit view logged successfully');
+      console.log("Unit view logged successfully");
     },
   });
 };
@@ -182,8 +225,10 @@ type StartShowingResponse = {
 };
 
 // Mutation to start a showing session
-const startShowingSession = async (payload: StartShowingPayload): Promise<StartShowingResponse> => {
-  const response = await apiRequest('POST', '/api/showings/start', payload);
+const startShowingSession = async (
+  payload: StartShowingPayload,
+): Promise<StartShowingResponse> => {
+  const response = await apiRequest("POST", "/api/showings/start", payload);
   return response.json();
 };
 
@@ -191,10 +236,10 @@ export const useStartShowing = () => {
   return useMutation({
     mutationFn: (payload: StartShowingPayload) => startShowingSession(payload),
     onSuccess: (data) => {
-      console.log('Showing session started:', data.id);
+      console.log("Showing session started:", data.id);
     },
     onError: (error) => {
-      console.error('Failed to start showing session:', error);
+      console.error("Failed to start showing session:", error);
     },
   });
 };
@@ -206,7 +251,11 @@ type EndShowingPayload = {
 
 // Mutation to end showing and trigger post-showing automation
 const triggerPostShowingAutomation = async (visitId: string) => {
-  const response = await apiRequest('POST', '/api/automation/trigger-post-showing', { visitId });
+  const response = await apiRequest(
+    "POST",
+    "/api/automation/trigger-post-showing",
+    { visitId },
+  );
   return response.json();
 };
 
@@ -217,26 +266,26 @@ export const useEndShowing = () => {
     mutationFn: (visitId: string) => triggerPostShowingAutomation(visitId),
     onSuccess: () => {
       // Invalidate tasks to show the new follow-up task
-      queryClientInstance.invalidateQueries({ queryKey: ['/api/tasks'] });
-      console.log('Showing ended. Post-showing automation triggered.');
+      queryClientInstance.invalidateQueries({ queryKey: ["/api/tasks"] });
+      console.log("Showing ended. Post-showing automation triggered.");
     },
     onError: (error) => {
-      console.error('Failed to end showing session:', error);
+      console.error("Failed to end showing session:", error);
     },
   });
 };
 
 // Fetch client details with preferences
 const fetchClientDetails = async (clientId: string) => {
-  const response = await apiRequest('GET', `/api/leads/${clientId}`, undefined);
+  const response = await apiRequest("GET", `/api/leads/${clientId}`, undefined);
   return response.json();
 };
 
 export const useClientDetails = (clientId: string | null) => {
   return useQuery({
-    queryKey: ['/api/leads', clientId],
+    queryKey: ["/api/leads", clientId],
     queryFn: () => {
-      if (!clientId) throw new Error('No client ID provided');
+      if (!clientId) throw new Error("No client ID provided");
       return fetchClientDetails(clientId);
     },
     enabled: !!clientId,
@@ -255,17 +304,27 @@ type LeadList = Array<{
 }>;
 
 // Fetch leads available for showing sessions
-const fetchLeadsForShowing = async (agentId: string, projectId: string): Promise<LeadList> => {
-  const response = await apiRequest('GET', `/api/leads?agentId=${agentId}&projectId=${projectId}&status=qualified`, undefined);
+const fetchLeadsForShowing = async (
+  agentId: string,
+  projectId: string,
+): Promise<LeadList> => {
+  const response = await apiRequest(
+    "GET",
+    `/api/leads?agentId=${agentId}&projectId=${projectId}`,
+    undefined,
+  );
   return response.json();
 };
 
-export const useLeadsForShowing = (agentId: string | null, projectId: string | null) => {
+export const useLeadsForShowing = (
+  agentId: string | null,
+  projectId: string | null,
+) => {
   return useQuery<LeadList>({
-    queryKey: ['leadsForShowing', agentId, projectId],
+    queryKey: ["leadsForShowing", agentId, projectId],
     queryFn: () => {
-      if (!agentId) throw new Error('No agent ID provided');
-      if (!projectId) throw new Error('No project ID provided');
+      if (!agentId) throw new Error("No agent ID provided");
+      if (!projectId) throw new Error("No project ID provided");
       return fetchLeadsForShowing(agentId, projectId);
     },
     enabled: !!agentId && !!projectId,
@@ -277,16 +336,22 @@ export const useLeadsForShowing = (agentId: string | null, projectId: string | n
 type TaskCountResponse = { count: number };
 
 // Fetch pending task count for an agent
-const fetchPendingTaskCount = async (agentId: string): Promise<TaskCountResponse> => {
-  const response = await apiRequest('GET', `/api/tasks/count?agentId=${agentId}&status=pending`, undefined);
+const fetchPendingTaskCount = async (
+  agentId: string,
+): Promise<TaskCountResponse> => {
+  const response = await apiRequest(
+    "GET",
+    `/api/tasks/count?agentId=${agentId}&status=pending`,
+    undefined,
+  );
   return response.json();
 };
 
 export const usePendingTaskCount = (agentId: string | null) => {
   return useQuery<TaskCountResponse>({
-    queryKey: ['/api/tasks/count', agentId],
+    queryKey: ["/api/tasks/count", agentId],
     queryFn: () => {
-      if (!agentId) throw new Error('No agent ID provided');
+      if (!agentId) throw new Error("No agent ID provided");
       return fetchPendingTaskCount(agentId);
     },
     enabled: !!agentId,
@@ -314,16 +379,16 @@ type CreateQuickLeadResponse = {
 const createQuickLead = async (
   agentId: string,
   projectId: string,
-  payload: CreateQuickLeadPayload
+  payload: CreateQuickLeadPayload,
 ): Promise<CreateQuickLeadResponse> => {
-  const response = await apiRequest('POST', '/api/leads', {
+  const response = await apiRequest("POST", "/api/leads", {
     name: `${payload.firstName} ${payload.lastName}`,
     firstName: payload.firstName,
     lastName: payload.lastName,
     email: payload.email,
     phone: payload.phone,
-    status: 'qualified',
-    pipelineStage: 'qualified',
+    status: "qualified",
+    pipelineStage: "qualified",
     agentId,
     projectId,
   });
@@ -334,14 +399,17 @@ export const useCreateQuickLead = (agentId: string, projectId: string) => {
   const queryClientInstance = queryClient;
 
   return useMutation({
-    mutationFn: (data: CreateQuickLeadPayload) => createQuickLead(agentId, projectId, data),
+    mutationFn: (data: CreateQuickLeadPayload) =>
+      createQuickLead(agentId, projectId, data),
     onSuccess: (newLead) => {
       // Invalidate the leads query so the newly created and qualified lead appears in the list
-      queryClientInstance.invalidateQueries({ queryKey: ['leadsForShowing', agentId, projectId] });
+      queryClientInstance.invalidateQueries({
+        queryKey: ["leadsForShowing", agentId, projectId],
+      });
       console.log(`New lead ${newLead.id} created and qualified.`);
     },
     onError: (error) => {
-      console.error('Error creating quick lead:', error);
+      console.error("Error creating quick lead:", error);
     },
   });
 };

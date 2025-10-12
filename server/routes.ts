@@ -47,30 +47,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // --- YOUR EXISTING API ENDPOINTS (PRESERVED) ---
 
-  // Agents endpoints
-  app.get("/api/agents", async (req, res) => {
-    try {
-      const agents = await storage.getAllAgents();
-      res.json(agents);
-    } catch (error) {
-      console.error("Error fetching agents:", error);
-      res.status(500).json({ error: "Failed to fetch agents" });
-    }
-  });
-
-  app.get("/api/agents/:id", async (req, res) => {
-    try {
-      const agent = await storage.getAgentById(req.params.id);
-      if (!agent) {
-        return res.status(404).json({ error: "Agent not found" });
-      }
-      res.json(agent);
-    } catch (error) {
-      console.error("Error fetching agent:", error);
-      res.status(500).json({ error: "Failed to fetch agent" });
-    }
-  });
-
   // Units endpoints
   app.get("/api/units", async (req, res) => {
     try {
@@ -464,26 +440,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/leads", async (req, res) => {
     try {
       const { agentId, projectId } = req.query;
-      
+
       let leads = await storage.getAllLeads();
-      
+
       // Apply filtering based on agentId (if provided)
       if (agentId) {
-        leads = leads.filter(lead => lead.agentId === agentId);
+        leads = leads.filter((lead) => lead.agentId === agentId);
       }
-      
+
       // Apply filtering based on projectId (if provided)
       // Note: This assumes leads have a projectId or target location that matches
       if (projectId) {
-        leads = leads.filter(lead => {
+        leads = leads.filter((lead) => {
           // Check if targetLocations array includes the project name
           if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
-            return lead.targetLocations.some(loc => loc === projectId);
+            return lead.targetLocations.some((loc) => loc === projectId);
           }
           return false;
         });
       }
-      
+      if (req.query.status) {
+        leads = leads.filter((lead) => lead.status === req.query.status);
+      }
+
       res.json(leads);
     } catch (error) {
       console.error("Error fetching leads:", error);

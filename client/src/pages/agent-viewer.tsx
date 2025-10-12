@@ -90,10 +90,19 @@ export default function AgentViewer() {
   });
 
   // Fetch leads for showing session selection using new query hook
+  // Always provide both IDs when dialog is open to ensure proper filtering
   const { data: allLeads = [], isLoading: isLoadingLeads } = useLeadsForShowing(
     showStartShowingDialog ? agentId : null,
     showStartShowingDialog ? currentProjectId : null
   );
+
+  console.log('[AgentViewer] Leads query context:', {
+    showStartShowingDialog,
+    agentId,
+    currentProjectId,
+    isLoadingLeads,
+    leadsCount: allLeads.length
+  });
 
   // Lead search state
   const [leadSearchQuery, setLeadSearchQuery] = useState("");
@@ -347,7 +356,12 @@ export default function AgentViewer() {
       return;
     }
 
-    console.log(`[${actionId}] Starting showing session for lead: ${selectedLeadForShowing}`);
+    console.log(`[${actionId}] Starting showing session`, {
+      leadId: selectedLeadForShowing,
+      agentId,
+      projectId: currentProjectId,
+      availableLeads: allLeads.length
+    });
 
     startShowingMutation.mutate(
       {
@@ -1091,7 +1105,10 @@ export default function AgentViewer() {
               </>
             ) : (
               <div className="text-sm text-muted-foreground text-center py-4">
-                No leads available. Please qualify a lead first.
+                <p className="font-semibold mb-2">No qualified leads available</p>
+                <p className="text-xs">Project: {currentProject.name}</p>
+                <p className="text-xs">Agent: {agentName}</p>
+                <p className="text-xs mt-2">Please qualify a lead for this project first on the Leads page.</p>
               </div>
             )}
           </div>

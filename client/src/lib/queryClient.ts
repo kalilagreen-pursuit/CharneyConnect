@@ -243,3 +243,24 @@ export const useClientDetails = (clientId: string | null) => {
     staleTime: Infinity, // Client details rarely change during a session
   });
 };
+
+// Type for task count response
+type TaskCountResponse = { count: number };
+
+// Fetch pending task count for an agent
+const fetchPendingTaskCount = async (agentId: string): Promise<TaskCountResponse> => {
+  const response = await apiRequest('GET', `/api/tasks/count?agentId=${agentId}&status=pending`, undefined);
+  return response.json();
+};
+
+export const usePendingTaskCount = (agentId: string | null) => {
+  return useQuery<TaskCountResponse>({
+    queryKey: ['/api/tasks/count', agentId],
+    queryFn: () => {
+      if (!agentId) throw new Error('No agent ID provided');
+      return fetchPendingTaskCount(agentId);
+    },
+    enabled: !!agentId,
+    staleTime: 5000, // Low staleTime ensures count updates after 'End Showing'
+  });
+};

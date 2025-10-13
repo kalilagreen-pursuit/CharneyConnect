@@ -240,6 +240,9 @@ export const leads = pgTable("leads", {
   leadScore: integer("lead_score").default(0),
   pipelineStage: varchar("pipeline_stage", { length: 50 }).default("new"),
   agentId: varchar("agent_id", { length: 50 }),
+  preferenceScore: integer("preference_score").default(0),
+  lastContactedAt: timestamp("last_contacted_at"),
+  nextFollowUpDate: timestamp("next_follow_up_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -280,6 +283,9 @@ export const insertLeadSchema = createInsertSchema(leads)
     leadScore: z.number().optional(),
     pipelineStage: z.string().optional(),
     toured_unit_ids: z.array(z.string()).optional(),
+    preferenceScore: z.number().optional(),
+    lastContactedAt: z.date().optional(),
+    nextFollowUpDate: z.date().optional(),
   });
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type InsertDeal = z.infer<typeof insertDealSchema>;
@@ -426,3 +432,74 @@ export const insertAiFeedbackSchema = createInsertSchema(aiFeedback)
     comment: z.string().optional(),
   });
 export type InsertAiFeedback = z.infer<typeof insertAiFeedbackSchema>;
+
+// Showing Sessions table - tracks agent-led property showing sessions
+export const showingSessions = pgTable("showing_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentId: text("agent_id").notNull(),
+  contactId: uuid("contact_id").notNull(),
+  projectId: uuid("project_id").notNull(),
+  status: text("status").notNull().default("in_progress"), // 'in_progress', 'completed', 'cancelled'
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+  totalUnitsViewed: integer("total_units_viewed").default(0),
+  duration: integer("duration"), // duration in minutes
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type ShowingSession = typeof showingSessions.$inferSelect;
+export const insertShowingSessionSchema = createInsertSchema(showingSessions)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    completedAt: z.date().optional(),
+    totalUnitsViewed: z.number().optional(),
+    duration: z.number().optional(),
+  });
+export type InsertShowingSession = z.infer<typeof insertShowingSessionSchema>;
+
+// Toured Units table - tracks which units were viewed during showing sessions
+export const touredUnits = pgTable("toured_units", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sessionId: uuid("session_id")
+    .notNull()
+    .references(() => showingSessions.id, { onDelete: "cascade" }),
+  unitId: uuid("unit_id")
+    .notNull()
+    .references(() => units.id),
+  viewedAt: timestamp("viewed_at").notNull().defaultNow(),
+  agentNotes: text("agent_notes"),
+  clientInterestLevel: text("client_interest_level"), // 'low', 'medium', 'high', 'very_high'
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type TouredUnit = typeof touredUnits.$inferSelect;
+export const insertTouredUnitSchema = createInsertSchema(touredUnits)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    agentNotes: z.string().optional(),
+    clientInterestLevel: z.string().optional(),
+  });
+export type InsertTouredUnit = z.infer<typeof insertTouredUnitSchema>;
+
+// Portal Links table - personalized buyer portal links with toured units
+export const portalLinks = pgTable("portal_links", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sessionId: uuid("session_id")
+    .notNull()
+    .references(() => showingSessions.id, { onDelete: "cascade" }),
+  contactId: uuid("contact_id").notNull(),
+  linkToken: text("link_token").notNull().unique(),
+  touredUnitIds: text("toured_unit_ids").array(),
+  sentAt: timestamp("sent_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type PortalLink = typeof portalLinks.$inferSelect;
+export const insertPortalLinkSchema = createInsertSchema(portalLinks)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    touredUnitIds: z.array(z.string()).optional(),
+    expiresAt: z.date().optional(),
+  });
+export type InsertPortalLink = z.infer<typeof insertPortalLinkSchema>;

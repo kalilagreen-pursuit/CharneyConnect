@@ -53,11 +53,13 @@ export class PostgresStorage implements IStorage {
       console.log("Fetching agents from database...");
       const result = await db.select().from(agents);
       console.log(`Successfully fetched ${result.length} agents from database`);
-      
+
       if (result.length === 0) {
-        console.warn("Database query returned zero agents. Check if agents table has data.");
+        console.warn(
+          "Database query returned zero agents. Check if agents table has data.",
+        );
       }
-      
+
       return result;
     } catch (error) {
       console.error("Error fetching agents from database:", error);
@@ -72,7 +74,7 @@ export class PostgresStorage implements IStorage {
         .from(agents)
         .where(eq(agents.id, id))
         .limit(1);
-      
+
       if (result.length === 0) return undefined;
       return result[0];
     } catch (error) {
@@ -602,6 +604,15 @@ export class PostgresStorage implements IStorage {
   }
 
   // Projects
+  // NEW: Add the real implementation for getting a project by ID
+  async getProjectById(id: string): Promise<Project | undefined> {
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, id))
+      .limit(1);
+    return project;
+  }
   async getProjectCounts() {
     const projectsData = await db.select().from(projects);
     const unitsData = await this.getAllUnits();

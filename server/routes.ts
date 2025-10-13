@@ -11,7 +11,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { contacts, deals, activities, leads } from "@shared/schema";
+import { contacts, deals, activities, leads, agents } from "@shared/schema";
 
 // FIXED: Add the missing import for Google Generative AI
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -57,6 +57,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("[API] Error fetching agents:", error);
       res.status(500).json({ error: "Failed to fetch agents" });
+    }
+  });
+
+  // NEW ENDPOINT: Get a single agent by their ID
+  app.get("/api/agents/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const agent = await storage.getAgentById(id); // We will create this function next
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      res.json(agent);
+    } catch (error) {
+      console.error("Error fetching agent:", error);
+      res.status(500).json({ error: "Failed to fetch agent" });
     }
   });
 
@@ -471,20 +486,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 3. Filter by Project ID
       if (projectId) {
         // First, get the project name from the UUID
-        const projectCounts = await storage.getProjectCounts();
-        const project = projectCounts.find(p => p.id === projectId);
+        const project = await storage.getProjectById(projectId);
         const projectName = project?.name;
-        
+
         if (projectName) {
           leads = leads.filter((lead) => {
             if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
-              return lead.targetLocations.some((loc) => 
-                loc.toLowerCase() === projectName.toLowerCase()
+              return lead.targetLocations.some(
+                (loc) => loc.toLowerCase() === projectName.toLowerCase(),
               );
             }
             return false;
           });
-          console.log(`[API] Leads after projectId filter (${projectName}): ${leads.length}`);
+          console.log(
+            `[API] Leads after projectId filter (${projectName}): ${leads.length}`,
+          );
         } else {
           console.warn(`[API] Project not found for ID: ${projectId}`);
         }

@@ -3,7 +3,6 @@ import {
   type UnitWithDealContext,
   type InsertUnit,
   type UnitStatus,
-  type UnitUpdateRequest,
   type Contact,
   type InsertContact,
   type Lead,
@@ -27,14 +26,11 @@ import {
   type InsertAiFeedback,
   type Visit,
   type ViewedUnit,
+  type Project, // FIXED: Added missing Project type import
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
-  // Agents
-  getAllAgents(): Promise<import("@shared/schema").Agent[]>;
-  getAgentById(id: string): Promise<import("@shared/schema").Agent | undefined>;
-
   // Units
   getAllUnits(): Promise<UnitWithDetails[]>;
   getUnitById(id: string): Promise<UnitWithDetails | undefined>;
@@ -63,13 +59,16 @@ export interface IStorage {
   createContact(contact: InsertContact): Promise<Contact>;
   searchContacts(query: string): Promise<Contact[]>;
 
-  // Brokers (using contacts with contactType = 'broker')
+  // Brokers
   getAllBrokers(): Promise<Contact[]>;
   getBrokerById(id: string): Promise<Contact | undefined>;
   createBroker(broker: any): Promise<Contact>;
 
-  // Leads (from public.leads table)
-  getAllLeads(): Promise<Lead[]>;
+  // Agents (NEW - for fetching agent data)
+  getAgentById(id: string): Promise<any | undefined>; // Using 'any' to match your schema, can be typed later
+
+  // Leads
+  getAllLeads(projectId?: string): Promise<Lead[]>; // Added optional projectId
   getLeadById(id: string): Promise<Lead | undefined>;
   createLead(lead: InsertLead): Promise<Lead>;
   updateLead(id: string, lead: Partial<InsertLead>): Promise<Lead | undefined>;
@@ -84,6 +83,7 @@ export interface IStorage {
   createActivity(activity: InsertActivity): Promise<Activity>;
 
   // Projects
+  getProjectById(id: string): Promise<Project | undefined>; // FIXED: Added this signature
   getProjectCounts(): Promise<
     Array<{
       id: string;
@@ -139,20 +139,18 @@ export interface IStorage {
   createMessage(message: InsertAiMessage): Promise<AiMessage>;
   getMessagesByConversationId(conversationId: string): Promise<AiMessage[]>;
 
-  // NEW: Showing Session (Visit) Management
+  // AI Feedback
+  createFeedback(feedback: InsertAiFeedback): Promise<AiFeedback>;
+  getFeedbackByMessageId(messageId: string): Promise<AiFeedback | undefined>;
+
+  // Showing Session (Visit) Management
   createVisit(
     visitData: Pick<Visit, "leadId" | "agentId" | "projectId">,
   ): Promise<Visit>;
   logUnitView(visitId: string, unitId: string): Promise<ViewedUnit>;
   getVisitSummary(visitId: string): Promise<UnitWithDetails[]>;
-
-  // NEW: Add the signature for the new function
   getVisitById(visitId: string): Promise<Visit | undefined>;
-
-  // AI Feedback
-  createFeedback(feedback: InsertAiFeedback): Promise<AiFeedback>;
-  getFeedbackByMessageId(messageId: string): Promise<AiFeedback | undefined>;
-}
+} // FIXED: Correctly closed the IStorage interface
 
 export class MemStorage implements IStorage {
   private units: Map<string, UnitWithDetails>;
@@ -160,7 +158,6 @@ export class MemStorage implements IStorage {
   private leads: Map<string, Lead>;
   private dealLeads: Map<string, DealLead>;
   private activities: Map<string, Activity>;
-  private visits: Map<string, Visit>; // Added for visit management
 
   constructor() {
     this.units = new Map();
@@ -168,7 +165,6 @@ export class MemStorage implements IStorage {
     this.leads = new Map();
     this.dealLeads = new Map();
     this.activities = new Map();
-    this.visits = new Map(); // Initialize visits map
     this.seedData();
   }
 
@@ -502,10 +498,6 @@ export class MemStorage implements IStorage {
     return [];
   }
 
-  async getAgentById(id: string): Promise<import("@shared/schema").Agent | undefined> {
-    return undefined;
-  }
-
   // Units
   async getAllUnits(): Promise<UnitWithDetails[]> {
     return Array.from(this.units.values());
@@ -631,6 +623,17 @@ export class MemStorage implements IStorage {
     };
     this.contacts.set(id, contact);
     return contact;
+  }
+
+  async getAgentById(id: string): Promise<Agent | undefined> {
+    console.log(`[MemStorage] Stub: Faking getAgentById for ${id}`);
+    // Return a default agent for local testing
+    return {
+      id,
+      name: "Mock Agent",
+      email: "mock@charney.email",
+      role: "Sales Agent",
+    };
   }
 
   // Leads (public.leads table)
@@ -979,9 +982,7 @@ export class MemStorage implements IStorage {
   }
 
   async getVisitById(visitId: string): Promise<Visit | undefined> {
-    console.log(
-      `[MemStorage] Retrieving visit with ID: ${visitId}`,
-    );
+    console.log(`[MemStorage] Retrieving visit with ID: ${visitId}`);
     return this.visits.get(visitId); // Return the visit from the map
   }
 }

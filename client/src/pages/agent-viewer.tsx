@@ -273,32 +273,25 @@ export default function AgentViewer() {
 
   // Handle unit tour tracking checkbox change
   const handleTourTrackingChange = (unitId: string, isToured: boolean) => {
-    if (!sessionId) return; // Only track if a session is active
+    if (!sessionId || !isToured) return; // Only track when checking as toured
 
     console.log(
-      `[${actionId}] Toggling tour status for unit ${unitId} to ${isToured}`,
+      `[${actionId}] Marking unit ${unitId} as toured`,
     );
 
-    markTouredMutation.mutate(
-      { unitId, isToured },
-      {
-        onSuccess: () => {
-          console.log(`[${actionId}] Tour status updated successfully`);
-          // Optionally invalidate or update local state if needed
-          queryClient.invalidateQueries({
-            queryKey: ["toured-units", sessionId],
-          });
-        },
-        onError: (error) => {
-          console.error(`[${actionId}] Error updating tour status:`, error);
-          toast({
-            title: "Error",
-            description: "Failed to update tour status.",
-            variant: "destructive",
-          });
-        },
+    markTouredMutation.mutate(unitId, {
+      onSuccess: () => {
+        console.log(`[${actionId}] Tour status updated successfully`);
       },
-    );
+      onError: (error) => {
+        console.error(`[${actionId}] Error updating tour status:`, error);
+        toast({
+          title: "Error",
+          description: "Failed to mark unit as toured.",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   // Handle view details - opens Lead Qualification Sheet for Active Deals, Unit Sheet for All Units
@@ -603,6 +596,35 @@ export default function AgentViewer() {
                     </p>
                   )}
                 </div>
+
+                {/* Toured Units List */}
+                {activeVisitId && (
+                  <div className="mt-6 pt-4 border-t">
+                    <h4 className="text-md font-bold uppercase mb-3">
+                      Toured Units ({touredUnits.length})
+                    </h4>
+                    {touredUnits.length > 0 ? (
+                      <ul className="space-y-2 max-h-48 overflow-y-auto">
+                        {touredUnits.map((touredUnit) => (
+                          <li
+                            key={touredUnit.id}
+                            className="text-sm flex items-center gap-2 p-2 bg-muted/50 rounded"
+                            data-testid={`toured-unit-${touredUnit.unitId}`}
+                          >
+                            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                            <span className="font-medium">
+                              Unit {touredUnit.unitNumber || touredUnit.unitId.slice(0, 8)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        No units toured yet.
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             ) : (
               !isLeadLoading && (

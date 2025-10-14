@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -8,8 +7,9 @@ import { Search, UserPlus } from 'lucide-react';
 
 interface Lead {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string; // Added for flexibility
   email?: string;
 }
 
@@ -32,7 +32,7 @@ export function StartShowingDialog({
   projectName = 'this project',
   agentName = 'Agent'
 }: StartShowingDialogProps) {
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [newLeadData, setNewLeadData] = useState({
@@ -41,18 +41,27 @@ export function StartShowingDialog({
     email: '',
     phone: ''
   });
-  
+
   const { data: leads = [], isLoading } = useLeadsForShowing(agentId, projectId);
   const createMutation = useCreateQuickLead(agentId, projectId);
 
+  // Filter leads based on search query
   const filteredLeads = useMemo(() => {
+    if (!leads) return [];
     if (!searchTerm.trim()) return leads;
-    const search = searchTerm.toLowerCase();
-    return leads.filter(lead => 
-      lead.firstName.toLowerCase().includes(search) || 
-      lead.lastName.toLowerCase().includes(search) ||
-      lead.email?.toLowerCase().includes(search)
-    );
+
+    const query = searchTerm.toLowerCase();
+    return leads.filter(lead => {
+      const firstName = lead.firstName || '';
+      const lastName = lead.lastName || '';
+      const name = lead.name || '';
+      const email = lead.email || '';
+
+      return firstName.toLowerCase().includes(query) ||
+        lastName.toLowerCase().includes(query) ||
+        name.toLowerCase().includes(query) ||
+        email.toLowerCase().includes(query);
+    });
   }, [leads, searchTerm]);
 
   const handleCreateSubmit = async () => {
@@ -120,7 +129,7 @@ export function StartShowingDialog({
               Loading qualified leads...
             </p>
           )}
-          
+
           {/* Display List or No Results */}
           {!isLoading && !isCreating && (
             <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -135,14 +144,10 @@ export function StartShowingDialog({
                     data-testid={`button-select-lead-${lead.id}`}
                   >
                     <div className="flex flex-col items-start">
-                      <span className="font-semibold">
-                        {lead.firstName} {lead.lastName}
-                      </span>
-                      {lead.email && (
-                        <span className="text-xs text-muted-foreground">
-                          {lead.email}
-                        </span>
-                      )}
+                      <div className="font-medium">
+                        {lead.name || `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'Unnamed Lead'}
+                      </div>
+                      <div className="text-sm text-muted-foreground">{lead.email || 'No email'}</div>
                     </div>
                   </Button>
                 ))
@@ -173,7 +178,7 @@ export function StartShowingDialog({
           {isCreating && (
             <div className="p-4 border rounded-lg bg-primary/5 space-y-3">
               <h4 className="text-sm font-bold uppercase mb-3">Quick Add Prospect</h4>
-              
+
               <div className="grid grid-cols-2 gap-2">
                 <Input 
                   placeholder="First Name *" 
@@ -188,7 +193,7 @@ export function StartShowingDialog({
                   data-testid="input-last-name"
                 />
               </div>
-              
+
               <Input 
                 placeholder="Email (Optional)" 
                 type="email"
@@ -196,7 +201,7 @@ export function StartShowingDialog({
                 onChange={(e) => setNewLeadData(p => ({ ...p, email: e.target.value }))}
                 data-testid="input-email"
               />
-              
+
               <Input 
                 placeholder="Phone (Optional)" 
                 type="tel"
@@ -204,7 +209,7 @@ export function StartShowingDialog({
                 onChange={(e) => setNewLeadData(p => ({ ...p, phone: e.target.value }))}
                 data-testid="input-phone"
               />
-              
+
               <div className="flex gap-2 pt-2">
                 <Button 
                   variant="outline" 

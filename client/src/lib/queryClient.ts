@@ -479,15 +479,17 @@ export const useActiveClients = (agentId: string | null) => {
   });
 };
 
-// Type for showing session response
-type ShowingSession = {
+// Type for showing session response (used by both session and visit endpoints)
+export type ShowingSession = {
   id: string;
   agentId: string;
-  contactId: string;
+  contactId?: string;
+  leadId?: string;
   projectId: string;
   status: string;
   startedAt: string;
   completedAt?: string;
+  endedAt?: string;
   totalUnitsViewed: number;
   duration?: number;
 };
@@ -499,19 +501,19 @@ type StartSessionPayload = {
   projectId: string;
 };
 
-// Start a new showing session
-const startShowingSession = async (payload: StartSessionPayload): Promise<ShowingSession> => {
+// Start a new showing session via showing-sessions endpoint
+const startNewShowingSession = async (payload: StartSessionPayload): Promise<ShowingSession> => {
   const response = await apiRequest("POST", "/api/showing-sessions", payload);
   return response.json();
 };
 
-// End a showing session
+// End a showing session via showing-sessions endpoint
 const endShowingSession = async (sessionId: string): Promise<ShowingSession> => {
   const response = await apiRequest("POST", `/api/showing-sessions/${sessionId}/end`, undefined);
   return response.json();
 };
 
-// Fetch session status
+// Fetch session status via showing-sessions endpoint
 const fetchSessionStatus = async (sessionId: string): Promise<ShowingSession> => {
   const response = await apiRequest("GET", `/api/showing-sessions/${sessionId}`, undefined);
   return response.json();
@@ -523,7 +525,7 @@ export const useStartSession = (agentId: string, projectId: string) => {
 
   return useMutation({
     mutationFn: (contactId: string) => 
-      startShowingSession({ agentId, contactId, projectId }),
+      startNewShowingSession({ agentId, contactId, projectId }),
     onSuccess: () => {
       // Invalidate dashboard metrics to update 'Active Sessions' count
       queryClientInstance.invalidateQueries({ 

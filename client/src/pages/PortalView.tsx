@@ -134,10 +134,18 @@ const PortalView: React.FC = () => {
       {/* Header */}
       <header className="bg-primary text-primary-foreground py-8 px-6 shadow-lg">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-black uppercase tracking-tight mb-2">
-            {portalData.projectName || 'Luxury Residences'}
-          </h1>
-          <p className="text-lg opacity-90">Your Personalized Tour Summary</p>
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-4xl font-black uppercase tracking-tight mb-2">
+                {portalData.projectName || 'Luxury Residences'}
+              </h1>
+              <p className="text-lg opacity-90">Your Personalized Tour Summary</p>
+            </div>
+            <Badge variant="secondary" className="bg-green-600 text-white text-sm px-4 py-2">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Tour Confirmed
+            </Badge>
+          </div>
         </div>
       </header>
 
@@ -193,9 +201,13 @@ const PortalView: React.FC = () => {
           </div>
 
           {portalData.units && portalData.units.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="portal-toured-units-grid">
               {portalData.units.map((unit) => (
-                <Card key={unit.id} className="p-6 hover:shadow-xl transition-shadow">
+                <Card 
+                  key={unit.id} 
+                  className="p-6 hover:shadow-xl transition-shadow"
+                  data-testid={`portal-unit-${unit.unitNumber}`}
+                >
                   <div className="space-y-4">
                     <div>
                       <h4 className="text-2xl font-black uppercase">Unit {unit.unitNumber}</h4>

@@ -51,7 +51,7 @@ export default function ShowingSessionLayout() {
   const agentName = agentContextStore.getAgentName() || "Agent";
 
   // WebSocket Hook
-  const { lastMessage, sendMessage } = useWebSocket("ws://localhost:8080"); // Adjust URL as needed
+  const { lastMessage, sendMessage } = useWebSocket(); // Adjust URL as needed
 
   // Auto-open client selector if coming from /new route
   useEffect(() => {
@@ -60,6 +60,18 @@ export default function ShowingSessionLayout() {
       setLocation('/showing');
     }
   }, [location]);
+
+  // Subscribe to session events when session starts
+  useEffect(() => {
+    if (activeSessionId && sendMessage) {
+      const subscribeMessage = JSON.stringify({
+        type: 'subscribe',
+        sessionId: activeSessionId
+      });
+      sendMessage(subscribeMessage);
+      console.log(`[ShowingSession] Subscribed to WebSocket events for session: ${activeSessionId}`);
+    }
+  }, [activeSessionId, sendMessage]);
 
   // Fetch units for current project
   const { data: units = [], isLoading: unitsLoading, isError: unitsError } = useQuery<UnitWithDetails[]>({
@@ -125,7 +137,7 @@ export default function ShowingSessionLayout() {
     setActiveLeadId(leadId);
     setCurrentProjectId(projectId);
     agentContextStore.setProject(projectId, PROJECTS.find(p => p.id === projectId)?.name || '');
-    sendMessage(JSON.stringify({ type: "subscribe", sessionId: sessionId })); // Subscribe to session events
+    // The WebSocket subscription is now handled by the useEffect hook
   };
 
   const handleEndSession = async () => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -104,6 +103,11 @@ export function ClientSelectorDialog({ isOpen, onClose, agentId, onSessionStart 
     setSelectedLeadId(null);
     onClose();
   };
+
+  // Placeholder for projectName and agentName, assuming they are available in the scope
+  // If not, these might need to be passed as props or fetched.
+  const projectName = selectedProject?.name || 'this project';
+  const agentName = agentId || 'this agent'; // This is a simplification, agent name might need to be fetched
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

@@ -155,6 +155,7 @@ export default function ShowingSessionLayout() {
   // Mutations
   const endSessionMutation = useEndSession();
   const generatePortalMutation = useGeneratePortal();
+  const markTouredMutation = useMarkUnitToured(activeSessionId);
 
   const currentProject = PROJECTS.find(p => p.id === currentProjectId);
 
@@ -222,43 +223,43 @@ export default function ShowingSessionLayout() {
   };
 
   const handleTourUnit = useCallback(async (unitId: string, isToured: boolean) => {
-    if (!activeSessionId) return;
+    if (!activeSessionId) {
+      toast({
+        title: "No Active Session",
+        description: "Please start a showing session first.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (isToured) {
-      try {
-        const response = await fetch('/api/toured-units', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId: activeSessionId,
-            unitId,
-          }),
-        });
-
-        if (!response.ok) throw new Error("Failed to mark unit as toured");
-
-        // No need to invalidate queries here, WebSocket will handle it
-        // queryClient.invalidateQueries({ queryKey: ["/api/showing-sessions", activeSessionId, "toured-units"] });
-
-        toast({
-          title: "Unit Toured",
-          description: "Unit marked as toured in this session.",
-          duration: 2000,
-        });
-
-        // Optionally send a message to the server via WebSocket if your backend expects it
-        // sendMessage(JSON.stringify({ type: "unit_toured", sessionId: activeSessionId, unitId }));
-
-      } catch (error) {
-        console.error("Error marking unit as toured:", error);
-        toast({
-          title: "Error",
-          description: "Failed to mark unit as toured.",
-          variant: "destructive",
-        });
-      }
+      markTouredMutation.mutate(unitId, {
+        onSuccess: () => {
+          // Invalidate both queries to ensure UI updates
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/showing-sessions", activeSessionId, "toured-units"] 
+          });
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/showing-sessions", activeSessionId] 
+          });
+          
+          toast({
+            title: "Unit Toured",
+            description: "Unit marked as toured in this session.",
+            duration: 2000,
+          });
+        },
+        onError: (error) => {
+          console.error("Error marking unit as toured:", error);
+          toast({
+            title: "Error",
+            description: "Failed to mark unit as toured. Please try again.",
+            variant: "destructive",
+          });
+        },
+      });
     }
-  }, [activeSessionId, toast, sendMessage]); // Added sendMessage to dependencies
+  }, [activeSessionId, markTouredMutation, toast]);
 
   const formatPrice = (price: string | number): string => {
     const numPrice = typeof price === "string" ? parseFloat(price) : price;

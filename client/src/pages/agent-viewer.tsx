@@ -1143,9 +1143,10 @@ export default function AgentViewer() {
                 </div>
 
                 {units.length === 0 && (
-                    <div className="text-center py-12 text-muted-foreground">
-                      No units found for this project
-                    </div>
+                  <div className="text-center py-12 text-muted-foreground">
+                    No units found for this project
+                  </div>
+                )}
                   )}
                 </div>
                 ) : (

@@ -81,7 +81,7 @@ export default function AgentDashboard() {
   const handleGoToViewer = () => {
     // Store agent context
     agentContextStore.setAgent(AGENT_ID, AGENT_NAME.split(' ')[0] + ' ' + AGENT_NAME.split(' ')[1]);
-    // Navigate directly to unified viewer with client selection
+    // Navigate directly to unified viewer - the viewer will handle client selection
     setLocation("/agent/viewer");
   };
 

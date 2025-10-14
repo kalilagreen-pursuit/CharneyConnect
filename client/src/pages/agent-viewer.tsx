@@ -156,15 +156,19 @@ export default function AgentViewer() {
   });
 
   const { data: units = [], isLoading, error: unitsError } = useQuery<UnitWithDetails[]>({
-    queryKey: ["/api/agents", agentId, "units", currentProjectId],
+    queryKey: ["/api/units", currentProjectId, "available"],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/agents/${agentId}/units?projectId=${currentProjectId}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch agent units");
+      const url = new URL('/api/units', window.location.origin);
+      url.searchParams.set('projectId', currentProjectId);
+      url.searchParams.set('status', 'available');
+      
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error(`Failed to fetch units: ${response.statusText}`);
+      }
       return response.json();
     },
-    enabled: !!agentId && !!currentProjectId,
+    enabled: !!currentProjectId,
     retry: 2,
   });
 

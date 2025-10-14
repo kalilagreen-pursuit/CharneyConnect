@@ -598,20 +598,6 @@ const fetchSessionStatus = async (sessionId: string): Promise<ShowingSession> =>
   return response.json();
 };
 
-// Hook to fetch current session status (for bottom tracker/context)
-export const useSessionStatus = (sessionId: string | null) => {
-  return useQuery<ShowingSession>({
-    queryKey: ["/api/showing-sessions", sessionId],
-    queryFn: () => {
-      if (!sessionId) throw new Error("No session ID provided");
-      return fetchSessionStatus(sessionId);
-    },
-    enabled: !!sessionId,
-    staleTime: 0, // Always fetch fresh data
-    refetchInterval: 1000, // Refetch every second for live duration updates
-  });
-};
-
 // Type for toured unit response
 type TouredUnitResponse = {
   id: string;
@@ -684,17 +670,17 @@ export const useTouredUnits = (sessionId: string | null) => {
   });
 };
 
-// Hook to fetch session status for real-time metrics
+// Hook to fetch session status for real-time metrics (combined from both previous declarations)
 export const useSessionStatus = (sessionId: string | null) => {
   return useQuery<ShowingSession>({
-    queryKey: ["sessionStatus", sessionId],
+    queryKey: ["/api/showing-sessions", sessionId],
     queryFn: () => {
       if (!sessionId) throw new Error("No session ID provided");
       return fetchSessionStatus(sessionId);
     },
     enabled: !!sessionId,
     staleTime: 0,
-    refetchInterval: 5000, // Update every 5 seconds
+    refetchInterval: 1000, // Refetch every second for live duration updates
   });
 };
 

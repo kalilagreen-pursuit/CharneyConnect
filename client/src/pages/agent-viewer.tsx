@@ -11,6 +11,7 @@ import {
   useTouredUnits,
   useGeneratePortal, // Import useGeneratePortal
   useEndSession, // Import useEndSession
+  useSessionStatus, // Import useSessionStatus
 } from "@/lib/queryClient";
 import { Agent } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -126,7 +127,7 @@ export default function AgentViewer() {
   const [currentProjectId, setCurrentProjectId] = useState(
     () => agentContextStore.getProjectId() || PROJECTS[0].id,
   );
-  
+
   const { data: units = [], isLoading, error: unitsError } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/agents", agentId, "units", currentProjectId],
     queryFn: async () => {
@@ -147,7 +148,7 @@ export default function AgentViewer() {
   const sessionId = activeVisitId; // Assuming activeVisitId can be used as sessionId
   const markTouredMutation = useMarkUnitToured(sessionId);
   const { data: touredUnits = [] } = useTouredUnits(sessionId);
-  
+
   // Session status for real-time metrics in bottom tracker
   const { data: sessionStatus } = useSessionStatus(sessionId);
 
@@ -286,6 +287,9 @@ export default function AgentViewer() {
       },
       staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     });
+
+  // Determine if there's an error loading the client
+  const isClientError = !isLeadLoading && !activeLead && !!activeLeadId;
 
   // Calculate unit matches based on active lead preferences
   const unitMatches = useMemo(() => {
@@ -841,7 +845,8 @@ export default function AgentViewer() {
                   </div>
                 )}
               </>
-            ) : !isLeadLoading ? (
+            )}
+            {!isLeadLoading && isClientError && (
               <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
                 <p className="text-sm text-destructive font-medium">
                   Error loading client details
@@ -855,7 +860,7 @@ export default function AgentViewer() {
                   Retry
                 </Button>
               </div>
-            ) : null}
+            )}
           </>
         ) : (
           <div className="space-y-4">

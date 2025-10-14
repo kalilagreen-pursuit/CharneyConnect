@@ -92,14 +92,18 @@ export default function ShowingSessionLayout() {
   
   // Fetch units for current project - depends only on currentProjectId state being populated
   const { data: units = [], isLoading: unitsLoading, isError: unitsError, error: unitsFetchError } = useQuery<UnitWithDetails[]>({
-    queryKey: ["/api/agents", agentId, "units", currentProjectId],
+    queryKey: ["/api/units", currentProjectId, activeLeadId],
     queryFn: async () => {
       if (!currentProjectId) {
         console.log('[ShowingSession] No project selected, returning empty units');
         return [];
       }
       console.log('[ShowingSession] Fetching units for project:', currentProjectId);
-      const response = await fetch(`/api/agents/${agentId}/units?projectId=${currentProjectId}`);
+      
+      const url = new URL('/api/units', window.location.origin);
+      url.searchParams.set('projectId', currentProjectId);
+      
+      const response = await fetch(url.toString());
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[ShowingSession] Failed to fetch units:', response.status, errorText);

@@ -132,18 +132,18 @@ const PortalView: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground py-20 px-6 shadow-2xl relative overflow-hidden">
+      <header className="bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground py-24 md:py-32 px-6 shadow-2xl relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/[0.05] pointer-events-none"></div>
         <div className="max-w-6xl mx-auto relative z-10">
-          <div className="flex items-start justify-between flex-wrap gap-6">
+          <div className="flex items-start justify-between flex-wrap gap-8">
             <div>
-              <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight mb-5 leading-none drop-shadow-lg">
+              <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tight mb-6 leading-none drop-shadow-xl">
                 {portalData.projectName || 'Luxury Residences'}
               </h1>
-              <p className="text-xl md:text-2xl opacity-95 font-bold">Your Personalized Tour Summary</p>
+              <p className="text-2xl md:text-3xl opacity-95 font-black uppercase tracking-wide">Your Personalized Tour Summary</p>
             </div>
-            <Badge variant="secondary" className="bg-white text-green-700 text-base md:text-lg px-8 py-4 shadow-2xl font-black uppercase min-h-[56px] flex items-center border-2 border-green-200">
-              <CheckCircle className="h-6 w-6 mr-2 fill-green-700" />
+            <Badge variant="secondary" className="bg-white text-green-700 text-lg md:text-xl px-10 py-5 shadow-2xl font-black uppercase min-h-[64px] flex items-center border-2 border-green-300">
+              <CheckCircle className="h-7 w-7 mr-3 fill-green-700" />
               Tour Confirmed
             </Badge>
           </div>
@@ -206,7 +206,7 @@ const PortalView: React.FC = () => {
               {portalData.units.map((unit) => (
                 <Card 
                   key={unit.id} 
-                  className="p-8 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] border-2"
+                  className="p-8 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] border-2 border-border/50 shadow-md"
                   data-testid={`portal-unit-${unit.unitNumber}`}
                 >
                   <div className="space-y-5">

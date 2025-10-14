@@ -16,9 +16,9 @@ const AGENT_ID = "agent-001";
 
 // Simple Metric Card Component
 const MetricCard = ({ title, value, color }: { title: string; value: string | number; color: string }) => (
-  <Card className="text-center shadow-lg hover-elevate transition-all hover:shadow-xl border-2">
-    <CardContent className="p-8">
-      <p className={`text-6xl font-black ${color} mb-3 leading-none`} data-testid={`metric-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+  <Card className="text-center shadow-md hover-elevate transition-all hover:shadow-xl border-2 border-border/50">
+    <CardContent className="p-10">
+      <p className={`text-7xl font-black ${color} mb-4 leading-none tabular-nums`} data-testid={`metric-${title.toLowerCase().replace(/\s+/g, '-')}`}>
         {value}
       </p>
       <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">
@@ -88,14 +88,14 @@ export default function AgentDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header: Agent Profile */}
-      <div className="border-b-4 border-primary bg-gradient-to-br from-card via-card to-primary/5 shadow-2xl">
-        <div className="px-6 py-12">
+      <div className="border-b-4 border-primary bg-gradient-to-br from-card via-card to-primary/10 shadow-2xl">
+        <div className="px-6 py-16 md:py-20">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight mb-4 leading-none bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent" data-testid="text-welcome">
               WELCOME BACK, {AGENT_NAME}
             </h1>
             <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold flex items-center gap-2" data-testid="text-role">
-              <span className="h-2 w-2 rounded-full bg-primary"></span>
+              <span className="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
               {AGENT_ROLE}
             </p>
           </div>

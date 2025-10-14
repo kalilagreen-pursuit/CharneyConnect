@@ -53,16 +53,16 @@ export function EndSessionDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md" data-testid="dialog-end-session">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-black uppercase tracking-tight">
+          <DialogTitle className="text-3xl font-black uppercase tracking-tight">
             End Showing Session
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-base">
             Review session summary and generate client portal
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl p-6 space-y-4 border border-border/50">
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl p-8 space-y-4 border-2 border-border/50 shadow-sm">
             <h4 className="font-black uppercase text-xs tracking-wider text-muted-foreground flex items-center gap-2">
               <span className="h-1 w-8 bg-primary rounded-full"></span>
               Session Summary

@@ -87,8 +87,20 @@ export default function AgentViewer() {
   const generatePortalMutation = useGeneratePortal(); // Added mutation
   const endSessionMutation = useEndSession(); // Added mutation
 
-  // State for sidebar visibility
+  // State for sidebar visibility - open by default on desktop
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Auto-open sidebar on desktop screens
+  useEffect(() => {
+    const checkDesktop = () => {
+      if (window.innerWidth >= 768) {
+        setIsSidebarOpen(true);
+      }
+    };
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   // Auto-open dialog when route is /agent/viewer/new
   useEffect(() => {
@@ -715,24 +727,21 @@ export default function AgentViewer() {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      {/* Mobile overlay when sidebar is open */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+      
       {/* 1. Left Sidebar - Client Context */}
       <aside
         className={cn(
-          "w-80 bg-card border-r p-6 flex-shrink-0 overflow-y-auto transition-transform duration-300 ease-in-out",
+          "fixed md:relative z-50 md:z-auto w-80 h-full bg-card border-r p-6 flex-shrink-0 overflow-y-auto transition-transform duration-300 ease-in-out",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
-        style={{ maxWidth: isSidebarOpen ? "320px" : "0px", minWidth: isSidebarOpen ? "320px" : "0px" }}
       >
-        <button
-          onClick={() => setIsSidebarOpen(false)}
-          className={cn(
-            "absolute top-1/2 right-2 transform -translate-y-1/2 z-50 p-1 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200",
-            !isSidebarOpen && "hidden md:block",
-          )}
-          aria-label="Close sidebar"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
 
         <h3 className="text-xl font-black uppercase mb-1">
           Agent: {agentName}
@@ -919,7 +928,8 @@ export default function AgentViewer() {
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 variant="outline"
                 size="icon"
-                className="md:hidden"
+                className="md:hidden flex-shrink-0"
+                data-testid="button-toggle-sidebar"
               >
                 <Menu className="h-4 w-4" />
               </Button>

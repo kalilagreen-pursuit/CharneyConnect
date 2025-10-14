@@ -81,6 +81,15 @@ export default function ShowingSessionLayout() {
   // Fetch session status first
   const { data: sessionStatus } = useSessionStatus(activeSessionId);
   
+  // Set currentProjectId from session data when it's available
+  useEffect(() => {
+    if (sessionStatus?.projectId && !currentProjectId) {
+      setCurrentProjectId(sessionStatus.projectId);
+      agentContextStore.setProject(sessionStatus.projectId, PROJECTS.find(p => p.id === sessionStatus.projectId)?.name || '');
+      console.log('[ShowingSession] Set project ID from session:', sessionStatus.projectId);
+    }
+  }, [sessionStatus, currentProjectId]);
+  
   // Fetch units for current project - now depends on session being properly loaded
   const { data: units = [], isLoading: unitsLoading, isError: unitsError, error: unitsFetchError } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/agents", agentId, "units", currentProjectId],

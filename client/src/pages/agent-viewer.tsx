@@ -9,9 +9,8 @@ import {
   useLogUnitView,
   useMarkUnitToured,
   useTouredUnits,
-  useGeneratePortal,
-  useEndSession,
-  useSessionStatus, // Import useSessionStatus for duration tracking
+  useGeneratePortal, // Import useGeneratePortal
+  useEndSession, // Import useEndSession
 } from "@/lib/queryClient";
 import { Agent } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -145,35 +144,8 @@ export default function AgentViewer() {
   // Visualization mode state (LIVE 3D vs PRE-CONSTRUCTION GALLERY)
   const [isGalleryMode, setIsGalleryMode] = useState(false);
 
-  // Fetch showing session status (for duration tracking)
-  const { data: sessionStatus } = useSessionStatus(activeVisitId);
-
   // Fetch showing itinerary (viewed units in current session)
   const { data: viewedUnits = [] } = useShowingItinerary(activeVisitId);
-  
-  // Calculate session duration
-  const sessionDuration = useMemo(() => {
-    if (!sessionStatus?.startedAt) return '00:00:00';
-    const start = new Date(sessionStatus.startedAt).getTime();
-    const now = Date.now();
-    const diff = now - start;
-    const hours = Math.floor(diff / 3600000);
-    const minutes = Math.floor((diff % 3600000) / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, [sessionStatus]);
-  
-  // Update session duration every second when active
-  useEffect(() => {
-    if (!activeVisitId) return;
-    const interval = setInterval(() => {
-      // Force re-render to update duration
-      queryClient.invalidateQueries({
-        queryKey: ["/api/showing-sessions", activeVisitId],
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [activeVisitId]);
 
   // Create a Set for quick lookup
   const viewedUnitIds = useMemo(() => {
@@ -643,7 +615,7 @@ export default function AgentViewer() {
     try {
       // 1. Generate the client portal link using the new mutation
       const touredUnitIds = touredUnits?.map(t => t.unitId) || [];
-      
+
       console.log(`[${actionId}] Ending session and generating portal`, {
         sessionId: activeVisitId,
         leadId: activeLeadId,
@@ -661,7 +633,7 @@ export default function AgentViewer() {
 
       // Display success toast with portal link
       const fullPortalUrl = `${window.location.origin}${portalResult.portalUrl}`;
-      
+
       toast({
         title: "Session Ended Successfully!",
         description: `Portal link generated: ${fullPortalUrl}. Follow-up automation triggered.`,
@@ -870,200 +842,388 @@ export default function AgentViewer() {
 
       {/* 2. Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Main Viewer Section */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden"
-                  onClick={() => setIsSidebarOpen(true)}
+        {/* Unit Cards Grid */}
+        <div
+          className="flex-1 overflow-auto bg-background"
+          data-testid="container-unit-cards"
+        >
+          <div className="p-6">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList className="mb-6">
+                <TabsTrigger
+                  value="all-units"
+                  data-testid="tab-all-units"
+                  className="uppercase font-bold"
                 >
-                  <Menu className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleBack}
-                  data-testid="button-back"
+                  ALL UNITS
+                </TabsTrigger>
+                <TabsTrigger
+                  value="active-deals"
+                  data-testid="tab-active-deals"
+                  className="uppercase font-bold"
                 >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div>
-                  <h1
-                    className="text-xl font-black uppercase tracking-tight"
-                    data-testid="text-viewer-title"
-                  >
-                    {projectName}
-                  </h1>
-                  <p
-                    className="text-sm text-muted-foreground"
-                    data-testid="text-agent-name"
-                  >
-                    Agent: {agentName} • {agentRole}
-                  </p>
+                  MY ACTIVE DEALS
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all-units" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {units.map((unit) => {
+                    const unitMatch = unitMatches.get(unit.id);
+                    const matchIndicator = unitMatch
+                      ? getMatchIndicatorClass(unitMatch.matchScore)
+                      : "";
+                    const matchBadge = unitMatch
+                      ? getMatchBadge(unitMatch.matchScore)
+                      : null;
+
+                    // Use simpler match utility for visual highlighting
+                    const simpleMatch = activeLead
+                      ? matchUnitToClient(unit, activeLead)
+                      : null;
+                    const highlightClass = simpleMatch?.isMatch
+                      ? "border-4 border-green-500 shadow-xl"
+                      : "border border-transparent";
+
+                    // Check if unit has been toured in the current session
+                    const isToured =
+                      touredUnits.some((tu) => tu.unitId === unit.id) || false;
+
+                    const isVisible = visibleUnitIds.has(unit.id);
+
+                    return (
+                      <Card
+                        key={unit.id}
+                        ref={unitCardRef}
+                        data-unit-id={unit.id}
+                        data-testid={`card-unit-${unit.unitNumber}`}
+                        title={simpleMatch?.reason || ""}
+                        className={cn(
+                          "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] hover:border-indigo-600 relative",
+                          selectedUnitId === unit.id && "ring-2 ring-primary",
+                          matchIndicator,
+                          highlightClass,
+                          !isVisible && "min-h-[300px]" // Reserve space for non-visible cards
+                        )}
+                        onClick={() => handleUnitSelect(unit.id)}
+                      >
+                        {isVisible ? (
+                        <div className="space-y-3">
+                          {/* Header: Unit Number + Status */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="text-xs text-muted-foreground uppercase">
+                                {unit.building}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-xl font-black uppercase tracking-tight">
+                                  Unit {unit.unitNumber}
+                                </h3>
+                                {activeVisitId &&
+                                  viewedUnitIds.has(unit.id) && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-primary/10 text-primary border-primary"
+                                      data-testid={`badge-viewed-${unit.unitNumber}`}
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      VIEWED
+                                    </Badge>
+                                  )}
+                                {matchBadge && (
+                                  <Badge
+                                    variant={matchBadge.variant}
+                                    className="bg-green-500 text-white uppercase text-xs"
+                                    data-testid={`badge-match-${unit.unitNumber}`}
+                                  >
+                                    <Star className="h-3 w-3 mr-1 fill-white" />
+                                    {matchBadge.label}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            <Badge
+                              variant={getStatusBadgeVariant(unit.status)}
+                              data-testid={`badge-status-${unit.unitNumber}`}
+                              className="uppercase text-xs"
+                            >
+                              {formatStatus(unit.status)}
+                            </Badge>
+                          </div>
+
+                          {/* Price */}
+                          <div
+                            className="text-2xl font-bold"
+                            data-testid={`text-price-${unit.unitNumber}`}
+                          >
+                            {formatPrice(unit.price)}
+                          </div>
+
+                          {/* Unit Details */}
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div
+                              className="flex items-center gap-1"
+                              data-testid={`text-beds-${unit.unitNumber}`}
+                            >
+                              <Bed className="h-4 w-4" />
+                              <span>{unit.bedrooms} BD</span>
+                            </div>
+                            <div
+                              className="flex items-center gap-1"
+                              data-testid={`text-baths-${unit.unitNumber}`}
+                            >
+                              <Bath className="h-4 w-4" />
+                              <span>{unit.bathrooms} BA</span>
+                            </div>
+                            <div
+                              className="flex items-center gap-1"
+                              data-testid={`text-sqft-${unit.unitNumber}`}
+                            >
+                              <Maximize2 className="h-4 w-4" />
+                              <span>
+                                {unit.squareFeet.toLocaleString()} SF
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Floor */}
+                          <div className="text-xs text-muted-foreground">
+                            Floor {unit.floor}
+                          </div>
+
+                          {/* Tour Tracking Checkbox */}
+                          {activeVisitId && (
+                            <div className="flex items-center space-x-2 mt-2 p-2 rounded-md hover:bg-accent">
+                              <Checkbox
+                                id={`tour-checkbox-${unit.id}`}
+                                checked={isToured}
+                                onCheckedChange={(checked) =>
+                                  handleTourTrackingChange(
+                                    unit.id,
+                                    checked as boolean,
+                                  )
+                                }
+                                className="h-5 w-5"
+                              />
+                              <label
+                                htmlFor={`tour-checkbox-${unit.id}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                Toured
+                              </label>
+                            </div>
+                          )}
+
+                          {/* Recommendation Badge for Strong Matches */}
+                          {simpleMatch?.isMatch && simpleMatch.score >= 3 && (
+                            <div className="absolute top-2 right-2">
+                              <span className="text-xs font-bold text-white bg-green-500 rounded-full px-2 py-1 shadow-md">
+                                RECOMMENDED
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Match Reasons */}
+                          {unitMatch && unitMatch.matchReasons.length > 0 && (
+                            <div className="pt-2 border-t">
+                              <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">
+                                Match Reasons ({unitMatch.matchScore}% match)
+                              </div>
+                              <ul className="text-xs space-y-0.5">
+                                {unitMatch.matchReasons
+                                  .slice(0, 3)
+                                  .map((reason, idx) => (
+                                    <li
+                                      key={idx}
+                                      className="text-muted-foreground flex items-center gap-1"
+                                    >
+                                      <span className="text-green-500">
+                                        ✓
+                                      </span>{" "}
+                                      {reason}
+                                    </li>
+                                  ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* View Details Button */}
+                          <Button
+                            size="lg"
+                            className="w-full uppercase mt-3"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDetails(unit);
+                            }}
+                            data-testid={`button-view-details-${unit.unitNumber}`}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </Button>
+                        </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-full min-h-[250px]">
+                            <div className="text-sm text-muted-foreground">Loading...</div>
+                          </div>
+                        )}
+                      </Card>
+                    );
+                  })}
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-sm text-muted-foreground">
-                  {units.length} Units
-                </div>
-                {!activeVisitId && (
-                  <Button
-                    variant="default"
-                    size="lg"
-                    onClick={() => setShowStartShowingDialog(true)}
-                    data-testid="button-start-showing"
-                    className="bg-primary hover:bg-primary/90 min-h-[44px] px-6 font-black uppercase"
-                  >
-                    <Calendar className="mr-2 h-5 w-5" />
-                    START SHOWING
-                  </Button>
+
+                {units.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No units found for this project
+                  </div>
                 )}
-                {activeVisitId && (
-                  <div className="flex items-center gap-3">
-                    <Badge variant="default" className="px-4 py-2 text-sm min-h-[44px] flex items-center">
-                      <Eye className="mr-2 h-4 w-4" />
-                      Showing Active ({viewedUnits.length} viewed)
-                    </Badge>
+              </TabsContent>
+
+              <TabsContent value="active-deals" className="mt-0 space-y-4">
+                {/* Stats/Filter Header */}
+                {!isLoadingDeals && activeDeals.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
                     <Button
-                      variant="destructive"
-                      size="lg"
-                      onClick={handleEndSession}
-                      data-testid="button-end-showing"
-                      className="uppercase font-black min-h-[44px] px-6"
-                      disabled={endSessionMutation.isPending || generatePortalMutation.isPending}
+                      size="sm"
+                      variant={stageFilter === "all" ? "default" : "outline"}
+                      onClick={() => setStageFilter("all")}
+                      data-testid="filter-all"
+                      className="uppercase px-4 py-2 min-h-[36px]"
                     >
-                      {endSessionMutation.isPending || generatePortalMutation.isPending
-                        ? "PROCESSING..."
-                        : "END SHOWING"}
+                      All: {dealCountsByStage.all}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={stageFilter === "new" ? "default" : "outline"}
+                      onClick={() => setStageFilter("new")}
+                      data-testid="filter-new"
+                      className="uppercase px-4 py-2 min-h-[36px]"
+                    >
+                      New: {dealCountsByStage.new}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={
+                        stageFilter === "contacted" ? "default" : "outline"
+                      }
+                      onClick={() => setStageFilter("contacted")}
+                      data-testid="filter-contacted"
+                      className="uppercase px-4 py-2 min-h-[36px]"
+                    >
+                      Contacted: {dealCountsByStage.contacted}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={
+                        stageFilter === "qualified" ? "default" : "outline"
+                      }
+                      onClick={() => setStageFilter("qualified")}
+                      data-testid="filter-qualified"
+                      className="uppercase px-4 py-2 min-h-[36px]"
+                    >
+                      Qualified: {dealCountsByStage.qualified}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={
+                        stageFilter === "proposal" ? "default" : "outline"
+                      }
+                      onClick={() => setStageFilter("proposal")}
+                      data-testid="filter-proposal"
+                      className="uppercase px-4 py-2 min-h-[36px]"
+                    >
+                      Proposal: {dealCountsByStage.proposal}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={
+                        stageFilter === "negotiation" ? "default" : "outline"
+                      }
+                      onClick={() => setStageFilter("negotiation")}
+                      data-testid="filter-negotiation"
+                      className="uppercase px-4 py-2 min-h-[36px]"
+                    >
+                      Negotiation: {dealCountsByStage.negotiation}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={
+                        stageFilter === "closed_won" ? "default" : "outline"
+                      }
+                      onClick={() => setStageFilter("closed_won")}
+                      data-testid="filter-closed-won"
+                      className="uppercase px-4 py-2 min-h-[36px]"
+                    >
+                      Closed Won: {dealCountsByStage.closed_won}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={
+                        stageFilter === "closed_lost" ? "default" : "outline"
+                      }
+                      onClick={() => setStageFilter("closed_lost")}
+                      data-testid="filter-closed-lost"
+                      className="uppercase px-4 py-2 min-h-[36px]"
+                    >
+                      Closed Lost: {dealCountsByStage.closed_lost}
                     </Button>
                   </div>
                 )}
-                <Button
-                  variant="outline"
-                  onClick={() => setLocation("/")}
-                  data-testid="button-view-all-units"
-                >
-                  <LayoutGrid className="mr-2 h-4 w-4" />
-                  VIEW ALL UNITS
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Unit Cards Section */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Project Selector Tabs */}
-          <div className="flex-shrink-0 flex items-center justify-between gap-3 p-4 bg-[#f6f1eb] border-b">
-            <div className="flex items-center gap-3">
-              {PROJECTS.map((project) => (
-                <Button
-                  key={project.id}
-                  data-testid={`button-project-${project.name.toLowerCase().replace(/\s+/g, "-")}`}
-                  variant={
-                    currentProjectId === project.id ? "default" : "outline"
-                  }
-                  size="lg"
-                  onClick={() => handleProjectChange(project.id)}
-                  className="font-black uppercase tracking-tight min-h-[44px] px-6"
-                >
-                  {project.name}
-                </Button>
-              ))}
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {isLoadingDeals ? (
+                    <div className="col-span-full text-center py-12 text-muted-foreground">
+                      Loading active deals...
+                    </div>
+                  ) : filteredDeals.length > 0 ? (
+                    filteredDeals.map((unit) => {
+                      // Map deal stage to Charney brand border color
+                      const stageBorderColor =
+                        {
+                          new: "border-l-muted-foreground",
+                          contacted: "border-l-primary",
+                          qualified:
+                            "border-l-[hsl(var(--status-available))]",
+                          proposal: "border-l-[hsl(var(--status-on-hold))]",
+                          negotiation:
+                            "border-l-[hsl(var(--status-contract))]",
+                          closed_won:
+                            "border-l-[hsl(var(--status-available))]",
+                          closed_lost: "border-l-destructive",
+                        }[unit.dealStage] || "border-l-muted";
 
-            {/* Visualization Mode Toggle */}
-            <Tabs
-              value={isGalleryMode ? "gallery" : "live"}
-              onValueChange={(v) => setIsGalleryMode(v === "gallery")}
-            >
-              <TabsList>
-                <TabsTrigger value="live" data-testid="button-viz-live">
-                  Live Inventory Map
-                </TabsTrigger>
-                <TabsTrigger value="gallery" data-testid="button-viz-gallery">
-                  Pre-Construction Gallery
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-
-          {/* Unit Cards Grid */}
-          <div
-            className="flex-1 overflow-auto bg-background"
-            data-testid="container-unit-cards"
-          >
-            <div className="p-6">
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="w-full"
-              >
-                <TabsList className="mb-6">
-                  <TabsTrigger
-                    value="all-units"
-                    data-testid="tab-all-units"
-                    className="uppercase font-bold"
-                  >
-                    ALL UNITS
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="active-deals"
-                    data-testid="tab-active-deals"
-                    className="uppercase font-bold"
-                  >
-                    MY ACTIVE DEALS
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="all-units" className="mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {units.map((unit) => {
-                      const unitMatch = unitMatches.get(unit.id);
-                      const matchIndicator = unitMatch
-                        ? getMatchIndicatorClass(unitMatch.matchScore)
-                        : "";
-                      const matchBadge = unitMatch
-                        ? getMatchBadge(unitMatch.matchScore)
-                        : null;
-
-                      // Use simpler match utility for visual highlighting
-                      const simpleMatch = activeLead
-                        ? matchUnitToClient(unit, activeLead)
-                        : null;
-                      const highlightClass = simpleMatch?.isMatch
-                        ? "border-4 border-green-500 shadow-xl"
-                        : "border border-transparent";
+                      // Map deal stage to badge variant
+                      const stageBadgeVariant =
+                        {
+                          new: "secondary" as const,
+                          contacted: "default" as const,
+                          qualified: "default" as const,
+                          proposal: "default" as const,
+                          negotiation: "default" as const,
+                          closed_won: "default" as const,
+                          closed_lost: "destructive" as const,
+                        }[unit.dealStage] || ("secondary" as const);
 
                       // Check if unit has been toured in the current session
                       const isToured =
                         touredUnits.some((tu) => tu.unitId === unit.id) || false;
 
-                      const isVisible = visibleUnitIds.has(unit.id);
-
                       return (
                         <Card
                           key={unit.id}
-                          ref={unitCardRef}
                           data-unit-id={unit.id}
-                          data-testid={`card-unit-${unit.unitNumber}`}
-                          title={simpleMatch?.reason || ""}
+                          data-testid={`card-deal-${unit.unitNumber}`}
                           className={cn(
-                            "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] hover:border-indigo-600 relative",
-                            selectedUnitId === unit.id && "ring-2 ring-primary",
-                            matchIndicator,
-                            highlightClass,
-                            !isVisible && "min-h-[300px]" // Reserve space for non-visible cards
+                            "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] border-l-4 border-transparent hover:border-indigo-600",
+                            stageBorderColor,
+                            selectedUnitId === unit.id &&
+                              "ring-2 ring-primary",
                           )}
                           onClick={() => handleUnitSelect(unit.id)}
                         >
-                          {isVisible ? (
                           <div className="space-y-3">
                             {/* Header: Unit Number + Status */}
                             <div className="flex items-start justify-between gap-2">
@@ -1079,32 +1239,62 @@ export default function AgentViewer() {
                                     viewedUnitIds.has(unit.id) && (
                                       <Badge
                                         variant="outline"
-                                        className="bg-primary/10 text-primary border-primary"
-                                        data-testid={`badge-viewed-${unit.unitNumber}`}
+                                        className="bg-green-500/10 text-green-600 border-green-500"
+                                        data-testid={`badge-viewed-deal-${unit.unitNumber}`}
                                       >
-                                        <Eye className="h-3 w-3 mr-1" />
+                                        <CheckCircle className="h-3 w-3 mr-1 fill-green-600" />
                                         VIEWED
                                       </Badge>
                                     )}
-                                  {matchBadge && (
-                                    <Badge
-                                      variant={matchBadge.variant}
-                                      className="bg-green-500 text-white uppercase text-xs"
-                                      data-testid={`badge-match-${unit.unitNumber}`}
-                                    >
-                                      <Star className="h-3 w-3 mr-1 fill-white" />
-                                      {matchBadge.label}
-                                    </Badge>
+                                  {/* Priority Indicators */}
+                                  {("hasOverdueTasks" in unit ||
+                                    "isHotLead" in unit ||
+                                    "isStaleLead" in unit) && (
+                                    <div className="flex items-center gap-1">
+                                      {unit.hasOverdueTasks && (
+                                        <div
+                                          className="relative"
+                                          data-testid={`indicator-overdue-${unit.unitNumber}`}
+                                        >
+                                          <AlertCircle className="h-4 w-4 text-destructive fill-destructive" />
+                                        </div>
+                                      )}
+                                      {unit.isHotLead && (
+                                        <div
+                                          className="relative"
+                                          data-testid={`indicator-hot-${unit.unitNumber}`}
+                                        >
+                                          <Zap className="h-4 w-4 text-[hsl(var(--status-on-hold))] fill-[hsl(var(--status-on-hold))]" />
+                                        </div>
+                                      )}
+                                      {unit.isStaleLead && (
+                                        <div
+                                          className="relative"
+                                          data-testid={`indicator-stale-${unit.unitNumber}`}
+                                        >
+                                          <Clock className="h-4 w-4 text-muted-foreground" />
+                                        </div>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               </div>
-                              <Badge
-                                variant={getStatusBadgeVariant(unit.status)}
-                                data-testid={`badge-status-${unit.unitNumber}`}
-                                className="uppercase text-xs"
-                              >
-                                {formatStatus(unit.status)}
-                              </Badge>
+                              <div className="flex flex-col gap-1 items-end">
+                                <Badge
+                                  variant={getStatusBadgeVariant(unit.status)}
+                                  data-testid={`badge-status-${unit.unitNumber}`}
+                                  className="uppercase text-xs"
+                                >
+                                  {formatStatus(unit.status)}
+                                </Badge>
+                                <Badge
+                                  variant={stageBadgeVariant}
+                                  data-testid={`badge-stage-${unit.unitNumber}`}
+                                  className="uppercase text-xs"
+                                >
+                                  {unit.dealStage.replace("_", " ")}
+                                </Badge>
+                              </div>
                             </div>
 
                             {/* Price */}
@@ -1142,11 +1332,6 @@ export default function AgentViewer() {
                               </div>
                             </div>
 
-                            {/* Floor */}
-                            <div className="text-xs text-muted-foreground">
-                              Floor {unit.floor}
-                            </div>
-
                             {/* Tour Tracking Checkbox */}
                             {activeVisitId && (
                               <div className="flex items-center space-x-2 mt-2 p-2 rounded-md hover:bg-accent">
@@ -1170,38 +1355,36 @@ export default function AgentViewer() {
                               </div>
                             )}
 
-                            {/* Recommendation Badge for Strong Matches */}
-                            {simpleMatch?.isMatch && simpleMatch.score >= 3 && (
-                              <div className="absolute top-2 right-2">
-                                <span className="text-xs font-bold text-white bg-green-500 rounded-full px-2 py-1 shadow-md">
-                                  RECOMMENDED
-                                </span>
+                            {/* Lead Info (Active Deals only) */}
+                            {"leadName" in unit && (
+                              <div className="pt-2 border-t">
+                                <div className="text-xs text-muted-foreground">
+                                  Lead
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="text-sm font-semibold">
+                                    {unit.leadName}
+                                  </div>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditLead(unit.dealId);
+                                    }}
+                                    data-testid={`button-edit-lead-${unit.unitNumber}`}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             )}
 
-                            {/* Match Reasons */}
-                            {unitMatch && unitMatch.matchReasons.length > 0 && (
-                              <div className="pt-2 border-t">
-                                <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">
-                                  Match Reasons ({unitMatch.matchScore}% match)
-                                </div>
-                                <ul className="text-xs space-y-0.5">
-                                  {unitMatch.matchReasons
-                                    .slice(0, 3)
-                                    .map((reason, idx) => (
-                                      <li
-                                        key={idx}
-                                        className="text-muted-foreground flex items-center gap-1"
-                                      >
-                                        <span className="text-green-500">
-                                          ✓
-                                        </span>{" "}
-                                        {reason}
-                                      </li>
-                                    ))}
-                                </ul>
-                              </div>
-                            )}
+                            {/* Floor */}
+                            <div className="text-xs text-muted-foreground">
+                              Floor {unit.floor}
+                            </div>
 
                             {/* View Details Button */}
                             <Button
@@ -1217,470 +1400,72 @@ export default function AgentViewer() {
                               View Details
                             </Button>
                           </div>
-                          ) : (
-                            <div className="flex items-center justify-center h-full min-h-[250px]">
-                              <div className="text-sm text-muted-foreground">Loading...</div>
-                            </div>
-                          )}
                         </Card>
                       );
-                    })}
-                  </div>
-
-                  {units.length === 0 && (
-                    <div className="text-center py-12 text-muted-foreground">
-                      No units found for this project
+                    })
+                  ) : (
+                    <div className="col-span-full text-center py-12 text-muted-foreground">
+                      No active deals found for this project
                     </div>
                   )}
-                </TabsContent>
-
-                <TabsContent value="active-deals" className="mt-0 space-y-4">
-                  {/* Stats/Filter Header */}
-                  {!isLoadingDeals && activeDeals.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant={stageFilter === "all" ? "default" : "outline"}
-                        onClick={() => setStageFilter("all")}
-                        data-testid="filter-all"
-                        className="uppercase px-4 py-2 min-h-[36px]"
-                      >
-                        All: {dealCountsByStage.all}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={stageFilter === "new" ? "default" : "outline"}
-                        onClick={() => setStageFilter("new")}
-                        data-testid="filter-new"
-                        className="uppercase px-4 py-2 min-h-[36px]"
-                      >
-                        New: {dealCountsByStage.new}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={
-                          stageFilter === "contacted" ? "default" : "outline"
-                        }
-                        onClick={() => setStageFilter("contacted")}
-                        data-testid="filter-contacted"
-                        className="uppercase px-4 py-2 min-h-[36px]"
-                      >
-                        Contacted: {dealCountsByStage.contacted}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={
-                          stageFilter === "qualified" ? "default" : "outline"
-                        }
-                        onClick={() => setStageFilter("qualified")}
-                        data-testid="filter-qualified"
-                        className="uppercase px-4 py-2 min-h-[36px]"
-                      >
-                        Qualified: {dealCountsByStage.qualified}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={
-                          stageFilter === "proposal" ? "default" : "outline"
-                        }
-                        onClick={() => setStageFilter("proposal")}
-                        data-testid="filter-proposal"
-                        className="uppercase px-4 py-2 min-h-[36px]"
-                      >
-                        Proposal: {dealCountsByStage.proposal}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={
-                          stageFilter === "negotiation" ? "default" : "outline"
-                        }
-                        onClick={() => setStageFilter("negotiation")}
-                        data-testid="filter-negotiation"
-                        className="uppercase px-4 py-2 min-h-[36px]"
-                      >
-                        Negotiation: {dealCountsByStage.negotiation}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={
-                          stageFilter === "closed_won" ? "default" : "outline"
-                        }
-                        onClick={() => setStageFilter("closed_won")}
-                        data-testid="filter-closed-won"
-                        className="uppercase px-4 py-2 min-h-[36px]"
-                      >
-                        Closed Won: {dealCountsByStage.closed_won}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={
-                          stageFilter === "closed_lost" ? "default" : "outline"
-                        }
-                        onClick={() => setStageFilter("closed_lost")}
-                        data-testid="filter-closed-lost"
-                        className="uppercase px-4 py-2 min-h-[36px]"
-                      >
-                        Closed Lost: {dealCountsByStage.closed_lost}
-                      </Button>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {isLoadingDeals ? (
-                      <div className="col-span-full text-center py-12 text-muted-foreground">
-                        Loading active deals...
-                      </div>
-                    ) : filteredDeals.length > 0 ? (
-                      filteredDeals.map((unit) => {
-                        // Map deal stage to Charney brand border color
-                        const stageBorderColor =
-                          {
-                            new: "border-l-muted-foreground",
-                            contacted: "border-l-primary",
-                            qualified:
-                              "border-l-[hsl(var(--status-available))]",
-                            proposal: "border-l-[hsl(var(--status-on-hold))]",
-                            negotiation:
-                              "border-l-[hsl(var(--status-contract))]",
-                            closed_won:
-                              "border-l-[hsl(var(--status-available))]",
-                            closed_lost: "border-l-destructive",
-                          }[unit.dealStage] || "border-l-muted";
-
-                        // Map deal stage to badge variant
-                        const stageBadgeVariant =
-                          {
-                            new: "secondary" as const,
-                            contacted: "default" as const,
-                            qualified: "default" as const,
-                            proposal: "default" as const,
-                            negotiation: "default" as const,
-                            closed_won: "default" as const,
-                            closed_lost: "destructive" as const,
-                          }[unit.dealStage] || ("secondary" as const);
-
-                        // Check if unit has been toured in the current session
-                        const isToured =
-                          touredUnits.some((tu) => tu.unitId === unit.id) || false;
-
-                        return (
-                          <Card
-                            key={unit.id}
-                            data-unit-id={unit.id}
-                            data-testid={`card-deal-${unit.unitNumber}`}
-                            className={cn(
-                              "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] border-l-4 border-transparent hover:border-indigo-600",
-                              stageBorderColor,
-                              selectedUnitId === unit.id &&
-                                "ring-2 ring-primary",
-                            )}
-                            onClick={() => handleUnitSelect(unit.id)}
-                          >
-                            <div className="space-y-3">
-                              {/* Header: Unit Number + Status */}
-                              <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <div className="text-xs text-muted-foreground uppercase">
-                                    {unit.building}
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="text-xl font-black uppercase tracking-tight">
-                                      Unit {unit.unitNumber}
-                                    </h3>
-                                    {activeVisitId &&
-                                      viewedUnitIds.has(unit.id) && (
-                                        <Badge
-                                          variant="outline"
-                                          className="bg-green-500/10 text-green-600 border-green-500"
-                                          data-testid={`badge-viewed-deal-${unit.unitNumber}`}
-                                        >
-                                          <CheckCircle className="h-3 w-3 mr-1 fill-green-600" />
-                                          VIEWED
-                                        </Badge>
-                                      )}
-                                    {/* Priority Indicators */}
-                                    {("hasOverdueTasks" in unit ||
-                                      "isHotLead" in unit ||
-                                      "isStaleLead" in unit) && (
-                                      <div className="flex items-center gap-1">
-                                        {unit.hasOverdueTasks && (
-                                          <div
-                                            className="relative"
-                                            data-testid={`indicator-overdue-${unit.unitNumber}`}
-                                          >
-                                            <AlertCircle className="h-4 w-4 text-destructive fill-destructive" />
-                                          </div>
-                                        )}
-                                        {unit.isHotLead && (
-                                          <div
-                                            className="relative"
-                                            data-testid={`indicator-hot-${unit.unitNumber}`}
-                                          >
-                                            <Zap className="h-4 w-4 text-[hsl(var(--status-on-hold))] fill-[hsl(var(--status-on-hold))]" />
-                                          </div>
-                                        )}
-                                        {unit.isStaleLead && (
-                                          <div
-                                            className="relative"
-                                            data-testid={`indicator-stale-${unit.unitNumber}`}
-                                          >
-                                            <Clock className="h-4 w-4 text-muted-foreground" />
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex flex-col gap-1 items-end">
-                                  <Badge
-                                    variant={getStatusBadgeVariant(unit.status)}
-                                    data-testid={`badge-status-${unit.unitNumber}`}
-                                    className="uppercase text-xs"
-                                  >
-                                    {formatStatus(unit.status)}
-                                  </Badge>
-                                  <Badge
-                                    variant={stageBadgeVariant}
-                                    data-testid={`badge-stage-${unit.unitNumber}`}
-                                    className="uppercase text-xs"
-                                  >
-                                    {unit.dealStage.replace("_", " ")}
-                                  </Badge>
-                                </div>
-                              </div>
-
-                              {/* Price */}
-                              <div
-                                className="text-2xl font-bold"
-                                data-testid={`text-price-${unit.unitNumber}`}
-                              >
-                                {formatPrice(unit.price)}
-                              </div>
-
-                              {/* Unit Details */}
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <div
-                                  className="flex items-center gap-1"
-                                  data-testid={`text-beds-${unit.unitNumber}`}
-                                >
-                                  <Bed className="h-4 w-4" />
-                                  <span>{unit.bedrooms} BD</span>
-                                </div>
-                                <div
-                                  className="flex items-center gap-1"
-                                  data-testid={`text-baths-${unit.unitNumber}`}
-                                >
-                                  <Bath className="h-4 w-4" />
-                                  <span>{unit.bathrooms} BA</span>
-                                </div>
-                                <div
-                                  className="flex items-center gap-1"
-                                  data-testid={`text-sqft-${unit.unitNumber}`}
-                                >
-                                  <Maximize2 className="h-4 w-4" />
-                                  <span>
-                                    {unit.squareFeet.toLocaleString()} SF
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Tour Tracking Checkbox */}
-                              {activeVisitId && (
-                                <div className="flex items-center space-x-2 mt-2 p-2 rounded-md hover:bg-accent">
-                                  <Checkbox
-                                    id={`tour-checkbox-${unit.id}`}
-                                    checked={isToured}
-                                    onCheckedChange={(checked) =>
-                                      handleTourTrackingChange(
-                                        unit.id,
-                                        checked as boolean,
-                                      )
-                                    }
-                                    className="h-5 w-5"
-                                  />
-                                  <label
-                                    htmlFor={`tour-checkbox-${unit.id}`}
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                  >
-                                    Toured
-                                  </label>
-                                </div>
-                              )}
-
-                              {/* Lead Info (Active Deals only) */}
-                              {"leadName" in unit && (
-                                <div className="pt-2 border-t">
-                                  <div className="text-xs text-muted-foreground">
-                                    Lead
-                                  </div>
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="text-sm font-semibold">
-                                      {unit.leadName}
-                                    </div>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-8 w-8"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEditLead(unit.dealId);
-                                      }}
-                                      data-testid={`button-edit-lead-${unit.unitNumber}`}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Floor */}
-                              <div className="text-xs text-muted-foreground">
-                                Floor {unit.floor}
-                              </div>
-
-                              {/* View Details Button */}
-                              <Button
-                                size="lg"
-                                className="w-full uppercase mt-3"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewDetails(unit);
-                                }}
-                                data-testid={`button-view-details-${unit.unitNumber}`}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </Button>
-                            </div>
-                          </Card>
-                        );
-                      })
-                    ) : (
-                      <div className="col-span-full text-center py-12 text-muted-foreground">
-                        No active deals found for this project
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer - Session Tracker */}
-          <div className="flex-shrink-0 border-t-4 border-primary bg-card p-4 shadow-xl">
-            <div className="flex items-center justify-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                Showing Session Active:{" "}
-                {activeVisitId ? (
-                  <span className="font-bold text-primary">YES</span>
-                ) : (
-                  <span className="font-medium">NO</span>
-                )}
-              </span>
-              {activeVisitId && sessionStatus && (
-                <>
-                  <span className="text-muted-foreground">|</span>
-                  <span className="text-sm text-muted-foreground">
-                    Started:{" "}
-                    <span className="font-medium">
-                      {new Date(sessionStatus.startedAt).toLocaleTimeString()}
-                    </span>
-                  </span>
-                  <span className="text-muted-foreground">|</span>
-                  <span className="text-sm text-muted-foreground">
-                    Duration:{" "}
-                    <span className="font-medium font-mono">
-                      {sessionDuration}
-                    </span>
-                  </span>
-                  <span className="text-muted-foreground">|</span>
-                  <span className="text-sm text-muted-foreground">
-                    Units Viewed:{" "}
-                    <span className="font-bold text-primary">
-                      {viewedUnits.length}
-                    </span>
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Panel - Notes & Preferences Stub */}
-        <aside className="w-80 bg-card border-l p-6 flex-shrink-0 overflow-y-auto">
-          <h3 className="text-lg font-black uppercase mb-4 border-b pb-2">
-            Session Notes
-          </h3>
-          
-          {activeVisitId ? (
-            <div className="space-y-4">
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Quick notes and observations during the showing session
-                </p>
-                <textarea 
-                  className="w-full min-h-[120px] p-2 text-sm border rounded-md bg-background"
-                  placeholder="Add session notes here..."
-                  disabled
-                />
-              </div>
-
-              <div className="pt-4 border-t">
-                <h4 className="text-sm font-bold uppercase mb-3">
-                  Client Preferences Snapshot
-                </h4>
-                {activeLead?.preferences ? (
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex justify-between">
-                      <span className="text-muted-foreground">Min Beds:</span>
-                      <span className="font-semibold">{activeLead.preferences.min_beds || 'N/A'}</span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span className="text-muted-foreground">Max Price:</span>
-                      <span className="font-semibold">
-                        {activeLead.preferences.max_price 
-                          ? `$${(activeLead.preferences.max_price / 1000).toFixed(0)}K` 
-                          : 'N/A'}
-                      </span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span className="text-muted-foreground">Views:</span>
-                      <span className="font-semibold">
-                        {activeLead.preferences.desired_views?.join(', ') || 'N/A'}
-                      </span>
-                    </li>
-                  </ul>
-                ) : (
-                  <p className="text-xs text-muted-foreground">No preferences set</p>
-                )}
-              </div>
-
-              <div className="pt-4 border-t">
-                <h4 className="text-sm font-bold uppercase mb-3">
-                  Session Summary
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Units Toured:</span>
-                    <span className="font-bold text-primary">{touredUnits.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Viewed:</span>
-                    <span className="font-bold">{viewedUnits.length}</span>
-                  </div>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 bg-muted/50 rounded-lg text-center">
-              <p className="text-sm text-muted-foreground">
-                Session notes will appear here when a showing session is active
-              </p>
-            </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+
+        {/* 3. Right Panel (Preferences & Notes) */}
+        <div className="w-80 bg-gray-50 border-l p-6 flex-shrink-0 overflow-y-auto">
+          <h4 className="text-lg font-bold mb-4 border-b pb-2">Client Preferences</h4>
+          {/* Display Preferences from activeClient.preferences */}
+          <ul className="text-sm space-y-1">
+            <li>Budget: $1M - $1.5M</li>
+            <li>Beds: 2+</li>
+            <li>Views: City</li>
+          </ul>
+
+          <h4 className="text-lg font-bold mt-6 mb-4 border-b pb-2">Quick Notes</h4>
+          <textarea
+            placeholder="Enter quick notes about this client/showing..."
+            className="w-full h-32 p-2 border rounded resize-none text-sm"
+          />
+        </div>
+      </div>
+
+
+      {/* Footer - Session Tracker */}
+      <div className="flex-shrink-0 border-t-4 border-primary bg-card p-4 shadow-xl">
+        <div className="flex items-center justify-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
+            Showing Session Active:{" "}
+            {activeVisitId ? (
+              <span className="font-bold text-primary">YES</span>
+            ) : (
+              <span className="font-medium">NO</span>
+            )}
+          </span>
+          {activeVisitId && (
+            <>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-sm text-muted-foreground">
+                Started:{" "}
+                <span className="font-medium">
+                  {/* TODO: Format and display start time */}
+                  N/A
+                </span>
+              </span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-sm text-muted-foreground">
+                Duration:{" "}
+                <span className="font-medium">
+                  {/* TODO: Calculate and display duration */}
+                  00:00:00
+                </span>
+              </span>
+            </>
           )}
-        </aside>
+        </div>
       </div>
 
       {/* Unit Sheet Drawer */}

@@ -413,3 +413,68 @@ export const useCreateQuickLead = (agentId: string, projectId: string) => {
     },
   });
 };
+
+// Type for dashboard metrics response
+type DashboardMetrics = {
+  activeSessions: number;
+  pendingFollowUps: number;
+  projectCount: number;
+};
+
+// Type for active client response
+type ActiveClient = {
+  id: string;
+  name: string;
+  leadScore: number;
+  nextFollowUpDate: string;
+};
+
+// Fetch dashboard metrics for an agent
+const fetchDashboardMetrics = async (
+  agentId: string,
+): Promise<DashboardMetrics> => {
+  const response = await apiRequest(
+    "GET",
+    `/api/agents/${agentId}/dashboard`,
+    undefined,
+  );
+  return response.json();
+};
+
+// Fetch active clients (qualified leads) for an agent
+const fetchActiveClients = async (
+  agentId: string,
+): Promise<ActiveClient[]> => {
+  const response = await apiRequest(
+    "GET",
+    `/api/agents/${agentId}/active-clients`,
+    undefined,
+  );
+  return response.json();
+};
+
+// Hook to fetch dashboard metrics
+export const useDashboardMetrics = (agentId: string | null) => {
+  return useQuery<DashboardMetrics>({
+    queryKey: ["/api/agents", agentId, "dashboard"],
+    queryFn: () => {
+      if (!agentId) throw new Error("No agent ID provided");
+      return fetchDashboardMetrics(agentId);
+    },
+    enabled: !!agentId,
+    staleTime: 30000, // Cache for 30 seconds
+  });
+};
+
+// Hook to fetch active clients for dashboard
+export const useActiveClients = (agentId: string | null) => {
+  return useQuery<ActiveClient[]>({
+    queryKey: ["/api/agents", agentId, "active-clients"],
+    queryFn: () => {
+      if (!agentId) throw new Error("No agent ID provided");
+      return fetchActiveClients(agentId);
+    },
+    enabled: !!agentId,
+    staleTime: 30000, // Cache for 30 seconds
+  });
+};

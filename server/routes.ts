@@ -207,31 +207,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate portal link for client
-  app.post("/api/portals/generate", async (req, res) => {
+  // Get portal view by token
+  app.get("/api/portal/:token", async (req, res) => {
     try {
-      const { sessionId, contactId, touredUnitIds } = req.body;
+      const { token } = req.params;
 
-      console.log("Generating portal link for session:", sessionId, "with", touredUnitIds?.length || 0, "toured units");
+      // Fetch portal link details
+      const [portalLink] = await db
+        .select()
+        .from(portalLinks)
+        .where(eq(portalLinks.linkToken, token))
+        .limit(1);
 
-      // Generate a unique token for the portal
-      const linkToken = `portal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const portalUrl = `/portal/${linkToken}`;
+      if (!portalLink) {
+        return res.status(404).json({ error: "Portal not found" });
+      }
 
-      // TODO: In production:
-      // 1. Store portal data in database with portalLinks table
-      // 2. Associate with session and toured units
-      // 3. Set expiration date (e.g., 30 days)
-      // 4. Store contactId and touredUnitIds for portal display
+      // Check if portal has expired
+      if (portalLink.expiresAt && portalLink.expiresAt < new Date()) {
+        return res.status(410).json({ error: "Portal link has expired" });
+      }
+
+      // Fetch contact details
+      const [contact] = await db
+        .select()
+        .from(contacts)
+        .where(eq(contacts.id, portalLink.contactId))
+        .limit(1);
+
+      // Fetch toured units with full details
+      const touredUnitsData = await db
+        .select({
+          touredUnit: touredUnits,
+          unit: units,
+          floorPlan: floorPlans,
+          project: projects,
+        })
+        .from(touredUnits)
+        .innerJoin(units, eq(touredUnits.unitId, units.id))
+        .leftJoin(floorPlans, eq(units.floorPlanId, floorPlans.id))
+        .leftJoin(projects, eq(units.projectId, projects.id))
+        .where(eq(touredUnits.sessionId, portalLink.sessionId))
+        .orderBy(touredUnits.viewedAt);
+
+      const touredUnitsFormatted = touredUnitsData.map(row => ({
+        id: row.unit.id,
+        unitNumber: row.unit.unitNumber,
+        price: row.unit.price,
+        floor: row.unit.floor,
+        status: row.unit.status,
+        bedrooms: row.floorPlan?.bedrooms || 0,
+        bathrooms: parseFloat(row.floorPlan?.bathrooms?.toString() || "0"),
+        squareFeet: row.floorPlan?.sqFt || 0,
+        building: row.project?.name || "Unknown",
+        viewedAt: row.touredUnit.viewedAt,
+        agentNotes: row.touredUnit.agentNotes,
+        clientInterestLevel: row.touredUnit.clientInterestLevel,
+      }));
 
       res.json({
-        portalUrl,
-        linkToken,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
+        contact: {
+          firstName: contact?.firstName,
+          lastName: contact?.lastName,
+          email: contact?.email,
+        },
+        touredUnits: touredUnitsFormatted,
+        sessionId: portalLink.sessionId,
+        expiresAt: portalLink.expiresAt,
       });
     } catch (error) {
-      console.error("Error generating portal link:", error);
-      res.status(500).json({ error: "Failed to generate portal link" });
+      console.error("Error fetching portal view:", error);
+      res.status(500).json({ error: "Failed to fetch portal view" });
     }
   });
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { queryClient, useEndSession, useGeneratePortal, useTouredUnits, useSessionStatus } from "@/lib/queryClient";
+import { queryClient, useEndSession, useGeneratePortal, useTouredUnits, useSessionStatus, useMarkUnitToured } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";

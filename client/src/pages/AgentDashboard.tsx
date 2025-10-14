@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { Building2, Users, Calendar, CheckCircle, ArrowRight, AlertCircle } from
 import { agentContextStore } from "@/lib/localStores";
 import { useDashboardMetrics, useActiveClients } from "@/lib/queryClient";
 import type { Lead, UnitWithDetails } from "@shared/schema";
+import { useMemo } from "react";
 
 // Hardcoded agent context for Demo Day
 const AGENT_NAME = "SARAH CHEN";
@@ -33,9 +33,22 @@ export default function AgentDashboard() {
 
   // Fetch dashboard metrics
   const { data: metrics, isLoading: isMetricsLoading } = useDashboardMetrics(AGENT_ID);
-  
-  // Fetch active clients
+
+  // Fetch active clients (qualified leads) for an agent
   const { data: activeClients = [], isLoading: isClientsLoading } = useActiveClients(AGENT_ID);
+
+  // Format active clients with computed fields
+  const formattedClients = useMemo(() => {
+    return (activeClients as any[]).map(client => ({
+      id: client.id,
+      name: client.name || `${client.firstName || ''} ${client.lastName || ''}`.trim(),
+      leadScore: client.leadScore || 0,
+      nextFollowUpDate: client.nextFollowUpDate
+        ? new Date(client.nextFollowUpDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : 'No date set'
+    }));
+  }, [activeClients]);
+
 
   // Fetch active leads for fallback display
   const { data: leads = [] } = useQuery<Lead[]>({
@@ -92,39 +105,39 @@ export default function AgentDashboard() {
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <MetricCard 
-              title="Active Sessions" 
-              value={isMetricsLoading ? '...' : activeSessions} 
-              color="text-primary" 
+            <MetricCard
+              title="Active Sessions"
+              value={isMetricsLoading ? '...' : activeSessions}
+              color="text-primary"
             />
-            <MetricCard 
-              title="Pending Follow-ups" 
-              value={isMetricsLoading ? '...' : pendingFollowUps} 
-              color="text-destructive" 
+            <MetricCard
+              title="Pending Follow-ups"
+              value={isMetricsLoading ? '...' : pendingFollowUps}
+              color="text-destructive"
             />
-            <MetricCard 
-              title="Projects Qualified" 
-              value={isMetricsLoading ? '...' : projectCount} 
-              color="text-green-600" 
+            <MetricCard
+              title="Projects Qualified"
+              value={isMetricsLoading ? '...' : projectCount}
+              color="text-green-600"
             />
           </div>
 
           {/* Main Content: Active Clients & Quick Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Active Clients Grid */}
             <div className="lg:col-span-2 space-y-4">
               <h2 className="text-2xl font-black uppercase tracking-tight">Active Clients</h2>
-              
+
               {isClientsLoading && (
                 <p className="text-muted-foreground" data-testid="loading-clients">Loading clients...</p>
               )}
-              
-              {!isClientsLoading && activeClients.length > 0 && (
+
+              {!isClientsLoading && formattedClients.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {activeClients.map(client => (
-                    <Card 
-                      key={client.id} 
+                  {formattedClients.map(client => (
+                    <Card
+                      key={client.id}
                       className="shadow-lg hover-elevate active-elevate-2 transition-all"
                       data-testid={`card-client-${client.id}`}
                     >
@@ -140,8 +153,8 @@ export default function AgentDashboard() {
                           <span className="text-muted-foreground">Next Follow-up</span>
                           <span className="font-medium">{client.nextFollowUpDate}</span>
                         </div>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           className="w-full uppercase font-black gap-2"
                           onClick={handleGoToViewer}
                           data-testid={`button-start-session-${client.id}`}
@@ -154,8 +167,8 @@ export default function AgentDashboard() {
                   ))}
                 </div>
               )}
-              
-              {!isClientsLoading && activeClients.length === 0 && (
+
+              {!isClientsLoading && formattedClients.length === 0 && (
                 <Card className="shadow-lg" data-testid="card-no-clients">
                   <CardContent className="py-12 text-center">
                     <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -176,17 +189,17 @@ export default function AgentDashboard() {
                   <CardTitle className="text-lg font-black uppercase">Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button 
-                    className="w-full uppercase font-black gap-2" 
+                  <Button
+                    className="w-full uppercase font-black gap-2"
                     onClick={handleGoToViewer}
                     data-testid="button-start-showing"
                   >
                     🎯 Start Showing Session
                   </Button>
                   <Link href="/leads">
-                    <Button 
-                      variant="outline" 
-                      className="w-full uppercase font-black gap-2" 
+                    <Button
+                      variant="outline"
+                      className="w-full uppercase font-black gap-2"
                       data-testid="button-follow-ups"
                     >
                       <AlertCircle className="h-4 w-4" />
@@ -198,7 +211,7 @@ export default function AgentDashboard() {
                       )}
                     </Button>
                   </Link>
-                  
+
                   {/* Project Inventory Summary */}
                   <div className="pt-3 border-t space-y-2">
                     <p className="text-sm font-bold uppercase text-muted-foreground">Inventory</p>

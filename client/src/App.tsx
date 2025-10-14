@@ -22,9 +22,11 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={AgentDashboard} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/leads" component={Leads} />
       <Route path="/agent/select" component={AgentSelect} />
+      <Route path="/agent/dashboard" component={AgentDashboard} />
       <Route path="/agent/project-select" component={ProjectSelect} />
       <Route path="/agent/viewer" component={AgentViewer} />
       <Route path="/manager" component={ManagerView} />

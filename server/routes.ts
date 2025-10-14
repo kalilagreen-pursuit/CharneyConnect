@@ -10,8 +10,8 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
-import { contacts, deals, activities, leads, agents, portalLinks, showingSessions, touredUnits } from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
+import { contacts, deals, activities, leads, agents, portalLinks, showingSessions, touredUnits, units, tasks } from "@shared/schema";
 
 // FIXED: Add the missing import for Google Generative AI
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -46,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/automations", automationsRoutes);
 
   // --- SHOWING SESSIONS API ENDPOINTS ---
-  
+
   // A. Session Endpoints
   app.post("/api/showing-sessions", async (req, res) => {
     try {
@@ -179,18 +179,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/portals/generate", async (req, res) => {
     try {
       const { sessionId, contactId, touredUnitIds } = req.body;
-      
+
       console.log("Generating portal link for session:", sessionId, "with", touredUnitIds.length, "toured units");
-      
+
       // Generate a unique token for the portal
       const linkToken = `portal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const portalUrl = `/portal/${linkToken}`;
-      
+
       // In production, you would:
       // 1. Store the portal data in the database
       // 2. Associate it with the session and toured units
       // 3. Set an expiration date (e.g., 30 days)
-      
+
       res.json({
         portalUrl,
         linkToken,
@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate a unique, short token (8 characters)
       const linkToken = Math.random().toString(36).substring(2, 10);
-      
+
       // Set expiration date (30 days from now)
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
@@ -375,13 +375,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // C. Fetch Active Clients for Agent Dashboard
   app.get("/api/agents/:id/active-clients", async (req, res) => {
     try {
-      const agentId = req.params.id;
+      const { id: agentId } = req.params;
 
-      // Fetch qualified leads assigned to this agent
+      console.log(`Fetching active clients for agent: ${agentId}`);
+
+      // Fetch qualified leads assigned to this agent with next follow-up task
       const qualifiedLeads = await db
-        .select()
+        .select({
+          id: leads.id,
+          name: leads.name,
+          firstName: leads.firstName,
+          lastName: leads.lastName,
+          email: leads.email,
+          leadScore: leads.leadScore,
+          status: leads.status,
+          pipelineStage: leads.pipelineStage
+        })
         .from(leads)
         .where(
           and(
@@ -390,9 +402,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         );
 
-      console.log(`Found ${qualifiedLeads.length} active clients for agent ${agentId}`);
+      // Fetch next follow-up dates for each client
+      const clientsWithFollowUp = await Promise.all(
+        qualifiedLeads.map(async (client) => {
+          const nextTask = await db
+            .select({ dueDate: tasks.dueDate })
+            .from(tasks)
+            .where(
+              and(
+                eq(tasks.contactId, client.id),
+                eq(tasks.status, 'pending')
+              )
+            )
+            .orderBy(tasks.dueDate)
+            .limit(1);
 
-      res.json(qualifiedLeads);
+          return {
+            ...client,
+            nextFollowUpDate: nextTask[0]?.dueDate || null
+          };
+        })
+      );
+
+      console.log(`Found ${clientsWithFollowUp.length} active clients for agent ${agentId}`);
+
+      res.json(clientsWithFollowUp);
     } catch (error) {
       console.error("Error fetching active clients:", error);
       res.status(500).json({ error: "Failed to fetch active clients" });
@@ -433,30 +467,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/units", async (req, res) => {
     try {
       const { projectId, matchPreferences } = req.query;
-      
+
       // Fetch units (optionally filtered by projectId if needed)
       let units = await storage.getAllUnits();
-      
+
       // Filter by projectId if provided
       if (projectId) {
         units = units.filter(unit => unit.projectId === projectId);
       }
-      
+
       // Check if match preferences are provided
       if (matchPreferences) {
         try {
           const preferences = JSON.parse(matchPreferences as string);
           const { calculateMatchScore } = await import("./match-scoring");
-          
+
           // Add match score to each unit
           const unitsWithScores = units.map(unit => ({
             ...unit,
             matchScore: calculateMatchScore(unit, preferences)
           }));
-          
+
           // Sort by match score descending
           unitsWithScores.sort((a, b) => b.matchScore - a.matchScore);
-          
+
           res.json(unitsWithScores);
         } catch (parseError) {
           console.error("Error parsing match preferences:", parseError);

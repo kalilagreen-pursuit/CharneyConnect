@@ -194,19 +194,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Units endpoints
   app.get("/api/units", async (req, res) => {
     try {
-      const units = await storage.getAllUnits();
+      const { projectId, matchPreferences } = req.query;
+      
+      // Fetch units (optionally filtered by projectId if needed)
+      let units = await storage.getAllUnits();
+      
+      // Filter by projectId if provided
+      if (projectId) {
+        units = units.filter(unit => unit.projectId === projectId);
+      }
       
       // Check if match preferences are provided
-      const matchPreferences = req.query.matchPreferences 
-        ? JSON.parse(req.query.matchPreferences as string)
-        : null;
-
       if (matchPreferences) {
+        const preferences = JSON.parse(matchPreferences as string);
         const { calculateMatchScore } = await import("./match-scoring");
+        
         // Add match score to each unit
         const unitsWithScores = units.map(unit => ({
           ...unit,
-          matchScore: calculateMatchScore(unit, matchPreferences)
+          matchScore: calculateMatchScore(unit, preferences)
         }));
         res.json(unitsWithScores);
       } else {

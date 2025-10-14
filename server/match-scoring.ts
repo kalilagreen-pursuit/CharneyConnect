@@ -21,7 +21,7 @@ export function calculateMatchScore(
   unit: UnitWithDetails,
   preferences: MatchPreferences
 ): number {
-  // TODO: Implement actual scoring algorithm
-  // For now, return 0 as placeholder
-  return 0;
+  // PLACEHOLDER: This is where the complex logic (Phase 6A) will live.
+  // For now, return a random score between 50 and 100 to enable frontend visualization.
+  return Math.floor(Math.random() * 50) + 50;
 }

@@ -219,7 +219,11 @@ export default function AgentDashboard() {
                 <CardContent className="space-y-3">
                   <Button
                     className="w-full uppercase font-black gap-2"
-                    onClick={() => setLocation('/agent/viewer/new')}
+                    onClick={() => {
+                      // Navigate to unified viewer with /new route to trigger client selector dialog
+                      agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
+                      setLocation('/agent/viewer/new');
+                    }}
                     data-testid="button-start-showing"
                   >
                     🎯 Start New Showing Session

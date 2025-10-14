@@ -1276,12 +1276,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // DEMO FAIL-SAFE: If no leads match filters AND agent is Sarah Chen requesting qualified leads
       // Always inject Andrew K. to ensure the demo workflow works
-      if (leads.length === 0 && agentId === 'agent-001' && status === 'qualified') {
+      if (leads.length === 0 && agentId === 'agent-001' && status === 'qualified' && projectId) {
         console.log(`[API] 🚨 DEMO FAIL-SAFE ACTIVATED - Injecting Andrew K. for agent-001`);
         
         const demoLead = {
           id: "demo-lead-andrew-k",
           name: "Andrew K.",
+          firstName: "Andrew",
+          lastName: "K.",
           email: "andrew.k@demo.com",
           phone: "(555) 999-0001",
           status: "qualified" as const,

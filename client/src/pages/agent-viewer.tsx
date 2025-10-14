@@ -298,38 +298,6 @@ export default function AgentViewer() {
     setLocation("/agent/project-select");
   };
 
-  // Show error state if units failed to load
-  if (unitsError) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <div className="text-center space-y-4 p-6 max-w-md">
-          <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
-          <p className="text-lg font-bold uppercase text-destructive">
-            Failed to Load Units
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {unitsError.message || "An error occurred while loading unit data"}
-          </p>
-          <Button
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", currentProjectId] })}
-            size="lg"
-            className="min-h-[48px] w-full touch-manipulation"
-          >
-            Retry Loading Units
-          </Button>
-          <Button
-            onClick={handleBack}
-            variant="outline"
-            size="lg"
-            className="min-h-[48px] w-full touch-manipulation"
-          >
-            Return to Project Select
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   // Listen for realtime updates and invalidate cache
   // Defer updates if unit drawer is open to prevent data loss
   useEffect(() => {
@@ -736,6 +704,38 @@ export default function AgentViewer() {
           <p className="text-lg font-bold uppercase text-muted-foreground">
             Loading Agent Data...
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if units failed to load
+  if (unitsError) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center space-y-4 p-6 max-w-md">
+          <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+          <p className="text-lg font-bold uppercase text-destructive">
+            Failed to Load Units
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {unitsError.message || "An error occurred while loading unit data"}
+          </p>
+          <Button
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", currentProjectId] })}
+            size="lg"
+            className="min-h-[48px] w-full touch-manipulation"
+          >
+            Retry Loading Units
+          </Button>
+          <Button
+            onClick={handleBack}
+            variant="outline"
+            size="lg"
+            className="min-h-[48px] w-full touch-manipulation"
+          >
+            Return to Project Select
+          </Button>
         </div>
       </div>
     );

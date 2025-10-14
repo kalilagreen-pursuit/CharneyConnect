@@ -689,4 +689,18 @@ export const useTouredUnits = (sessionId: string | null) => {
   });
 };
 
+// Hook to fetch session status for real-time metrics
+export const useSessionStatus = (sessionId: string | null) => {
+  return useQuery<ShowingSession>({
+    queryKey: ["sessionStatus", sessionId],
+    queryFn: () => {
+      if (!sessionId) throw new Error("No session ID provided");
+      return fetchSessionStatus(sessionId);
+    },
+    enabled: !!sessionId,
+    staleTime: 0,
+    refetchInterval: 5000, // Update every 5 seconds
+  });
+};
+
 // Portal generation is already defined above, no duplicate needed

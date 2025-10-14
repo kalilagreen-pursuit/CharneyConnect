@@ -551,6 +551,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // E. Fetch Portal Data by Token (for client portal view)
+  app.get("/api/portals/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      // Fetch portal link data
+      const portalLink = await db
+        .select()
+        .from(portalLinks)
+        .where(eq(portalLinks.linkToken, token))
+        .limit(1);
+
+      if (!portalLink || portalLink.length === 0) {
+        return res.status(404).json({ error: "Portal not found" });
+      }
+
+      const portal = portalLink[0];
+
+      // Fetch contact/lead details
+      const contact = await db
+        .select({
+          name: leads.name,
+          email: leads.email,
+        })
+        .from(leads)
+        .where(eq(leads.id, portal.contactId))
+        .limit(1);
+
+      // Fetch session details to get agent and project info
+      const session = await db
+        .select({
+          agentId: showingSessions.agentId,
+          projectId: showingSessions.projectId,
+        })
+        .from(showingSessions)
+        .where(eq(showingSessions.id, portal.sessionId))
+        .limit(1);
+
+      // Fetch agent details
+      const agent = session[0]
+        ? await db
+            .select({
+              name: agents.name,
+              email: agents.email,
+              phone: agents.phone,
+            })
+            .from(agents)
+            .where(eq(agents.id, session[0].agentId))
+            .limit(1)
+        : [];
+
+      // Fetch project details
+      const project = session[0]
+        ? await db
+            .select({
+              name: projects.name,
+            })
+            .from(projects)
+            .where(eq(projects.id, session[0].projectId))
+            .limit(1)
+        : [];
+
+      // Fetch toured unit details
+      const touredUnitsData =
+        portal.touredUnitIds && portal.touredUnitIds.length > 0
+          ? await db
+              .select({
+                id: units.id,
+                unitNumber: units.unitNumber,
+                bedrooms: units.bedrooms,
+                bathrooms: units.bathrooms,
+                squareFeet: units.squareFeet,
+                price: units.price,
+                floor: units.floor,
+                views: units.views,
+              })
+              .from(units)
+              .where(inArray(units.id, portal.touredUnitIds))
+          : [];
+
+      res.json({
+        id: portal.id,
+        sessionId: portal.sessionId,
+        contactId: portal.contactId,
+        linkToken: portal.linkToken,
+        touredUnitIds: portal.touredUnitIds || [],
+        sentAt: portal.sentAt,
+        expiresAt: portal.expiresAt,
+        contactName: contact[0]?.name,
+        contactEmail: contact[0]?.email,
+        agentName: agent[0]?.name,
+        agentEmail: agent[0]?.email,
+        agentPhone: agent[0]?.phone,
+        projectName: project[0]?.name,
+        units: touredUnitsData,
+      });
+    } catch (error) {
+      console.error("Error fetching portal data:", error);
+      res.status(500).json({ error: "Failed to fetch portal data" });
+    }
+  });
+
   // C. Fetch Active Clients for Agent Dashboard
   app.get("/api/agents/:id/active-clients", async (req, res) => {
     try {

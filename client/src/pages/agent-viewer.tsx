@@ -119,6 +119,17 @@ export default function AgentViewer() {
   // Visualization mode state (LIVE 3D vs PRE-CONSTRUCTION GALLERY)
   const [isGalleryMode, setIsGalleryMode] = useState(false);
 
+  // Fetch units specific to this agent and project
+  const [currentProjectId, setCurrentProjectId] = useState(
+    () => agentContextStore.getProjectId() || PROJECTS[0].id,
+  );
+
+  // Lead search state (still needed for dialog state management)
+  const [leadSearchQuery, setLeadSearchQuery] = useState("");
+
+  // Active lead for preference matching (from active showing session)
+  const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
+
   // NEW: Fetch the agent's data using useQuery
   const { data: agentData, isLoading: isLoadingAgent } = useQuery<Agent>({
     queryKey: ["/api/agents", agentId],
@@ -131,11 +142,6 @@ export default function AgentViewer() {
     },
     enabled: !!agentId, // Only run the query if we have an agentId
   });
-
-  // Fetch units specific to this agent and project
-  const [currentProjectId, setCurrentProjectId] = useState(
-    () => agentContextStore.getProjectId() || PROJECTS[0].id,
-  );
 
   const { data: units = [], isLoading, error: unitsError } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/agents", agentId, "units", currentProjectId],
@@ -164,6 +170,47 @@ export default function AgentViewer() {
   // Import the log unit view mutation
   const logUnitViewMutation = useLogUnitView(activeVisitId);
 
+  // Fetch active deals for this agent and project
+  const { data: activeDeals = [], isLoading: isLoadingDeals } = useQuery<
+    UnitWithDealContext[]
+  >({
+    queryKey: ["/api/agents", agentId, "active-deals", currentProjectId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/agents/${agentId}/active-deals?projectId=${currentProjectId}`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch active deals");
+      return response.json();
+    },
+    enabled: activeTab === "active-deals" && !!agentId && !!currentProjectId, // Only fetch when active deals tab is selected and IDs are available
+  });
+
+  const { data: activeLead = null, isLoading: isLeadLoading } =
+    useQuery<Lead | null>({
+      queryKey: ["/api/leads", activeLeadId],
+      enabled: !!activeLeadId,
+      queryFn: async () => {
+        if (!activeLeadId) return null;
+
+        // Check cache first
+        const cached = preferenceCache.get(activeLeadId);
+        if (cached) {
+          console.log(`[preference-cache] Using cached preferences for lead ${activeLeadId}`);
+          return cached;
+        }
+
+        // Fetch from API if not cached
+        const response = await fetch(`/api/leads/${activeLeadId}`);
+        if (!response.ok) return null;
+        const data = await response.json();
+
+        // Store in cache
+        preferenceCache.set(activeLeadId, data);
+        return data;
+      },
+      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    });
+
   // Computed values
   const agentName = agentData?.name || "Loading Agent...";
   const agentRole = agentData?.role || "...";
@@ -176,6 +223,15 @@ export default function AgentViewer() {
   const viewedUnitIds = useMemo(() => {
     return new Set(viewedUnits.map((vu) => vu.unitId));
   }, [viewedUnits]);
+
+  // Determine if there's an error loading the client
+  const isClientError = !isLeadLoading && !activeLead && !!activeLeadId;
+
+  // Calculate unit matches based on active lead preferences
+  const unitMatches = useMemo(() => {
+    if (!activeLead || !units || units.length === 0) return new Map();
+    return getMatchedUnitsWithScores(units, activeLead);
+  }, [units, activeLead]);
 
   // Setup intersection observer for lazy loading
   useEffect(() => {
@@ -250,61 +306,6 @@ export default function AgentViewer() {
       </div>
     );
   }
-
-  // Fetch active deals for this agent and project
-  const { data: activeDeals = [], isLoading: isLoadingDeals } = useQuery<
-    UnitWithDealContext[]
-  >({
-    queryKey: ["/api/agents", agentId, "active-deals", currentProjectId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/agents/${agentId}/active-deals?projectId=${currentProjectId}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch active deals");
-      return response.json();
-    },
-    enabled: activeTab === "active-deals" && !!agentId && !!currentProjectId, // Only fetch when active deals tab is selected and IDs are available
-  });
-
-  // Lead search state (still needed for dialog state management)
-  const [leadSearchQuery, setLeadSearchQuery] = useState("");
-
-  // Active lead for preference matching (from active showing session)
-  const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
-  const { data: activeLead = null, isLoading: isLeadLoading } =
-    useQuery<Lead | null>({
-      queryKey: ["/api/leads", activeLeadId],
-      enabled: !!activeLeadId,
-      queryFn: async () => {
-        if (!activeLeadId) return null;
-
-        // Check cache first
-        const cached = preferenceCache.get(activeLeadId);
-        if (cached) {
-          console.log(`[preference-cache] Using cached preferences for lead ${activeLeadId}`);
-          return cached;
-        }
-
-        // Fetch from API if not cached
-        const response = await fetch(`/api/leads/${activeLeadId}`);
-        if (!response.ok) return null;
-        const data = await response.json();
-
-        // Store in cache
-        preferenceCache.set(activeLeadId, data);
-        return data;
-      },
-      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    });
-
-  // Determine if there's an error loading the client
-  const isClientError = !isLeadLoading && !activeLead && !!activeLeadId;
-
-  // Calculate unit matches based on active lead preferences
-  const unitMatches = useMemo(() => {
-    if (!activeLead || !units || units.length === 0) return new Map();
-    return getMatchedUnitsWithScores(units, activeLead);
-  }, [units, activeLead]);
 
   // Listen for realtime updates and invalidate cache
   // Defer updates if unit drawer is open to prevent data loss

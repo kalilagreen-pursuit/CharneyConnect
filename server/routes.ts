@@ -128,9 +128,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // C. Dashboard Endpoints
   app.get("/api/agents/:id/dashboard", async (req, res) => {
     try {
-      // TODO: Implement aggregated dashboard data
-      // Should return: active sessions, pending tasks, recent activities, stats
-      res.status(501).json({ error: "Not implemented yet" });
+      console.log("ROUTE STUB: Fetching dashboard data for agent:", req.params.id);
+      
+      // Return mock aggregated dashboard data with 200 response
+      res.json({ 
+        activeSessions: 1, 
+        pendingFollowUps: 3, 
+        projectCount: 2 
+      });
     } catch (error) {
       console.error("Error fetching agent dashboard:", error);
       res.status(500).json({ error: "Failed to fetch dashboard data" });
@@ -139,9 +144,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/agents/:id/active-clients", async (req, res) => {
     try {
-      // TODO: Implement active clients retrieval
-      // Should return clients with ongoing or recent showing sessions
-      res.status(501).json({ error: "Not implemented yet" });
+      console.log("ROUTE STUB: Fetching active clients/qualified leads for agent:", req.params.id);
+      
+      // Return mock active client data with 200 response
+      res.json([
+        { 
+          id: 'mock-client-andrew', 
+          name: 'Andrew K.', 
+          leadScore: 85, 
+          nextFollowUpDate: '2025-10-15' 
+        }
+      ]);
     } catch (error) {
       console.error("Error fetching active clients:", error);
       res.status(500).json({ error: "Failed to fetch active clients" });

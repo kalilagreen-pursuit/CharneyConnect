@@ -132,17 +132,18 @@ const PortalView: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-16 px-6 shadow-2xl">
-        <div className="max-w-6xl mx-auto">
+      <header className="bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground py-20 px-6 shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/[0.05] pointer-events-none"></div>
+        <div className="max-w-6xl mx-auto relative z-10">
           <div className="flex items-start justify-between flex-wrap gap-6">
             <div>
-              <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight mb-4 leading-none">
+              <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight mb-5 leading-none drop-shadow-lg">
                 {portalData.projectName || 'Luxury Residences'}
               </h1>
               <p className="text-xl md:text-2xl opacity-95 font-bold">Your Personalized Tour Summary</p>
             </div>
-            <Badge variant="secondary" className="bg-green-600 text-white text-base md:text-lg px-6 py-3 shadow-xl font-black uppercase min-h-[48px] flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2 fill-white" />
+            <Badge variant="secondary" className="bg-white text-green-700 text-base md:text-lg px-8 py-4 shadow-2xl font-black uppercase min-h-[56px] flex items-center border-2 border-green-200">
+              <CheckCircle className="h-6 w-6 mr-2 fill-green-700" />
               Tour Confirmed
             </Badge>
           </div>

@@ -575,42 +575,50 @@ export default function ShowingSessionLayout() {
         </div>
 
         {/* Bottom Tracker */}
-        <div className="flex-shrink-0 border-t-4 border-primary bg-card p-4 shadow-xl">
-          <div className="flex items-center justify-center gap-6 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">
+        <div className="flex-shrink-0 border-t-4 border-primary bg-gradient-to-r from-card to-card/95 p-6 shadow-2xl">
+          <div className="flex items-center justify-center gap-8 flex-wrap max-w-6xl mx-auto">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "h-10 w-10 rounded-full flex items-center justify-center transition-all",
+                activeSessionId ? "bg-green-100 animate-pulse" : "bg-muted"
+              )}>
+                <Clock className={cn(
+                  "h-5 w-5",
+                  activeSessionId ? "text-green-600" : "text-muted-foreground"
+                )} />
+              </div>
+              <span className="text-sm font-bold">
                 {activeSessionId ? (
-                  <span className="text-green-600 font-bold uppercase">● ACTIVE SESSION</span>
+                  <span className="text-green-600 uppercase tracking-wide">● ACTIVE SESSION</span>
                 ) : (
-                  <span className="text-muted-foreground uppercase">○ No Active Session</span>
+                  <span className="text-muted-foreground uppercase tracking-wide">○ No Active Session</span>
                 )}
               </span>
             </div>
 
             {activeSessionId && sessionStatus && (
               <>
-                <div className="h-6 w-px bg-border"></div>
-                <div className="flex items-center gap-2">
-                  <Timer className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-mono font-bold text-primary">
+                <div className="h-8 w-px bg-border/50"></div>
+                <div className="flex items-center gap-3 bg-primary/5 px-4 py-2 rounded-lg border border-primary/20">
+                  <Timer className="h-5 w-5 text-primary" />
+                  <span className="text-lg font-mono font-black text-primary tabular-nums">
                     {elapsedTime}
                   </span>
                 </div>
 
-                <div className="h-6 w-px bg-border"></div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    Started: {new Date(sessionStatus.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div className="h-8 w-px bg-border/50"></div>
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm font-medium">
+                    Started: <span className="font-bold">{new Date(sessionStatus.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </span>
                 </div>
 
-                <div className="h-6 w-px bg-border"></div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600 fill-green-600" />
-                  <span className="text-sm">
-                    Toured: <span className="font-bold font-mono text-green-600">{touredUnits.length}</span>
+                <div className="h-8 w-px bg-border/50"></div>
+                <div className="flex items-center gap-3 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                  <CheckCircle className="h-5 w-5 text-green-600 fill-green-600" />
+                  <span className="text-sm font-medium">
+                    Toured: <span className="text-lg font-black font-mono text-green-600 tabular-nums">{touredUnits.length}</span>
                   </span>
                 </div>
               </>

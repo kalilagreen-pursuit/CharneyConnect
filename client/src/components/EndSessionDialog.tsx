@@ -62,44 +62,47 @@ export function EndSessionDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-            <h4 className="font-bold uppercase text-sm text-muted-foreground">Session Summary</h4>
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl p-6 space-y-4 border border-border/50">
+            <h4 className="font-black uppercase text-xs tracking-wider text-muted-foreground flex items-center gap-2">
+              <span className="h-1 w-8 bg-primary rounded-full"></span>
+              Session Summary
+            </h4>
             
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Client:</span>
-                <span className="font-semibold">{sessionData.clientName}</span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2">
+                <span className="text-sm text-muted-foreground font-medium">Client:</span>
+                <span className="font-bold text-base">{sessionData.clientName}</span>
               </div>
               
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Project:</span>
-                <span className="font-semibold">{sessionData.projectName}</span>
+              <div className="flex justify-between items-center py-2 border-t border-border/30">
+                <span className="text-sm text-muted-foreground font-medium">Project:</span>
+                <span className="font-bold text-base">{sessionData.projectName}</span>
               </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
+              <div className="flex justify-between items-center py-2 border-t border-border/30">
+                <span className="text-sm text-muted-foreground flex items-center gap-2 font-medium">
+                  <Clock className="h-4 w-4" />
                   Duration:
                 </span>
-                <span className="font-mono font-bold">{sessionData.elapsedTime}</span>
+                <span className="font-mono font-black text-lg text-primary tabular-nums">{sessionData.elapsedTime}</span>
               </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
+              <div className="flex justify-between items-center py-2 border-t border-border/30">
+                <span className="text-sm text-muted-foreground flex items-center gap-2 font-medium">
+                  <CheckCircle className="h-4 w-4" />
                   Units Toured:
                 </span>
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 font-black text-base px-4 py-1">
                   {sessionData.touredUnitsCount}
                 </Badge>
               </div>
 
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
+              <div className="flex justify-between items-center py-2 border-t border-border/30">
+                <span className="text-sm text-muted-foreground flex items-center gap-2 font-medium">
+                  <Calendar className="h-4 w-4" />
                   Started:
                 </span>
-                <span className="text-sm font-medium">
+                <span className="text-sm font-bold">
                   {new Date(sessionData.startTime).toLocaleString('en-US', {
                     month: 'short',
                     day: 'numeric',

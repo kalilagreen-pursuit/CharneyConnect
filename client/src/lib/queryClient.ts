@@ -546,11 +546,6 @@ const endShowingSession = async (sessionId: string): Promise<ShowingSession> => 
 };
 
 // Fetch session status via showing-sessions endpoint
-const fetchSessionStatus = async (sessionId: string): Promise<ShowingSession> => {
-  const response = await apiRequest("GET", `/api/showing-sessions/${sessionId}`, undefined);
-  return response.json();
-};
-
 // Hook to start a showing session
 export const useStartSession = (agentId: string, projectId: string) => {
   const queryClientInstance = queryClient;

@@ -698,6 +698,7 @@ export default function AgentViewer() {
   };
 
 
+  // Render loading state
   if (isLoading || isLoadingAgent) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">

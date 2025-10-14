@@ -679,35 +679,4 @@ export const useTouredUnits = (sessionId: string | null) => {
   });
 };
 
-// Type for portal link generation request
-type GeneratePortalPayload = {
-  sessionId: string;
-  contactId: string;
-  touredUnitIds: string[];
-};
-
-// Type for portal link generation response
-type GeneratePortalResponse = {
-  linkToken: string;
-  portalUrl: string;
-  expiresAt: string;
-};
-
-// Generate a portal link for a completed showing session
-const generatePortalLink = async (payload: GeneratePortalPayload): Promise<GeneratePortalResponse> => {
-  const response = await apiRequest("POST", "/api/portal-links", payload);
-  return response.json();
-};
-
-// Hook to generate portal link after showing session ends
-export const useGeneratePortal = () => {
-  return useMutation({
-    mutationFn: (data: GeneratePortalPayload) => generatePortalLink(data),
-    onSuccess: (response) => {
-      console.log(`Portal link generated: ${response.portalUrl} (expires: ${response.expiresAt})`);
-    },
-    onError: (error) => {
-      console.error("Failed to generate portal link:", error);
-    },
-  });
-};
+// Portal generation is already defined above, no duplicate needed

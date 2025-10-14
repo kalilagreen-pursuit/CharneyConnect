@@ -340,26 +340,35 @@ export default function AgentViewer() {
   const handleTourTrackingChange = useMemo(
     () =>
       debounce((unitId: string, isToured: boolean) => {
-        if (!sessionId || !isToured) return; // Only track when checking as toured
+        if (!sessionId) return;
 
         console.log(
-          `[${actionId}] Marking unit ${unitId} as toured`,
+          `[${actionId}] ${isToured ? 'Marking' : 'Unmarking'} unit ${unitId} as toured`,
         );
 
-        markTouredMutation.mutate(unitId, {
-          onSuccess: () => {
-            console.log(`[${actionId}] Tour status updated successfully`);
-          },
-          onError: (error) => {
-            console.error(`[${actionId}] Error updating tour status:`, error);
-            toast({
-              title: "Error",
-              description: "Failed to mark unit as toured.",
-              variant: "destructive",
-            });
-          },
-        });
-      }, 200),
+        if (isToured) {
+          // Mark as toured
+          markTouredMutation.mutate(unitId, {
+            onSuccess: () => {
+              console.log(`[${actionId}] Tour status updated successfully`);
+              toast({
+                title: "Unit Toured",
+                description: "Unit marked as toured in this session.",
+                duration: 2000,
+              });
+            },
+            onError: (error) => {
+              console.error(`[${actionId}] Error updating tour status:`, error);
+              toast({
+                title: "Error",
+                description: "Failed to mark unit as toured.",
+                variant: "destructive",
+              });
+            },
+          });
+        }
+        // Note: Unchecking is not currently implemented on backend - checkboxes are additive only
+      }, 300),
     [sessionId, markTouredMutation, actionId, toast]
   );
 
@@ -1546,6 +1555,10 @@ export default function AgentViewer() {
           console.log(`[${actionId}] Closing Unit Sheet`);
           setShowUnitSheet(false);
           setSelectedUnitData(null);
+          // Invalidate queries to refresh any changes made in the drawer
+          queryClient.invalidateQueries({
+            queryKey: ["/api/agents", agentId, "units", currentProjectId],
+          });
         }}
         onLogShowing={handleLogShowing}
         agentName={agentName}

@@ -1235,7 +1235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: "Andrew K.",
           email: "andrew.k@demo.com",
           phone: "(555) 999-0001",
-          status: "qualified",
+          status: "qualified" as const,
           pipelineStage: "qualified",
           agentId: "agent-001",
           targetPriceMin: "400000",
@@ -1248,7 +1248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           company: null,
           address: null,
           timeFrameToBuy: "3-6 months",
-          preferenceScore: 85,
+          preferenceScore: null,
           lastContactedAt: new Date(Date.now() - 3600000), // 1 hour ago
           nextFollowUpDate: new Date(Date.now() + 86400000), // tomorrow
           createdAt: new Date(),

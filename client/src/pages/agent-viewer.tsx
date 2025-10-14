@@ -1255,7 +1255,7 @@ export default function AgentViewer() {
                     No units found for this project
                   </div>
                 )}
-              </div>
+              </TabsContent>
                 ) : (
                   <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
                     <div className="text-center space-y-3">

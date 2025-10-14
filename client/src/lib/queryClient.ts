@@ -478,3 +478,97 @@ export const useActiveClients = (agentId: string | null) => {
     staleTime: 30000, // Cache for 30 seconds
   });
 };
+
+// Type for showing session response
+type ShowingSession = {
+  id: string;
+  agentId: string;
+  contactId: string;
+  projectId: string;
+  status: string;
+  startedAt: string;
+  completedAt?: string;
+  totalUnitsViewed: number;
+  duration?: number;
+};
+
+// Type for starting a session payload
+type StartSessionPayload = {
+  agentId: string;
+  contactId: string;
+  projectId: string;
+};
+
+// Start a new showing session
+const startShowingSession = async (payload: StartSessionPayload): Promise<ShowingSession> => {
+  const response = await apiRequest("POST", "/api/showing-sessions", payload);
+  return response.json();
+};
+
+// End a showing session
+const endShowingSession = async (sessionId: string): Promise<ShowingSession> => {
+  const response = await apiRequest("POST", `/api/showing-sessions/${sessionId}/end`, undefined);
+  return response.json();
+};
+
+// Fetch session status
+const fetchSessionStatus = async (sessionId: string): Promise<ShowingSession> => {
+  const response = await apiRequest("GET", `/api/showing-sessions/${sessionId}`, undefined);
+  return response.json();
+};
+
+// Hook to start a showing session
+export const useStartSession = (agentId: string, projectId: string) => {
+  const queryClientInstance = queryClient;
+
+  return useMutation({
+    mutationFn: (contactId: string) => 
+      startShowingSession({ agentId, contactId, projectId }),
+    onSuccess: () => {
+      // Invalidate dashboard metrics to update 'Active Sessions' count
+      queryClientInstance.invalidateQueries({ 
+        queryKey: ["/api/agents", agentId, "dashboard"] 
+      });
+      console.log("Showing session started successfully");
+    },
+    onError: (error) => {
+      console.error("Failed to start showing session:", error);
+    },
+  });
+};
+
+// Hook to end a showing session
+export const useEndSession = () => {
+  const queryClientInstance = queryClient;
+
+  return useMutation({
+    mutationFn: (sessionId: string) => endShowingSession(sessionId),
+    onSuccess: () => {
+      // Invalidate dashboard queries to reflect new tasks/ended session
+      queryClientInstance.invalidateQueries({ 
+        queryKey: ["/api/agents"] 
+      });
+      queryClientInstance.invalidateQueries({ 
+        queryKey: ["/api/tasks/count"] 
+      });
+      console.log("Showing session ended successfully");
+    },
+    onError: (error) => {
+      console.error("Failed to end showing session:", error);
+    },
+  });
+};
+
+// Hook to fetch current session status (for bottom tracker/context)
+export const useSessionStatus = (sessionId: string | null) => {
+  return useQuery<ShowingSession>({
+    queryKey: ["/api/showing-sessions", sessionId],
+    queryFn: () => {
+      if (!sessionId) throw new Error("No session ID provided");
+      return fetchSessionStatus(sessionId);
+    },
+    enabled: !!sessionId,
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 10000, // Refetch every 10 seconds to keep tracker updated
+  });
+};

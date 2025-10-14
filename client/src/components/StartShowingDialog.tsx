@@ -43,15 +43,37 @@ export function StartShowingDialog({
   });
 
   const { data: leads = [], isLoading } = useLeadsForShowing(agentId, projectId);
+  
+  // Add Andrew K. as a mock lead if not present for demo purposes
+  const leadsWithMock = useMemo(() => {
+    const hasAndrewK = leads.some(lead => 
+      lead.firstName === 'Andrew' && lead.lastName === 'K.'
+    );
+    
+    if (!hasAndrewK && !isLoading) {
+      return [
+        {
+          id: 'mock-andrew-k',
+          firstName: 'Andrew',
+          lastName: 'K.',
+          email: 'andrew.k@example.com',
+          name: 'Andrew K.'
+        },
+        ...leads
+      ];
+    }
+    
+    return leads;
+  }, [leads, isLoading]);
   const createMutation = useCreateQuickLead(agentId, projectId);
 
   // Filter leads based on search query
   const filteredLeads = useMemo(() => {
-    if (!leads) return [];
-    if (!searchTerm.trim()) return leads;
+    if (!leadsWithMock) return [];
+    if (!searchTerm.trim()) return leadsWithMock;
 
     const query = searchTerm.toLowerCase();
-    return leads.filter(lead => {
+    return leadsWithMock.filter(lead => {
       const firstName = lead.firstName || '';
       const lastName = lead.lastName || '';
       const name = lead.name || '';
@@ -62,7 +84,7 @@ export function StartShowingDialog({
         name.toLowerCase().includes(query) ||
         email.toLowerCase().includes(query);
     });
-  }, [leads, searchTerm]);
+  }, [leadsWithMock, searchTerm]);
 
   const handleCreateSubmit = async () => {
     if (!newLeadData.firstName || !newLeadData.lastName) {

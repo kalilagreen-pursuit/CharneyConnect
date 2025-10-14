@@ -244,6 +244,38 @@ export const useStartShowing = () => {
   });
 };
 
+// Type for portal generation
+type GeneratePortalPayload = {
+  sessionId: string;
+  contactId: string;
+  touredUnitIds: string[];
+};
+
+type GeneratePortalResponse = {
+  portalUrl: string;
+  linkToken: string;
+};
+
+// Generate portal link after showing session
+const generatePortalLink = async (
+  payload: GeneratePortalPayload,
+): Promise<GeneratePortalResponse> => {
+  const response = await apiRequest("POST", "/api/portals/generate", payload);
+  return response.json();
+};
+
+export const useGeneratePortal = () => {
+  return useMutation({
+    mutationFn: (payload: GeneratePortalPayload) => generatePortalLink(payload),
+    onSuccess: (data) => {
+      console.log("Portal link generated:", data.portalUrl);
+    },
+    onError: (error) => {
+      console.error("Failed to generate portal link:", error);
+    },
+  });
+};
+
 // Type for ending a showing session and triggering automation
 type EndShowingPayload = {
   visitId: string;

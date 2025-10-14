@@ -572,35 +572,65 @@ export default function AgentViewer() {
   // Function to handle ending the session and generating the portal link
   const handleEndSession = async () => {
     // Ensure necessary IDs and data are available
-    if (!activeVisitId || !activeLeadId || !touredUnits) {
+    if (!activeVisitId || !activeLeadId) {
       console.error("Missing required session data to end session.");
-      alert("Cannot end session: Missing session ID, lead ID, or toured units data.");
+      toast({
+        title: "Error",
+        description: "Cannot end session: Missing session ID or lead ID.",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
       // 1. Generate the client portal link using the new mutation
-      const touredUnitIds = touredUnits.map(t => t.unitId);
+      const touredUnitIds = touredUnits?.map(t => t.unitId) || [];
+      
+      console.log(`[${actionId}] Ending session and generating portal`, {
+        sessionId: activeVisitId,
+        leadId: activeLeadId,
+        touredUnitsCount: touredUnitIds.length
+      });
+
       const portalResult = await generatePortalMutation.mutateAsync({
-        sessionId: activeVisitId, // Use activeVisitId as sessionId
+        sessionId: activeVisitId,
         contactId: activeLeadId,
         touredUnitIds: touredUnitIds,
       });
 
       // 2. Complete the showing session (triggers automation logic on backend)
-      // Use endSessionMutation instead of endShowingMutation for clarity if it's a different backend action
       await endSessionMutation.mutateAsync(activeVisitId);
 
-      // Display success alert with portal link
-      alert(`Session ended! Portal link generated: ${window.location.origin}${portalResult.portalUrl}. Follow-up email sent.`);
+      // Display success toast with portal link
+      const fullPortalUrl = `${window.location.origin}${portalResult.portalUrl}`;
+      
+      toast({
+        title: "Session Ended Successfully!",
+        description: `Portal link generated: ${fullPortalUrl}. Follow-up automation triggered.`,
+        duration: 8000,
+      });
 
-      // 3. Clear state and redirect to dashboard (or other appropriate action)
+      console.log(`[${actionId}] Session ended successfully. Portal: ${fullPortalUrl}`);
+
+      // 3. Clear state
       setActiveVisitId(null);
       setActiveLeadId(null);
-      // navigate('/agent/dashboard'); // Uncomment if navigation is available/needed
+
+      // 4. Invalidate queries to refresh dashboard
+      queryClient.invalidateQueries({
+        queryKey: ["/api/agents", agentId, "dashboard"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/agents", agentId, "active-clients"],
+      });
+
     } catch (error) {
-      console.error("Failed to end session or generate portal:", error);
-      alert("Error ending session. Check console for details.");
+      console.error(`[${actionId}] Failed to end session or generate portal:`, error);
+      toast({
+        title: "Error",
+        description: "Failed to end session. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

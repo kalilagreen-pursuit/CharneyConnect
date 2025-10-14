@@ -96,6 +96,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate portal link for client
+  app.post("/api/portals/generate", async (req, res) => {
+    try {
+      const { sessionId, contactId, touredUnitIds } = req.body;
+      
+      console.log("Generating portal link for session:", sessionId, "with", touredUnitIds.length, "toured units");
+      
+      // Generate a unique token for the portal
+      const linkToken = `portal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const portalUrl = `/portal/${linkToken}`;
+      
+      // In production, you would:
+      // 1. Store the portal data in the database
+      // 2. Associate it with the session and toured units
+      // 3. Set an expiration date (e.g., 30 days)
+      
+      res.json({
+        portalUrl,
+        linkToken,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
+      });
+    } catch (error) {
+      console.error("Error generating portal link:", error);
+      res.status(500).json({ error: "Failed to generate portal link" });
+    }
+  });
+
   // B. Tour Tracking Endpoints
   app.post("/api/toured-units", async (req, res) => {
     try {

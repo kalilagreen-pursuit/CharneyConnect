@@ -1311,7 +1311,7 @@ export default function AgentViewer() {
                   <div className="h-[calc(100vh-300px)] min-h-[500px]">
                     <FloorplanViewer3D
                       projectId={currentProjectId}
-                      unitNumber={unitIdFromUrl ? units.find(u => u.id === unitIdFromUrl)?.unitNumber : undefined}
+                      unitNumber={selectedUnit?.unitNumber}
                       embedded={true}
                       onUnitClick={handleUnitSelect}
                       matchedUnitNumbers={Array.from(unitMatches.keys())

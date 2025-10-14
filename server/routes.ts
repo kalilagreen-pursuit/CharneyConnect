@@ -1179,6 +1179,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let leads = await storage.getAllLeads();
       console.log(`[API] Total leads from database: ${leads.length}`);
 
+      // Determine project name early for demo fail-safe
+      let projectName = "THE JACKSON"; // Default
+      if (projectId) {
+        try {
+          const project = await storage.getProjectById(projectId as string);
+          if (project?.name) {
+            projectName = project.name;
+            console.log(`[API] Project resolved: ${projectName} (${projectId})`);
+          } else {
+            console.warn(`[API] Project not found for UUID: ${projectId}, using default: ${projectName}`);
+          }
+        } catch (projectError) {
+          console.error(`[API] Error fetching project:`, projectError);
+        }
+      }
+
       // 1. Filter by Agent ID (MUST be preserved, critical for the workflow)
       if (agentId) {
         leads = leads.filter((lead) => lead.agentId === agentId);
@@ -1191,59 +1207,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[API] Leads after status filter: ${leads.length}`);
       }
 
-      // 3. Filter by Project ID (convert UUID to project name)
+      // 3. Filter by Project ID (using project name)
       if (projectId) {
-        try {
-          // Get the project name from the UUID
-          const project = await storage.getProjectById(projectId as string);
-          
-          if (project && project.name) {
-            const projectName = project.name;
-            console.log(`[API] Converting projectId ${projectId} to project name: ${projectName}`);
-            
-            leads = leads.filter((lead) => {
-              // Robust check: ensure targetLocations exists and is an array
-              if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
-                const hasMatch = lead.targetLocations.some(
-                  (loc) => loc.toLowerCase() === projectName.toLowerCase(),
-                );
-                if (hasMatch) {
-                  console.log(`[API] Lead ${lead.id} (${lead.name}) matches project ${projectName}`);
-                }
-                return hasMatch;
-              }
-              return false;
-            });
-            console.log(`[API] Leads after projectId filter (${projectName}): ${leads.length}`);
-          } else {
-            console.warn(`[API] Project not found for UUID: ${projectId}`);
-            // If project not found, return empty array to avoid showing wrong data
-            leads = [];
+        leads = leads.filter((lead) => {
+          // Robust check: ensure targetLocations exists and is an array
+          if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
+            const hasMatch = lead.targetLocations.some(
+              (loc) => loc.toLowerCase() === projectName.toLowerCase(),
+            );
+            if (hasMatch) {
+              console.log(`[API] Lead ${lead.id} (${lead.name}) matches project ${projectName}`);
+            }
+            return hasMatch;
           }
-        } catch (projectError) {
-          console.error(`[API] Error fetching project:`, projectError);
-          leads = [];
-        }
+          return false;
+        });
+        console.log(`[API] Leads after projectId filter (${projectName}): ${leads.length}`);
       }
 
-      // DEMO FAIL-SAFE: If no leads match filters, inject a mock qualified lead for agent-001
+      // DEMO FAIL-SAFE: If no leads match filters AND agent is Sarah Chen requesting qualified leads
+      // Always inject Andrew K. to ensure the demo workflow works
       if (leads.length === 0 && agentId === 'agent-001' && status === 'qualified') {
-        console.log(`[API] DEMO FAIL-SAFE ACTIVATED - No leads found, injecting demo lead for Sarah Chen`);
-        
-        let projectName = "THE JACKSON"; // Default
-        if (projectId) {
-          try {
-            const project = await storage.getProjectById(projectId as string);
-            if (project?.name) {
-              projectName = project.name;
-            }
-          } catch (err) {
-            console.warn(`[API] Could not get project name for demo lead, using default: ${projectName}`);
-          }
-        }
+        console.log(`[API] 🚨 DEMO FAIL-SAFE ACTIVATED - Injecting Andrew K. for agent-001`);
         
         const demoLead = {
-          id: "demo-lead-andrew",
+          id: "demo-lead-andrew-k",
           name: "Andrew K.",
           email: "andrew.k@demo.com",
           phone: "(555) 999-0001",
@@ -1267,7 +1255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedAt: new Date(),
         };
         leads = [demoLead];
-        console.log(`[API] Demo lead injected: Andrew K. for project: ${projectName}`);
+        console.log(`[API] ✅ Demo lead injected: Andrew K. for project: ${projectName}`);
       }
 
       console.log(`[API] Final leads returned: ${leads.length}`);

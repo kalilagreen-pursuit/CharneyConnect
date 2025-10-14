@@ -10,6 +10,8 @@ import {
   useLeadsForShowing,
   useMarkUnitToured,
   useTouredUnits,
+  useGeneratePortal, // Import useGeneratePortal
+  useEndSession, // Import useEndSession
 } from "@/lib/queryClient";
 import { Agent } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -79,6 +81,8 @@ export default function AgentViewer() {
   const { toast } = useToast();
   const startShowingMutation = useStartShowing();
   const endShowingMutation = useEndShowing();
+  const generatePortalMutation = useGeneratePortal(); // Added mutation
+  const endSessionMutation = useEndSession(); // Added mutation
 
   // Get agentId from the context store, with a fallback for the demo
   const agentId = agentContextStore.getAgentId() || "agent-001";
@@ -500,6 +504,42 @@ export default function AgentViewer() {
     );
   };
 
+  // Function to handle ending the session and generating the portal link
+  const handleEndSession = async () => {
+    // Ensure necessary IDs and data are available
+    if (!activeVisitId || !activeLeadId || !touredUnits) {
+      console.error("Missing required session data to end session.");
+      alert("Cannot end session: Missing session ID, lead ID, or toured units data.");
+      return;
+    }
+
+    try {
+      // 1. Generate the client portal link using the new mutation
+      const touredUnitIds = touredUnits.map(t => t.unitId);
+      const portalResult = await generatePortalMutation.mutateAsync({
+        sessionId: activeVisitId, // Use activeVisitId as sessionId
+        contactId: activeLeadId,
+        touredUnitIds: touredUnitIds,
+      });
+
+      // 2. Complete the showing session (triggers automation logic on backend)
+      // Use endSessionMutation instead of endShowingMutation for clarity if it's a different backend action
+      await endSessionMutation.mutateAsync(activeVisitId);
+
+      // Display success alert with portal link
+      alert(`Session ended! Portal link generated: ${window.location.origin}${portalResult.portalUrl}. Follow-up email sent.`);
+
+      // 3. Clear state and redirect to dashboard (or other appropriate action)
+      setActiveVisitId(null);
+      setActiveLeadId(null);
+      // navigate('/agent/dashboard'); // Uncomment if navigation is available/needed
+    } catch (error) {
+      console.error("Failed to end session or generate portal:", error);
+      alert("Error ending session. Check console for details.");
+    }
+  };
+
+
   if (isLoading || isLoadingAgent) {
     // Check both unit loading and agent loading
     return (
@@ -709,53 +749,12 @@ export default function AgentViewer() {
                     </Badge>
                     <Button
                       variant="destructive"
-                      onClick={() => {
-                        console.log(
-                          `[${actionId}] Ending showing session: ${activeVisitId}`,
-                        );
-                        endShowingMutation.mutate(activeVisitId, {
-                          onSuccess: () => {
-                            toast({
-                              title: "ShowingEnded",
-                              description: `Follow-up task created for ${viewedUnits.length} viewed unit(s).`,
-                              duration: 3000,
-                            });
-
-                            setActiveVisitId(null);
-                            setActiveLeadId(null);
-                            queryClient.invalidateQueries({
-                              queryKey: [
-                                "/api/agents",
-                                agentId,
-                                "units",
-                                projectId,
-                              ],
-                            });
-
-                            console.log(
-                              `[${actionId}] Showing ended and automation triggered`,
-                            );
-                          },
-                          onError: (error) => {
-                            console.error(
-                              `[${actionId}] Error ending showing:`,
-                              error,
-                            );
-                            toast({
-                              title: "Error",
-                              description:
-                                "Failed to end showing. Please try again.",
-                              variant: "destructive",
-                              duration: 3000,
-                            });
-                          },
-                        });
-                      }}
+                      onClick={handleEndSession} // Use the new handleEndSession function
                       data-testid="button-end-showing"
                       className="uppercase font-black"
-                      disabled={endShowingMutation.isPending}
+                      disabled={endSessionMutation.isPending} // Use endSessionMutation for pending state
                     >
-                      {endShowingMutation.isPending
+                      {endSessionMutation.isPending
                         ? "PROCESSING..."
                         : "END SHOWING"}
                     </Button>

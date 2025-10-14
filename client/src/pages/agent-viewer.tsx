@@ -275,6 +275,12 @@ export default function AgentViewer() {
     `[${actionId}] Agent Viewer initialized - Agent: ${agentName} (${agentId}), Project: ${projectName}`,
   );
 
+  // Define handleBack early so it can be used in error handling
+  const handleBack = () => {
+    console.log(`[${actionId}] Navigating back to project selection`);
+    setLocation("/agent/project-select");
+  };
+
   // Show error state if units failed to load
   if (unitsError) {
     return (
@@ -485,11 +491,6 @@ export default function AgentViewer() {
     console.log(
       `[${actionId}] TODO: Open Log Showing form for Unit ${selectedUnit?.unitNumber}`,
     );
-  };
-
-  const handleBack = () => {
-    console.log(`[${actionId}] Navigating back to project selection`);
-    setLocation("/agent/project-select");
   };
 
   const handleProjectChange = (newProjectId: string) => {

@@ -1200,7 +1200,7 @@ export default function AgentViewer() {
                           {/* Tour Tracking Checkbox - Enhanced with API connection */}
                           {activeVisitId && (
                             <div className={cn(
-                              "flex items-center space-x-2 mt-2 p-3 rounded-md border-2 transition-colors",
+                              "flex items-center space-x-2 mt-2 p-3 rounded-md border-2 transition-colors min-h-[48px]",
                               isToured
                                 ? "bg-green-50 border-green-300 hover:bg-green-100"
                                 : "border-dashed border-muted-foreground/30 hover:bg-accent"
@@ -1211,13 +1211,13 @@ export default function AgentViewer() {
                                 onCheckedChange={(checked) => {
                                   handleTourTrackingChange(unit.id, checked as boolean);
                                 }}
-                                className="h-6 w-6 min-h-[24px] min-w-[24px] data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                className="h-8 w-8 min-h-[32px] min-w-[32px] touch-manipulation data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                                 data-testid={`checkbox-toured-${unit.unitNumber}`}
                               />
                               <label
                                 htmlFor={`tour-checkbox-${unit.id}`}
                                 className={cn(
-                                  "text-sm font-medium leading-none cursor-pointer py-2 flex-1",
+                                  "text-sm font-medium leading-none cursor-pointer py-3 flex-1 min-h-[44px] flex items-center",
                                   isToured && "text-green-700"
                                 )}
                               >

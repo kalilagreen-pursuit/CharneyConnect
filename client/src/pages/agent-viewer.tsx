@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -50,6 +50,8 @@ import { UnitWithDetails, UnitWithDealContext, Lead } from "@shared/schema";
 import { agentContextStore } from "@/lib/localStores";
 import { useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
+import { preferenceCache } from "@/lib/preference-cache";
+import { debounce } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
 import {
   getMatchedUnitsWithScores,
@@ -86,6 +88,48 @@ export default function AgentViewer() {
 
   // State for sidebar visibility
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Virtualization state - track which units are visible
+  const [visibleUnitIds, setVisibleUnitIds] = useState<Set<string>>(new Set());
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // Setup intersection observer for lazy loading
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const unitId = entry.target.getAttribute('data-unit-id');
+          if (unitId) {
+            setVisibleUnitIds((prev) => {
+              const newSet = new Set(prev);
+              if (entry.isIntersecting) {
+                newSet.add(unitId);
+              }
+              return newSet;
+            });
+          }
+        });
+      },
+      {
+        rootMargin: '100px', // Load units 100px before they enter viewport
+        threshold: 0.01,
+      }
+    );
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, []);
+
+  // Callback to attach observer to unit card elements
+  const unitCardRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (node && observerRef.current) {
+        observerRef.current.observe(node);
+      }
+    },
+    []
+  );
 
   // Get agentId from the context store, with a fallback for the demo
   const agentId = agentContextStore.getAgentId() || "agent-001";
@@ -175,10 +219,24 @@ export default function AgentViewer() {
       enabled: !!activeLeadId,
       queryFn: async () => {
         if (!activeLeadId) return null;
+        
+        // Check cache first
+        const cached = preferenceCache.get(activeLeadId);
+        if (cached) {
+          console.log(`[preference-cache] Using cached preferences for lead ${activeLeadId}`);
+          return cached;
+        }
+        
+        // Fetch from API if not cached
         const response = await fetch(`/api/leads/${activeLeadId}`);
         if (!response.ok) return null;
-        return response.json();
+        const data = await response.json();
+        
+        // Store in cache
+        preferenceCache.set(activeLeadId, data);
+        return data;
       },
+      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     });
 
   // Calculate unit matches based on active lead preferences
@@ -278,28 +336,32 @@ export default function AgentViewer() {
     }
   };
 
-  // Handle unit tour tracking checkbox change
-  const handleTourTrackingChange = (unitId: string, isToured: boolean) => {
-    if (!sessionId || !isToured) return; // Only track when checking as toured
+  // Handle unit tour tracking checkbox change (debounced)
+  const handleTourTrackingChange = useMemo(
+    () =>
+      debounce((unitId: string, isToured: boolean) => {
+        if (!sessionId || !isToured) return; // Only track when checking as toured
 
-    console.log(
-      `[${actionId}] Marking unit ${unitId} as toured`,
-    );
+        console.log(
+          `[${actionId}] Marking unit ${unitId} as toured`,
+        );
 
-    markTouredMutation.mutate(unitId, {
-      onSuccess: () => {
-        console.log(`[${actionId}] Tour status updated successfully`);
-      },
-      onError: (error) => {
-        console.error(`[${actionId}] Error updating tour status:`, error);
-        toast({
-          title: "Error",
-          description: "Failed to mark unit as toured.",
-          variant: "destructive",
+        markTouredMutation.mutate(unitId, {
+          onSuccess: () => {
+            console.log(`[${actionId}] Tour status updated successfully`);
+          },
+          onError: (error) => {
+            console.error(`[${actionId}] Error updating tour status:`, error);
+            toast({
+              title: "Error",
+              description: "Failed to mark unit as toured.",
+              variant: "destructive",
+            });
+          },
         });
-      },
-    });
-  };
+      }, 200),
+    [sessionId, markTouredMutation, actionId, toast]
+  );
 
   // Handle view details - opens Lead Qualification Sheet for Active Deals, Unit Sheet for All Units
   const handleViewDetails = async (
@@ -888,9 +950,12 @@ export default function AgentViewer() {
                       const isToured =
                         touredUnits.some((tu) => tu.unitId === unit.id) || false;
 
+                      const isVisible = visibleUnitIds.has(unit.id);
+
                       return (
                         <Card
                           key={unit.id}
+                          ref={unitCardRef}
                           data-unit-id={unit.id}
                           data-testid={`card-unit-${unit.unitNumber}`}
                           title={simpleMatch?.reason || ""}
@@ -899,9 +964,11 @@ export default function AgentViewer() {
                             selectedUnitId === unit.id && "ring-2 ring-primary",
                             matchIndicator,
                             highlightClass,
+                            !isVisible && "min-h-[300px]" // Reserve space for non-visible cards
                           )}
                           onClick={() => handleUnitSelect(unit.id)}
                         >
+                          {isVisible ? (
                           <div className="space-y-3">
                             {/* Header: Unit Number + Status */}
                             <div className="flex items-start justify-between gap-2">
@@ -1055,6 +1122,11 @@ export default function AgentViewer() {
                               View Details
                             </Button>
                           </div>
+                          ) : (
+                            <div className="flex items-center justify-center h-full min-h-[250px]">
+                              <div className="text-sm text-muted-foreground">Loading...</div>
+                            </div>
+                          )}
                         </Card>
                       );
                     })}

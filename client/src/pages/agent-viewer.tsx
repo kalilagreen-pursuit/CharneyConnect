@@ -69,7 +69,13 @@ const PROJECTS = [
 
 export default function AgentViewer() {
   const [location, setLocation] = useLocation();
-  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  
+  // Extract unit ID from URL query parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const unitIdFromUrl = urlParams.get('unit');
+  const projectIdFromUrl = urlParams.get('projectId');
+  
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(unitIdFromUrl);
   const [selectedUnitData, setSelectedUnitData] =
     useState<UnitWithDetails | null>(null);
   const [showUnitSheet, setShowUnitSheet] = useState(false);
@@ -111,6 +117,18 @@ export default function AgentViewer() {
     }
   }, [location, setLocation]);
 
+  // Auto-open unit sheet when unit ID is in URL
+  useEffect(() => {
+    if (unitIdFromUrl && units.length > 0) {
+      const unit = units.find(u => u.id === unitIdFromUrl);
+      if (unit) {
+        setSelectedUnitId(unitIdFromUrl);
+        setSelectedUnitData(unit);
+        setShowUnitSheet(true);
+      }
+    }
+  }, [unitIdFromUrl, units]);
+
   // Virtualization state - track which units are visible
   const [visibleUnitIds, setVisibleUnitIds] = useState<Set<string>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -133,7 +151,7 @@ export default function AgentViewer() {
 
   // Fetch units specific to this agent and project
   const [currentProjectId, setCurrentProjectId] = useState(
-    () => agentContextStore.getProjectId() || PROJECTS[0].id,
+    () => projectIdFromUrl || agentContextStore.getProjectId() || PROJECTS[0].id,
   );
 
   // Lead search state (still needed for dialog state management)

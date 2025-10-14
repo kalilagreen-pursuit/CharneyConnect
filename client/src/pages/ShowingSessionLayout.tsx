@@ -80,7 +80,7 @@ export default function ShowingSessionLayout() {
 
   // Fetch session status first
   const { data: sessionStatus } = useSessionStatus(activeSessionId);
-  
+
   // Set currentProjectId from session data when it's available
   useEffect(() => {
     if (sessionStatus?.projectId && !currentProjectId) {
@@ -89,7 +89,7 @@ export default function ShowingSessionLayout() {
       console.log('[ShowingSession] Set project ID from session:', sessionStatus.projectId);
     }
   }, [sessionStatus, currentProjectId]);
-  
+
   // Fetch units for current project - depends only on currentProjectId state being populated
   const { data: units = [], isLoading: unitsLoading, isError: unitsError, error: unitsFetchError } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/units", currentProjectId, "available", activeLeadId],
@@ -99,11 +99,11 @@ export default function ShowingSessionLayout() {
         return [];
       }
       console.log('[ShowingSession] Fetching available units for project:', currentProjectId);
-      
+
       const url = new URL('/api/units', window.location.origin);
       url.searchParams.set('projectId', currentProjectId);
       url.searchParams.set('status', 'available');
-      
+
       const response = await fetch(url.toString());
       if (!response.ok) {
         const errorText = await response.text();
@@ -199,7 +199,7 @@ export default function ShowingSessionLayout() {
     setActiveLeadId(leadId);
     setCurrentProjectId(projectId);
     agentContextStore.setProject(projectId, PROJECTS.find(p => p.id === projectId)?.name || '');
-    
+
     // Navigate to the session-specific URL
     setLocation(`/showing/${sessionId}`);
   };
@@ -273,7 +273,7 @@ export default function ShowingSessionLayout() {
           queryClient.invalidateQueries({ 
             queryKey: ["/api/showing-sessions", activeSessionId] 
           });
-          
+
           toast({
             title: "Unit Toured",
             description: "Unit marked as toured in this session.",
@@ -308,7 +308,7 @@ export default function ShowingSessionLayout() {
     const errorMessage = unitsError 
       ? `Units Error: ${unitsFetchError?.message || 'Unknown error'}` 
       : 'Lead data error';
-    
+
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background p-6">
         <Card className="max-w-md p-8 text-center space-y-4">
@@ -631,8 +631,9 @@ export default function ShowingSessionLayout() {
                           e.stopPropagation(); // Prevent card onClick from also firing
                           setLocation(`/agent/viewer?unit=${unit.id}&projectId=${currentProjectId}`);
                         }}
+                        data-testid={`button-view-3d-${unit.unitNumber}`}
                       >
-                        <Maximize2 className="h-4 w-4 mr-2" />
+                        <Eye className="h-4 w-4 mr-2" />
                         View in 3D
                       </Button>
                     </div>

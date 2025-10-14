@@ -8,12 +8,15 @@ import {
   useShowingItinerary,
   useLogUnitView,
   useLeadsForShowing,
+  useMarkUnitToured,
+  useTouredUnits,
 } from "@/lib/queryClient";
 import { Agent } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -237,6 +240,11 @@ export default function AgentViewer() {
   // Import the log unit view mutation
   const logUnitViewMutation = useLogUnitView(activeVisitId);
 
+  // Tour tracking hooks for showing session
+  const sessionId = activeVisitId; // Assuming activeVisitId can be used as sessionId
+  const markTouredMutation = useMarkUnitToured(sessionId);
+  const { data: touredUnits = [] } = useTouredUnits(sessionId);
+
   // Handle unit selection from card
   const handleUnitSelect = (unitId: string) => {
     console.log(`[${actionId}] Unit selected: ${unitId}`);
@@ -261,6 +269,36 @@ export default function AgentViewer() {
     if (activeTab === "active-deals") {
       setActiveTab("all-units");
     }
+  };
+
+  // Handle unit tour tracking checkbox change
+  const handleTourTrackingChange = (unitId: string, isToured: boolean) => {
+    if (!sessionId) return; // Only track if a session is active
+
+    console.log(
+      `[${actionId}] Toggling tour status for unit ${unitId} to ${isToured}`,
+    );
+
+    markTouredMutation.mutate(
+      { unitId, isToured },
+      {
+        onSuccess: () => {
+          console.log(`[${actionId}] Tour status updated successfully`);
+          // Optionally invalidate or update local state if needed
+          queryClient.invalidateQueries({
+            queryKey: ["toured-units", sessionId],
+          });
+        },
+        onError: (error) => {
+          console.error(`[${actionId}] Error updating tour status:`, error);
+          toast({
+            title: "Error",
+            description: "Failed to update tour status.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
   };
 
   // Handle view details - opens Lead Qualification Sheet for Active Deals, Unit Sheet for All Units
@@ -509,7 +547,7 @@ export default function AgentViewer() {
                 </p>
                 <p
                   className="text-sm text-muted-foreground mb-4"
-                  data-testid="sidebar-client-stage"
+                  data-testid="sidebar-client-client-stage"
                 >
                   Stage:{" "}
                   {activeLead.stage?.replace(/_/g, " ").toUpperCase() || "N/A"}
@@ -797,6 +835,10 @@ export default function AgentViewer() {
                         ? "border-4 border-green-500 shadow-xl"
                         : "border border-transparent";
 
+                      // Check if unit has been toured in the current session
+                      const isToured =
+                        touredUnits.some((tu) => tu.unitId === unit.id) || false;
+
                       return (
                         <Card
                           key={unit.id}
@@ -893,6 +935,28 @@ export default function AgentViewer() {
                             <div className="text-xs text-muted-foreground">
                               Floor {unit.floor}
                             </div>
+
+                            {/* Tour Tracking Checkbox */}
+                            {activeVisitId && (
+                              <div className="flex items-center space-x-2 mt-2">
+                                <Checkbox
+                                  id={`tour-checkbox-${unit.id}`}
+                                  checked={isToured}
+                                  onCheckedChange={(checked) =>
+                                    handleTourTrackingChange(
+                                      unit.id,
+                                      checked as boolean,
+                                    )
+                                  }
+                                />
+                                <label
+                                  htmlFor={`tour-checkbox-${unit.id}`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
+                                  Toured
+                                </label>
+                              </div>
+                            )}
 
                             {/* Recommendation Badge for Strong Matches */}
                             {simpleMatch?.isMatch && simpleMatch.score >= 3 && (
@@ -1078,6 +1142,10 @@ export default function AgentViewer() {
                             closed_lost: "destructive" as const,
                           }[unit.dealStage] || ("secondary" as const);
 
+                        // Check if unit has been toured in the current session
+                        const isToured =
+                          touredUnits.some((tu) => tu.unitId === unit.id) || false;
+
                         return (
                           <Card
                             key={unit.id}
@@ -1198,6 +1266,28 @@ export default function AgentViewer() {
                                   </span>
                                 </div>
                               </div>
+
+                              {/* Tour Tracking Checkbox */}
+                              {activeVisitId && (
+                                <div className="flex items-center space-x-2 mt-2">
+                                  <Checkbox
+                                    id={`tour-checkbox-${unit.id}`}
+                                    checked={isToured}
+                                    onCheckedChange={(checked) =>
+                                      handleTourTrackingChange(
+                                        unit.id,
+                                        checked as boolean,
+                                      )
+                                    }
+                                  />
+                                  <label
+                                    htmlFor={`tour-checkbox-${unit.id}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    Toured
+                                  </label>
+                                </div>
+                              )}
 
                               {/* Lead Info (Active Deals only) */}
                               {"leadName" in unit && (

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users, Calendar, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { agentContextStore } from "@/lib/localStores";
-import { usePendingTaskCount } from "@/lib/queryClient";
+import { useDashboardMetrics, useActiveClients } from "@/lib/queryClient";
 import type { Lead, UnitWithDetails } from "@shared/schema";
 
 // Hardcoded agent context for Demo Day
@@ -14,10 +14,30 @@ const AGENT_NAME = "SARAH CHEN";
 const AGENT_ROLE = "SENIOR SALES AGENT";
 const AGENT_ID = "agent-001";
 
+// Simple Metric Card Component
+const MetricCard = ({ title, value, color }: { title: string; value: string | number; color: string }) => (
+  <Card className="text-center shadow-lg hover-elevate transition-all">
+    <CardContent className="p-6">
+      <p className={`text-5xl font-black ${color} mb-2`} data-testid={`metric-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+        {value}
+      </p>
+      <CardTitle className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </CardTitle>
+    </CardContent>
+  </Card>
+);
+
 export default function AgentDashboard() {
   const [, setLocation] = useLocation();
 
-  // Fetch active leads for follow-ups
+  // Fetch dashboard metrics
+  const { data: metrics, isLoading: isMetricsLoading } = useDashboardMetrics(AGENT_ID);
+  
+  // Fetch active clients
+  const { data: activeClients = [], isLoading: isClientsLoading } = useActiveClients(AGENT_ID);
+
+  // Fetch active leads for fallback display
   const { data: leads = [] } = useQuery<Lead[]>({
     queryKey: ["/api/leads"],
   });
@@ -27,14 +47,10 @@ export default function AgentDashboard() {
     queryKey: ["/api/units"],
   });
 
-  // Fetch pending task count for the agent
-  const { data: taskData, isLoading: isTaskCountLoading } = usePendingTaskCount(AGENT_ID);
-  const pendingTaskCount = taskData?.count ?? 0;
-
-  // Calculate dynamic stats
-  const activeClient = leads.find(lead => lead.stage === "qualified") || leads[0];
-  const activeClientName = activeClient?.name || "No Active Client";
-  const followUpTasks = pendingTaskCount; // Use real-time task count
+  // Calculate dynamic stats from metrics
+  const activeSessions = metrics?.activeSessions ?? 0;
+  const pendingFollowUps = metrics?.pendingFollowUps ?? 0;
+  const projectCount = metrics?.projectCount ?? 0;
 
   // Project summaries
   const projectStats = units.reduce((acc, unit) => {
@@ -49,12 +65,6 @@ export default function AgentDashboard() {
     return acc;
   }, {} as Record<string, { total: number; available: number }>);
 
-  // Active showing sessions (check if there's an active visit)
-  const activeShowingSessions = leads.filter(lead => {
-    // In real implementation, this would check for active showing visits
-    return lead.stage === "showing_scheduled";
-  }).length;
-
   const handleGoToViewer = () => {
     // Store agent context
     agentContextStore.setAgent(AGENT_ID, AGENT_NAME.split(' ')[0] + ' ' + AGENT_NAME.split(' ')[1]);
@@ -63,9 +73,10 @@ export default function AgentDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header: Agent Profile */}
       <div className="border-b bg-card">
         <div className="px-6 py-6">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <h1 className="text-4xl font-black uppercase tracking-tight mb-2" data-testid="text-welcome">
               WELCOME BACK, <span className="text-primary">{AGENT_NAME}</span>
             </h1>
@@ -77,174 +88,137 @@ export default function AgentDashboard() {
       </div>
 
       <div className="p-6">
-        <div className="max-w-5xl mx-auto space-y-6">
-          {/* Primary Action Cards */}
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Active Client Context */}
-            <Card className="shadow-lg border-2 hover-elevate active-elevate-2 transition-all" data-testid="card-active-client">
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg font-black uppercase">Active Client</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-2xl font-black text-primary mb-1" data-testid="text-active-client-name">
-                    {activeClientName}
-                  </p>
-                  {activeClient && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Badge variant="outline" className="uppercase text-xs">
-                        {activeClient.stage.replace(/_/g, ' ')}
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-                <Button 
-                  className="w-full uppercase font-black" 
-                  data-testid="button-view-client"
-                  onClick={handleGoToViewer}
-                >
-                  View Client Details
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="shadow-lg border-2 hover-elevate active-elevate-2 transition-all" data-testid="card-quick-actions">
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg font-black uppercase">Quick Actions</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  className="w-full uppercase font-black" 
-                  onClick={handleGoToViewer}
-                  data-testid="button-start-showing"
-                >
-                  🎯 START SHOWING SESSION
-                </Button>
-                <Link href="/leads">
-                  <Button 
-                    variant="outline" 
-                    className="w-full uppercase font-black" 
-                    data-testid="button-follow-ups"
-                    disabled={isTaskCountLoading}
-                  >
-                    <AlertCircle className="mr-2 h-4 w-4" />
-                    {isTaskCountLoading ? 'LOADING TASKS...' : 'FOLLOW-UP TASKS'}
-                    {!isTaskCountLoading && followUpTasks > 0 && (
-                      <Badge variant="destructive" className="ml-2">
-                        {followUpTasks}
-                      </Badge>
-                    )}
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Project Summary */}
-            <Card className="shadow-lg border-2 hover-elevate active-elevate-2 transition-all" data-testid="card-project-summary">
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <Building2 className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg font-black uppercase">Inventory</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {Object.entries(projectStats).slice(0, 2).map(([projectName, stats]) => (
-                  <div key={projectName} className="flex justify-between items-center text-sm">
-                    <span className="font-medium uppercase">{projectName}</span>
-                    <Badge variant="outline" data-testid={`badge-${projectName.toLowerCase().replace(/\s+/g, '-')}-available`}>
-                      {stats.available} Available
-                    </Badge>
-                  </div>
-                ))}
-                <Link href="/dashboard">
-                  <Button variant="link" className="p-0 w-full justify-start uppercase font-black" data-testid="button-browse-inventory">
-                    Browse All Inventory →
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+            <MetricCard 
+              title="Active Sessions" 
+              value={isMetricsLoading ? '...' : activeSessions} 
+              color="text-primary" 
+            />
+            <MetricCard 
+              title="Pending Follow-ups" 
+              value={isMetricsLoading ? '...' : pendingFollowUps} 
+              color="text-destructive" 
+            />
+            <MetricCard 
+              title="Projects Qualified" 
+              value={isMetricsLoading ? '...' : projectCount} 
+              color="text-green-600" 
+            />
           </div>
 
-          {/* Active Showing Sessions Alert */}
-          {activeShowingSessions > 0 && (
-            <Card className="border-primary bg-primary/5" data-testid="card-active-showings">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Calendar className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-black uppercase text-lg">
-                        {activeShowingSessions} Active Showing{activeShowingSessions !== 1 ? 's' : ''}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Resume your in-progress client meetings
-                      </p>
-                    </div>
-                  </div>
-                  <Button onClick={handleGoToViewer} data-testid="button-resume-showing">
-                    RESUME
-                    <ArrowRight className="ml-2 h-4 w-4" />
+          {/* Main Content: Active Clients & Quick Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Active Clients Grid */}
+            <div className="lg:col-span-2 space-y-4">
+              <h2 className="text-2xl font-black uppercase tracking-tight">Active Clients</h2>
+              
+              {isClientsLoading && (
+                <p className="text-muted-foreground" data-testid="loading-clients">Loading clients...</p>
+              )}
+              
+              {!isClientsLoading && activeClients.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {activeClients.map(client => (
+                    <Card 
+                      key={client.id} 
+                      className="shadow-lg hover-elevate active-elevate-2 transition-all"
+                      data-testid={`card-client-${client.id}`}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-lg font-black uppercase">{client.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Lead Score</span>
+                          <Badge variant="outline">{client.leadScore}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Next Follow-up</span>
+                          <span className="font-medium">{client.nextFollowUpDate}</span>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full uppercase font-black gap-2"
+                          onClick={handleGoToViewer}
+                          data-testid={`button-start-session-${client.id}`}
+                        >
+                          Start/Resume Session
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              
+              {!isClientsLoading && activeClients.length === 0 && (
+                <Card className="shadow-lg" data-testid="card-no-clients">
+                  <CardContent className="py-12 text-center">
+                    <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground mb-4">No active clients found.</p>
+                    <Button onClick={handleGoToViewer} data-testid="button-start-new-session">
+                      Start New Session
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Quick Actions Card */}
+            <div className="space-y-4">
+              <h2 className="text-2xl font-black uppercase tracking-tight">Quick Actions</h2>
+              <Card className="shadow-lg" data-testid="card-quick-actions">
+                <CardHeader>
+                  <CardTitle className="text-lg font-black uppercase">Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button 
+                    className="w-full uppercase font-black gap-2" 
+                    onClick={handleGoToViewer}
+                    data-testid="button-start-showing"
+                  >
+                    🎯 Start Showing Session
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Today's Priorities */}
-          <Card className="shadow-lg" data-testid="card-priorities">
-            <CardHeader>
-              <CardTitle className="text-xl font-black uppercase flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                TODAY'S PRIORITIES
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                  <div className="h-2 w-2 rounded-full bg-primary mt-2" />
-                  <div className="flex-1">
-                    <p className="font-medium">Follow up with qualified leads</p>
-                    <p className="text-sm text-muted-foreground">
-                      {followUpTasks} client{followUpTasks !== 1 ? 's' : ''} awaiting post-showing contact
-                    </p>
+                  <Link href="/leads">
+                    <Button 
+                      variant="outline" 
+                      className="w-full uppercase font-black gap-2" 
+                      data-testid="button-follow-ups"
+                    >
+                      <AlertCircle className="h-4 w-4" />
+                      Follow-up Tasks
+                      {pendingFollowUps > 0 && (
+                        <Badge variant="destructive" className="ml-2">
+                          {pendingFollowUps}
+                        </Badge>
+                      )}
+                    </Button>
+                  </Link>
+                  
+                  {/* Project Inventory Summary */}
+                  <div className="pt-3 border-t space-y-2">
+                    <p className="text-sm font-bold uppercase text-muted-foreground">Inventory</p>
+                    {Object.entries(projectStats).slice(0, 2).map(([projectName, stats]) => (
+                      <div key={projectName} className="flex justify-between items-center text-sm">
+                        <span className="font-medium">{projectName}</span>
+                        <Badge variant="outline" data-testid={`badge-${projectName.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {stats.available} Available
+                        </Badge>
+                      </div>
+                    ))}
+                    <Link href="/dashboard">
+                      <Button variant="link" className="p-0 w-full justify-start uppercase font-black text-xs" data-testid="button-browse-inventory">
+                        Browse All Inventory →
+                      </Button>
+                    </Link>
                   </div>
-                  <Badge variant="outline" className="uppercase text-xs">
-                    {followUpTasks}
-                  </Badge>
-                </div>
-
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                  <div className="h-2 w-2 rounded-full bg-muted-foreground mt-2" />
-                  <div className="flex-1">
-                    <p className="font-medium">Review new inventory</p>
-                    <p className="text-sm text-muted-foreground">
-                      Check latest unit availability across projects
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                  <div className="h-2 w-2 rounded-full bg-muted-foreground mt-2" />
-                  <div className="flex-1">
-                    <p className="font-medium">Update deal pipeline</p>
-                    <p className="text-sm text-muted-foreground">
-                      Move qualified prospects to contract stage
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
           {/* Navigation Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

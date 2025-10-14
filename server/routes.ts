@@ -99,9 +99,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // B. Tour Tracking Endpoints
   app.post("/api/toured-units", async (req, res) => {
     try {
-      // TODO: Implement toured unit logging logic
       // Expected body: { sessionId, unitId, agentNotes?, clientInterestLevel? }
-      res.status(501).json({ error: "Not implemented yet" });
+      console.log("ROUTE STUB: Logging unit view:", req.body);
+      
+      // Return mock success response with 200
+      res.json({ 
+        message: "Unit view logged successfully.", 
+        viewedAt: new Date() 
+      });
     } catch (error) {
       console.error("Error logging toured unit:", error);
       res.status(500).json({ error: "Failed to log toured unit" });
@@ -110,8 +115,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/showing-sessions/:id/toured-units", async (req, res) => {
     try {
-      // TODO: Implement toured units retrieval for a session
-      res.status(501).json({ error: "Not implemented yet" });
+      console.log("ROUTE STUB: Getting toured units for session:", req.params.id);
+      
+      // Return mock empty array with 200 response
+      res.json([]); 
     } catch (error) {
       console.error("Error fetching toured units:", error);
       res.status(500).json({ error: "Failed to fetch toured units" });

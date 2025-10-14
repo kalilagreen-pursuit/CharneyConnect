@@ -1004,263 +1004,260 @@ export default function AgentViewer() {
                 </div>
 
                 {viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {units.map((unit) => {
-                    const unitMatch = unitMatches.get(unit.id);
-                    const matchIndicator = unitMatch
-                      ? getMatchIndicatorClass(unitMatch.matchScore)
-                      : "";
-                    const matchBadge = unitMatch
-                      ? getMatchBadge(unitMatch.matchScore)
-                      : null;
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {units.map((unit) => {
+                        const unitMatch = unitMatches.get(unit.id);
+                        const matchIndicator = unitMatch
+                          ? getMatchIndicatorClass(unitMatch.matchScore)
+                          : "";
+                        const matchBadge = unitMatch
+                          ? getMatchBadge(unitMatch.matchScore)
+                          : null;
 
-                    // Use simpler match utility for visual highlighting
-                    const simpleMatch = activeLead
-                      ? matchUnitToClient(unit, activeLead)
-                      : null;
-                    const highlightClass = simpleMatch?.isMatch
-                      ? "border-4 border-green-500 shadow-xl"
-                      : "border border-transparent";
+                        // Use simpler match utility for visual highlighting
+                        const simpleMatch = activeLead
+                          ? matchUnitToClient(unit, activeLead)
+                          : null;
+                        const highlightClass = simpleMatch?.isMatch
+                          ? "border-4 border-green-500 shadow-xl"
+                          : "border border-transparent";
 
-                    // Check if unit has been toured in the current session
-                    const isToured =
-                      touredUnits.some((tu) => tu.unitId === unit.id) || false;
+                        // Check if unit has been toured in the current session
+                        const isToured =
+                          touredUnits.some((tu) => tu.unitId === unit.id) || false;
 
-                    const isVisible = visibleUnitIds.has(unit.id);
+                        const isVisible = visibleUnitIds.has(unit.id);
 
-                    // Enhanced matching overlay - determine match level for styling
-                    const matchLevel = unitMatch
-                      ? unitMatch.matchScore >= 90 ? 'perfect'
-                      : unitMatch.matchScore >= 70 ? 'strong'
-                      : unitMatch.matchScore >= 50 ? 'good'
-                      : 'none'
-                      : 'none';
+                        // Enhanced matching overlay - determine match level for styling
+                        const matchLevel = unitMatch
+                          ? unitMatch.matchScore >= 90 ? 'perfect'
+                          : unitMatch.matchScore >= 70 ? 'strong'
+                          : unitMatch.matchScore >= 50 ? 'good'
+                          : 'none'
+                          : 'none';
 
-                    const matchOverlayClass = {
-                      perfect: 'border-l-8 border-l-green-600 bg-green-50/50',
-                      strong: 'border-l-8 border-l-blue-600 bg-blue-50/50',
-                      good: 'border-l-8 border-l-yellow-600 bg-yellow-50/50',
-                      none: ''
-                    }[matchLevel];
+                        const matchOverlayClass = {
+                          perfect: 'border-l-8 border-l-green-600 bg-green-50/50',
+                          strong: 'border-l-8 border-l-blue-600 bg-blue-50/50',
+                          good: 'border-l-8 border-l-yellow-600 bg-yellow-50/50',
+                          none: ''
+                        }[matchLevel];
 
-                    return (
-                      <Card
-                        key={unit.id}
-                        ref={unitCardRef}
-                        data-unit-id={unit.id}
-                        data-testid={`card-unit-${unit.unitNumber}`}
-                        title={simpleMatch?.reason || ""}
-                        className={cn(
-                          "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] hover:border-indigo-600 relative",
-                          selectedUnitId === unit.id && "ring-2 ring-primary",
-                          matchOverlayClass,
-                          highlightClass,
-                          !isVisible && "min-h-[300px]" // Reserve space for non-visible cards
-                        )}
-                        onClick={() => handleUnitSelect(unit.id)}
-                      >
-                        {isVisible ? (
-                        <div className="space-y-3">
-                          {/* Matching Score Overlay - Top Right Corner */}
-                          {unitMatch && unitMatch.matchScore > 0 && (
-                            <div className="absolute top-3 right-3 z-10">
-                              <div className={cn(
-                                "px-3 py-1 rounded-full text-xs font-black uppercase shadow-lg",
-                                matchLevel === 'perfect' && "bg-green-600 text-white",
-                                matchLevel === 'strong' && "bg-blue-600 text-white",
-                                matchLevel === 'good' && "bg-yellow-600 text-white"
-                              )}>
-                                {unitMatch.matchScore}% Match
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Header: Unit Number + Status */}
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <div className="text-xs text-muted-foreground uppercase">
-                                {unit.building}
-                              </div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="text-xl font-black uppercase tracking-tight">
-                                  Unit {unit.unitNumber}
-                                </h3>
-                                {activeVisitId &&
-                                  viewedUnitIds.has(unit.id) && (
-                                    <Badge
-                                      variant="outline"
-                                      className="bg-primary/10 text-primary border-primary"
-                                      data-testid={`badge-viewed-${unit.unitNumber}`}
-                                    >
-                                      <Eye className="h-3 w-3 mr-1" />
-                                      VIEWED
-                                    </Badge>
-                                  )}
-                                {isToured && (
-                                  <Badge
-                                    variant="outline"
-                                    className="bg-green-500/10 text-green-600 border-green-500"
-                                    data-testid={`badge-toured-${unit.unitNumber}`}
-                                  >
-                                    <CheckCircle className="h-3 w-3 mr-1 fill-green-600" />
-                                    TOURED
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <Badge
-                              variant={getStatusBadgeVariant(unit.status)}
-                              data-testid={`badge-status-${unit.unitNumber}`}
-                              className="uppercase text-xs"
-                            >
-                              {formatStatus(unit.status)}
-                            </Badge>
-                          </div>
-
-                          {/* Price */}
-                          <div
-                            className="text-2xl font-bold"
-                            data-testid={`text-price-${unit.unitNumber}`}
+                        return (
+                          <Card
+                            key={unit.id}
+                            ref={unitCardRef}
+                            data-unit-id={unit.id}
+                            data-testid={`card-unit-${unit.unitNumber}`}
+                            title={simpleMatch?.reason || ""}
+                            className={cn(
+                              "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] hover:border-indigo-600 relative",
+                              selectedUnitId === unit.id && "ring-2 ring-primary",
+                              matchOverlayClass,
+                              highlightClass,
+                              !isVisible && "min-h-[300px]" // Reserve space for non-visible cards
+                            )}
+                            onClick={() => handleUnitSelect(unit.id)}
                           >
-                            {formatPrice(unit.price)}
-                          </div>
+                            {isVisible ? (
+                            <div className="space-y-3">
+                              {/* Matching Score Overlay - Top Right Corner */}
+                              {unitMatch && unitMatch.matchScore > 0 && (
+                                <div className="absolute top-3 right-3 z-10">
+                                  <div className={cn(
+                                    "px-3 py-1 rounded-full text-xs font-black uppercase shadow-lg",
+                                    matchLevel === 'perfect' && "bg-green-600 text-white",
+                                    matchLevel === 'strong' && "bg-blue-600 text-white",
+                                    matchLevel === 'good' && "bg-yellow-600 text-white"
+                                  )}>
+                                    {unitMatch.matchScore}% Match
+                                  </div>
+                                </div>
+                              )}
 
-                          {/* Unit Details */}
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div
-                              className="flex items-center gap-1"
-                              data-testid={`text-beds-${unit.unitNumber}`}
-                            >
-                              <Bed className="h-4 w-4" />
-                              <span>{unit.bedrooms} BD</span>
-                            </div>
-                            <div
-                              className="flex items-center gap-1"
-                              data-testid={`text-baths-${unit.unitNumber}`}
-                            >
-                              <Bath className="h-4 w-4" />
-                              <span>{unit.bathrooms} BA</span>
-                            </div>
-                            <div
-                              className="flex items-center gap-1"
-                              data-testid={`text-sqft-${unit.unitNumber}`}
-                            >
-                              <Maximize2 className="h-4 w-4" />
-                              <span>
-                                {unit.squareFeet.toLocaleString()} SF
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Floor */}
-                          <div className="text-xs text-muted-foreground">
-                            Floor {unit.floor}
-                          </div>
-
-                          {/* Match Reasons - Prominent Display */}
-                          {unitMatch && unitMatch.matchReasons.length > 0 && (
-                            <div className={cn(
-                              "p-3 rounded-lg border-2",
-                              matchLevel === 'perfect' && "bg-green-50 border-green-300",
-                              matchLevel === 'strong' && "bg-blue-50 border-blue-300",
-                              matchLevel === 'good' && "bg-yellow-50 border-yellow-300"
-                            )}>
-                              <div className="text-xs font-bold uppercase mb-2 flex items-center gap-1">
-                                <Star className={cn(
-                                  "h-3 w-3",
-                                  matchLevel === 'perfect' && "text-green-600 fill-green-600",
-                                  matchLevel === 'strong' && "text-blue-600 fill-blue-600",
-                                  matchLevel === 'good' && "text-yellow-600 fill-yellow-600"
-                                )} />
-                                Why This Matches
+                              {/* Header: Unit Number + Status */}
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <div className="text-xs text-muted-foreground uppercase">
+                                    {unit.building}
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="text-xl font-black uppercase tracking-tight">
+                                      Unit {unit.unitNumber}
+                                    </h3>
+                                    {activeVisitId &&
+                                      viewedUnitIds.has(unit.id) && (
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-primary/10 text-primary border-primary"
+                                          data-testid={`badge-viewed-${unit.unitNumber}`}
+                                        >
+                                          <Eye className="h-3 w-3 mr-1" />
+                                          VIEWED
+                                        </Badge>
+                                      )}
+                                    {isToured && (
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-green-500/10 text-green-600 border-green-500"
+                                        data-testid={`badge-toured-${unit.unitNumber}`}
+                                      >
+                                        <CheckCircle className="h-3 w-3 mr-1 fill-green-600" />
+                                        TOURED
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <Badge
+                                  variant={getStatusBadgeVariant(unit.status)}
+                                  data-testid={`badge-status-${unit.unitNumber}`}
+                                  className="uppercase text-xs"
+                                >
+                                  {formatStatus(unit.status)}
+                                </Badge>
                               </div>
-                              <ul className="text-xs space-y-1">
-                                {unitMatch.matchReasons
-                                  .slice(0, 3)
-                                  .map((reason, idx) => (
-                                    <li
-                                      key={idx}
-                                      className="flex items-start gap-1"
-                                    >
-                                      <span className={cn(
-                                        "mt-0.5",
-                                        matchLevel === 'perfect' && "text-green-600",
-                                        matchLevel === 'strong' && "text-blue-600",
-                                        matchLevel === 'good' && "text-yellow-600"
-                                      )}>
-                                        ✓
-                                      </span>
-                                      <span className="text-muted-foreground">{reason}</span>
-                                    </li>
-                                  ))}
-                              </ul>
-                            </div>
-                          )}
 
-                          {/* Tour Tracking Checkbox - Enhanced with API connection */}
-                          {activeVisitId && (
-                            <div className={cn(
-                              "flex items-center space-x-2 mt-2 p-3 rounded-md border-2 transition-colors min-h-[48px]",
-                              isToured
-                                ? "bg-green-50 border-green-300 hover:bg-green-100"
-                                : "border-dashed border-muted-foreground/30 hover:bg-accent"
-                            )}>
-                              <Checkbox
-                                id={`tour-checkbox-${unit.id}`}
-                                checked={isToured}
-                                onCheckedChange={(checked) => {
-                                  handleTourTrackingChange(unit.id, checked as boolean);
-                                }}
-                                className="h-8 w-8 min-h-[32px] min-w-[32px] touch-manipulation data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                                data-testid={`checkbox-toured-${unit.unitNumber}`}
-                              />
-                              <label
-                                htmlFor={`tour-checkbox-${unit.id}`}
-                                className={cn(
-                                  "text-sm font-medium leading-none cursor-pointer py-3 flex-1 min-h-[44px] flex items-center",
-                                  isToured && "text-green-700"
-                                )}
+                              {/* Price */}
+                              <div
+                                className="text-2xl font-bold"
+                                data-testid={`text-price-${unit.unitNumber}`}
                               >
-                                {isToured ? "✓ Toured with Client" : "Mark as Toured"}
-                              </label>
+                                {formatPrice(unit.price)}
+                              </div>
+
+                              {/* Unit Details */}
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div
+                                  className="flex items-center gap-1"
+                                  data-testid={`text-beds-${unit.unitNumber}`}
+                                >
+                                  <Bed className="h-4 w-4" />
+                                  <span>{unit.bedrooms} BD</span>
+                                </div>
+                                <div
+                                  className="flex items-center gap-1"
+                                  data-testid={`text-baths-${unit.unitNumber}`}
+                                >
+                                  <Bath className="h-4 w-4" />
+                                  <span>{unit.bathrooms} BA</span>
+                                </div>
+                                <div
+                                  className="flex items-center gap-1"
+                                  data-testid={`text-sqft-${unit.unitNumber}`}
+                                >
+                                  <Maximize2 className="h-4 w-4" />
+                                  <span>
+                                    {unit.squareFeet.toLocaleString()} SF
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Floor */}
+                              <div className="text-xs text-muted-foreground">
+                                Floor {unit.floor}
+                              </div>
+
+                              {/* Match Reasons - Prominent Display */}
+                              {unitMatch && unitMatch.matchReasons.length > 0 && (
+                                <div className={cn(
+                                  "p-3 rounded-lg border-2",
+                                  matchLevel === 'perfect' && "bg-green-50 border-green-300",
+                                  matchLevel === 'strong' && "bg-blue-50 border-blue-300",
+                                  matchLevel === 'good' && "bg-yellow-50 border-yellow-300"
+                                )}>
+                                  <div className="text-xs font-bold uppercase mb-2 flex items-center gap-1">
+                                    <Star className={cn(
+                                      "h-3 w-3",
+                                      matchLevel === 'perfect' && "text-green-600 fill-green-600",
+                                      matchLevel === 'strong' && "text-blue-600 fill-blue-600",
+                                      matchLevel === 'good' && "text-yellow-600 fill-yellow-600"
+                                    )} />
+                                    Why This Matches
+                                  </div>
+                                  <ul className="text-xs space-y-1">
+                                    {unitMatch.matchReasons
+                                      .slice(0, 3)
+                                      .map((reason, idx) => (
+                                        <li
+                                          key={idx}
+                                          className="flex items-start gap-1"
+                                        >
+                                          <span className={cn(
+                                            "mt-0.5",
+                                            matchLevel === 'perfect' && "text-green-600",
+                                            matchLevel === 'strong' && "text-blue-600",
+                                            matchLevel === 'good' && "text-yellow-600"
+                                          )}>
+                                            ✓
+                                          </span>
+                                          <span className="text-muted-foreground">{reason}</span>
+                                        </li>
+                                      ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {/* Tour Tracking Checkbox - Enhanced with API connection */}
+                              {activeVisitId && (
+                                <div className={cn(
+                                  "flex items-center space-x-2 mt-2 p-3 rounded-md border-2 transition-colors min-h-[48px]",
+                                  isToured
+                                    ? "bg-green-50 border-green-300 hover:bg-green-100"
+                                    : "border-dashed border-muted-foreground/30 hover:bg-accent"
+                                )}>
+                                  <Checkbox
+                                    id={`tour-checkbox-${unit.id}`}
+                                    checked={isToured}
+                                    onCheckedChange={(checked) => {
+                                      handleTourTrackingChange(unit.id, checked as boolean);
+                                    }}
+                                    className="h-8 w-8 min-h-[32px] min-w-[32px] touch-manipulation data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                    data-testid={`checkbox-toured-${unit.unitNumber}`}
+                                  />
+                                  <label
+                                    htmlFor={`tour-checkbox-${unit.id}`}
+                                    className={cn(
+                                      "text-sm font-medium leading-none cursor-pointer py-3 flex-1 min-h-[44px] flex items-center",
+                                      isToured && "text-green-700"
+                                    )}
+                                  >
+                                    {isToured ? "✓ Toured with Client" : "Mark as Toured"}
+                                  </label>
+                                </div>
+                              )}
+
+                              {/* View Details Button */}
+                              <Button
+                                size="lg"
+                                className="w-full uppercase mt-3"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewDetails(unit);
+                                }}
+                                data-testid={`button-view-details-${unit.unitNumber}`}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </Button>
                             </div>
-                          )}
+                            ) : (
+                              <div className="flex items-center justify-center h-full min-h-[250px]">
+                                <div className="text-sm text-muted-foreground">Loading...</div>
+                              </div>
+                            )}
+                          </Card>
+                        );
+                      })}
+                    </div>
 
-                          {/* View Details Button */}
-                          <Button
-                            size="lg"
-                            className="w-full uppercase mt-3"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewDetails(unit);
-                            }}
-                            data-testid={`button-view-details-${unit.unitNumber}`}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </Button>
-                        </div>
-                        ) : (
-                          <div className="flex items-center justify-center h-full min-h-[250px]">
-                            <div className="text-sm text-muted-foreground">Loading...</div>
-                          </div>
-                        )}
-                      </Card>
-                    );
-                  })}
-                </div>
-
-                {units.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    No units found for this project
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* 3D Viewer Tab */}
-            <TabsContent value="3d-viewer" className="mt-0">
-              {currentProjectId ? (
+                    {units.length === 0 && (
+                      <div className="text-center py-12 text-muted-foreground">
+                        No units found for this project
+                      </div>
+                    )}
+                  </>
+                ) : (
                 <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
                   <div className="text-center space-y-3">
                       <Maximize2 className="h-16 w-16 mx-auto text-muted-foreground" />
@@ -1271,19 +1268,35 @@ export default function AgentViewer() {
                       </p>
                     </div>
                   </div>
-                ) : (
-                  <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
-                    <div className="text-center space-y-3">
-                      <Maximize2 className="h-16 w-16 mx-auto text-muted-foreground" />
-                      <p className="text-xl font-bold uppercase text-muted-foreground">
-                        3D Viewer</p>
-                      <p className="text-sm text-muted-foreground max-w-md">
-                        3D floor plan visualization will be displayed here. Toggle back to Unit Grid to see the unit cards.
-                      </p>
-                    </div>
-                  </div>
                 )}
               </TabsContent>
+
+              {/* 3D Viewer Tab */}
+              <TabsContent value="3d-viewer" className="mt-0">
+                {currentProjectId ? (
+                  <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
+                    <div className="text-center space-y-3">
+                        <Maximize2 className="h-16 w-16 mx-auto text-muted-foreground" />
+                        <p className="text-xl font-bold uppercase text-muted-foreground">
+                          3D Viewer</p>
+                        <p className="text-sm text-muted-foreground max-w-md">
+                          3D floor plan visualization will be displayed here. Toggle back to Unit Grid to see the unit cards.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
+                      <div className="text-center space-y-3">
+                        <Maximize2 className="h-16 w-16 mx-auto text-muted-foreground" />
+                        <p className="text-xl font-bold uppercase text-muted-foreground">
+                          3D Viewer</p>
+                        <p className="text-sm text-muted-foreground max-w-md">
+                          3D floor plan visualization will be displayed here. Toggle back to Unit Grid to see the unit cards.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
 
               <TabsContent value="active-deals" className="mt-0 space-y-4">
                 {/* Stats/Filter Header */}

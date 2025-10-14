@@ -1029,7 +1029,7 @@ export default function AgentViewer() {
                     const isVisible = visibleUnitIds.has(unit.id);
 
                     // Enhanced matching overlay - determine match level for styling
-                    const matchLevel = unitMatch 
+                    const matchLevel = unitMatch
                       ? unitMatch.matchScore >= 90 ? 'perfect'
                       : unitMatch.matchScore >= 70 ? 'strong'
                       : unitMatch.matchScore >= 50 ? 'good'
@@ -1201,8 +1201,8 @@ export default function AgentViewer() {
                           {activeVisitId && (
                             <div className={cn(
                               "flex items-center space-x-2 mt-2 p-3 rounded-md border-2 transition-colors",
-                              isToured 
-                                ? "bg-green-50 border-green-300 hover:bg-green-100" 
+                              isToured
+                                ? "bg-green-50 border-green-300 hover:bg-green-100"
                                 : "border-dashed border-muted-foreground/30 hover:bg-accent"
                             )}>
                               <Checkbox
@@ -1612,7 +1612,7 @@ export default function AgentViewer() {
               <div className="p-3 bg-primary/5 rounded-lg">
                 <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Budget Range</p>
                 <p className="text-sm font-bold">
-                  {activeLead.preferences.max_price 
+                  {activeLead.preferences.max_price
                     ? `Up to ${formatPrice(activeLead.preferences.max_price)}`
                     : 'Not specified'}
                 </p>
@@ -1621,7 +1621,7 @@ export default function AgentViewer() {
               <div className="p-3 bg-primary/5 rounded-lg">
                 <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Bedrooms</p>
                 <p className="text-sm font-bold">
-                  {activeLead.preferences.min_beds 
+                  {activeLead.preferences.min_beds
                     ? `${activeLead.preferences.min_beds}+ Bedrooms`
                     : 'Not specified'}
                 </p>
@@ -1630,7 +1630,7 @@ export default function AgentViewer() {
               <div className="p-3 bg-primary/5 rounded-lg">
                 <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Desired Views</p>
                 <p className="text-sm font-bold">
-                  {activeLead.preferences.desired_views?.length 
+                  {activeLead.preferences.desired_views?.length
                     ? activeLead.preferences.desired_views.join(', ')
                     : 'Not specified'}
                 </p>

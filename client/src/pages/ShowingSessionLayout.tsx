@@ -59,7 +59,7 @@ export default function ShowingSessionLayout() {
       setShowClientSelector(true);
       setLocation('/showing');
     }
-  }, [location, setLocation]);
+  }, [location]);
 
   // Fetch units for current project
   const { data: units = [], isLoading: unitsLoading, isError: unitsError } = useQuery<UnitWithDetails[]>({

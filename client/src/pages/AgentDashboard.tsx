@@ -219,7 +219,7 @@ export default function AgentDashboard() {
                 <CardContent className="space-y-3">
                   <Button
                     className="w-full uppercase font-black gap-2"
-                    onClick={handleGoToViewer}
+                    onClick={() => setLocation('/agent/viewer/new')}
                     data-testid="button-start-showing"
                   >
                     🎯 Start New Showing Session

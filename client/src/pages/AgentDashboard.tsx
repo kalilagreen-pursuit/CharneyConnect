@@ -80,8 +80,8 @@ export default function AgentDashboard() {
 
   const handleGoToViewer = () => {
     // Store agent context
-    agentContextStore.setAgent(AGENT_ID, AGENT_NAME.split(' ')[0] + ' ' + AGENT_NAME.split(' ')[1]);
-    // Navigate to new unified showing session layout
+    agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
+    // Navigate to new unified showing session layout to trigger client selector
     setLocation("/showing/new");
   };
 

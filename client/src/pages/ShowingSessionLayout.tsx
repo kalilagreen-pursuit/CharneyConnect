@@ -90,7 +90,7 @@ export default function ShowingSessionLayout() {
     }
   }, [sessionStatus, currentProjectId]);
   
-  // Fetch units for current project - now depends on session being properly loaded
+  // Fetch units for current project - depends only on currentProjectId state being populated
   const { data: units = [], isLoading: unitsLoading, isError: unitsError, error: unitsFetchError } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/agents", agentId, "units", currentProjectId],
     queryFn: async () => {
@@ -109,8 +109,8 @@ export default function ShowingSessionLayout() {
       console.log('[ShowingSession] Units fetched:', data.length);
       return data;
     },
-    // Only enable when we have both a session and a project ID
-    enabled: !!activeSessionId && !!currentProjectId && !!sessionStatus,
+    // Only enable when currentProjectId state is populated (avoids race condition with sessionStatus)
+    enabled: !!currentProjectId,
     retry: 2,
     retryDelay: 1000,
   });

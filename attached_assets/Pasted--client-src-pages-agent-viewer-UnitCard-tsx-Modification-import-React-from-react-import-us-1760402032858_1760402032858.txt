@@ -1,0 +1,69 @@
+// client/src/pages/agent/viewer/UnitCard.tsx (Modification)
+
+import React from 'react';
+import { useMarkUnitToured } from '@/lib/queryClient'; 
+// Import Checkbox and other UI components
+
+interface UnitCardProps {
+    unit: Unit & { matchScore?: number }; // Expect the matchScore field
+    sessionId: string | null;
+    isToured: boolean; // Prop to know if this unit has already been checked
+}
+
+// Utility function for the visual badge (Phase 6A)
+const getMatchBadge = (score: number) => {
+    if (score >= 80) return { text: "Excellent Match", color: "bg-green-500" };
+    if (score >= 60) return { text: "Good Match", color: "bg-blue-500" };
+    if (score >= 40) return { text: "Possible Match", color: "bg-yellow-500" };
+    return { text: "Low Match", color: "bg-gray-500" };
+};
+
+const UnitCard: React.FC<UnitCardProps> = ({ unit, sessionId, isToured }) => {
+    
+    const markTouredMutation = useMarkUnitToured(sessionId || ''); // Use empty string for disabled state
+    
+    // Handler for the checkbox
+    const handleCheckToured = (checked: boolean) => {
+        if (!sessionId || !checked) return; // Only log when checking/toured
+
+        markTouredMutation.mutate(unit.id);
+    };
+
+    const matchBadge = unit.matchScore ? getMatchBadge(unit.matchScore) : null;
+
+    return (
+        <div className="unit-card relative shadow-md rounded-lg overflow-hidden">
+            
+            {/* 1. Match Score Overlay (Preference Badges) */}
+            {matchBadge && (
+                <div className={`absolute top-2 left-2 z-10 px-3 py-1 text-xs font-semibold text-white rounded-full ${matchBadge.color}`}>
+                    {matchBadge.text} ({unit.matchScore}%)
+                </div>
+            )}
+
+            {/* 
+
+[Image of unit]
+ */}
+
+            <div className="p-4">
+                <h3 className="text-xl font-bold">{unit.name}</h3>
+                <p className="text-gray-600">${unit.price.toLocaleString()}</p>
+
+                {/* 2. Tour Checkbox (Real-time Tracking) */}
+                <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                    <label htmlFor={`tour-${unit.id}`} className="text-sm font-medium">Toured?</label>
+                    <input
+                        type="checkbox"
+                        id={`tour-${unit.id}`}
+                        checked={isToured}
+                        onChange={(e) => handleCheckToured(e.target.checked)}
+                        disabled={!sessionId || markTouredMutation.isPending}
+                        className="h-6 w-6 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" // Touch-friendly size (Phase 6)
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+export default UnitCard;

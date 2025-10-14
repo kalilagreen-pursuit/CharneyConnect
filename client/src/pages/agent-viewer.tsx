@@ -1028,6 +1028,21 @@ export default function AgentViewer() {
 
                     const isVisible = visibleUnitIds.has(unit.id);
 
+                    // Enhanced matching overlay - determine match level for styling
+                    const matchLevel = unitMatch 
+                      ? unitMatch.matchScore >= 90 ? 'perfect'
+                      : unitMatch.matchScore >= 70 ? 'strong'
+                      : unitMatch.matchScore >= 50 ? 'good'
+                      : 'none'
+                      : 'none';
+
+                    const matchOverlayClass = {
+                      perfect: 'border-l-8 border-l-green-600 bg-green-50/50',
+                      strong: 'border-l-8 border-l-blue-600 bg-blue-50/50',
+                      good: 'border-l-8 border-l-yellow-600 bg-yellow-50/50',
+                      none: ''
+                    }[matchLevel];
+
                     return (
                       <Card
                         key={unit.id}
@@ -1038,7 +1053,7 @@ export default function AgentViewer() {
                         className={cn(
                           "p-4 cursor-pointer transform transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] hover:border-indigo-600 relative",
                           selectedUnitId === unit.id && "ring-2 ring-primary",
-                          matchIndicator,
+                          matchOverlayClass,
                           highlightClass,
                           !isVisible && "min-h-[300px]" // Reserve space for non-visible cards
                         )}
@@ -1046,13 +1061,27 @@ export default function AgentViewer() {
                       >
                         {isVisible ? (
                         <div className="space-y-3">
+                          {/* Matching Score Overlay - Top Right Corner */}
+                          {unitMatch && unitMatch.matchScore > 0 && (
+                            <div className="absolute top-3 right-3 z-10">
+                              <div className={cn(
+                                "px-3 py-1 rounded-full text-xs font-black uppercase shadow-lg",
+                                matchLevel === 'perfect' && "bg-green-600 text-white",
+                                matchLevel === 'strong' && "bg-blue-600 text-white",
+                                matchLevel === 'good' && "bg-yellow-600 text-white"
+                              )}>
+                                {unitMatch.matchScore}% Match
+                              </div>
+                            </div>
+                          )}
+
                           {/* Header: Unit Number + Status */}
                           <div className="flex items-start justify-between gap-2">
                             <div>
                               <div className="text-xs text-muted-foreground uppercase">
                                 {unit.building}
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="text-xl font-black uppercase tracking-tight">
                                   Unit {unit.unitNumber}
                                 </h3>
@@ -1067,14 +1096,14 @@ export default function AgentViewer() {
                                       VIEWED
                                     </Badge>
                                   )}
-                                {matchBadge && (
+                                {isToured && (
                                   <Badge
-                                    variant={matchBadge.variant}
-                                    className="bg-green-500 text-white uppercase text-xs"
-                                    data-testid={`badge-match-${unit.unitNumber}`}
+                                    variant="outline"
+                                    className="bg-green-500/10 text-green-600 border-green-500"
+                                    data-testid={`badge-toured-${unit.unitNumber}`}
                                   >
-                                    <Star className="h-3 w-3 mr-1 fill-white" />
-                                    {matchBadge.label}
+                                    <CheckCircle className="h-3 w-3 mr-1 fill-green-600" />
+                                    TOURED
                                   </Badge>
                                 )}
                               </div>
@@ -1128,59 +1157,72 @@ export default function AgentViewer() {
                             Floor {unit.floor}
                           </div>
 
-                          {/* Tour Tracking Checkbox */}
-                          {activeVisitId && (
-                            <div className="flex items-center space-x-2 mt-2 p-3 rounded-md hover:bg-accent touch-manipulation">
-                              <Checkbox
-                                id={`tour-checkbox-${unit.id}`}
-                                checked={isToured}
-                                onCheckedChange={(checked) =>
-                                  handleTourTrackingChange(
-                                    unit.id,
-                                    checked as boolean,
-                                  )
-                                }
-                                className="h-6 w-6 min-h-[24px] min-w-[24px]"
-                              />
-                              <label
-                                htmlFor={`tour-checkbox-${unit.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer py-2"
-                              >
-                                Toured
-                              </label>
-                            </div>
-                          )}
-
-                          {/* Recommendation Badge for Strong Matches */}
-                          {simpleMatch?.isMatch && simpleMatch.score >= 3 && (
-                            <div className="absolute top-2 right-2">
-                              <span className="text-xs font-bold text-white bg-green-500 rounded-full px-2 py-1 shadow-md">
-                                RECOMMENDED
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Match Reasons */}
+                          {/* Match Reasons - Prominent Display */}
                           {unitMatch && unitMatch.matchReasons.length > 0 && (
-                            <div className="pt-2 border-t">
-                              <div className="text-xs font-semibold text-muted-foreground uppercase mb-1">
-                                Match Reasons ({unitMatch.matchScore}% match)
+                            <div className={cn(
+                              "p-3 rounded-lg border-2",
+                              matchLevel === 'perfect' && "bg-green-50 border-green-300",
+                              matchLevel === 'strong' && "bg-blue-50 border-blue-300",
+                              matchLevel === 'good' && "bg-yellow-50 border-yellow-300"
+                            )}>
+                              <div className="text-xs font-bold uppercase mb-2 flex items-center gap-1">
+                                <Star className={cn(
+                                  "h-3 w-3",
+                                  matchLevel === 'perfect' && "text-green-600 fill-green-600",
+                                  matchLevel === 'strong' && "text-blue-600 fill-blue-600",
+                                  matchLevel === 'good' && "text-yellow-600 fill-yellow-600"
+                                )} />
+                                Why This Matches
                               </div>
-                              <ul className="text-xs space-y-0.5">
+                              <ul className="text-xs space-y-1">
                                 {unitMatch.matchReasons
                                   .slice(0, 3)
                                   .map((reason, idx) => (
                                     <li
                                       key={idx}
-                                      className="text-muted-foreground flex items-center gap-1"
+                                      className="flex items-start gap-1"
                                     >
-                                      <span className="text-green-500">
+                                      <span className={cn(
+                                        "mt-0.5",
+                                        matchLevel === 'perfect' && "text-green-600",
+                                        matchLevel === 'strong' && "text-blue-600",
+                                        matchLevel === 'good' && "text-yellow-600"
+                                      )}>
                                         ✓
-                                      </span>{" "}
-                                      {reason}
+                                      </span>
+                                      <span className="text-muted-foreground">{reason}</span>
                                     </li>
                                   ))}
                               </ul>
+                            </div>
+                          )}
+
+                          {/* Tour Tracking Checkbox - Enhanced with API connection */}
+                          {activeVisitId && (
+                            <div className={cn(
+                              "flex items-center space-x-2 mt-2 p-3 rounded-md border-2 transition-colors",
+                              isToured 
+                                ? "bg-green-50 border-green-300 hover:bg-green-100" 
+                                : "border-dashed border-muted-foreground/30 hover:bg-accent"
+                            )}>
+                              <Checkbox
+                                id={`tour-checkbox-${unit.id}`}
+                                checked={isToured}
+                                onCheckedChange={(checked) => {
+                                  handleTourTrackingChange(unit.id, checked as boolean);
+                                }}
+                                className="h-6 w-6 min-h-[24px] min-w-[24px] data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                data-testid={`checkbox-toured-${unit.unitNumber}`}
+                              />
+                              <label
+                                htmlFor={`tour-checkbox-${unit.id}`}
+                                className={cn(
+                                  "text-sm font-medium leading-none cursor-pointer py-2 flex-1",
+                                  isToured && "text-green-700"
+                                )}
+                              >
+                                {isToured ? "✓ Toured with Client" : "Mark as Toured"}
+                              </label>
                             </div>
                           )}
 

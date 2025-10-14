@@ -201,7 +201,7 @@ export default function AgentDashboard() {
                   <CardContent className="py-12 text-center">
                     <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <p className="text-muted-foreground mb-4">No active clients found.</p>
-                    <Button onClick={handleGoToViewer} data-testid="button-start-new-session">
+                    <Button onClick={() => setLocation('/agent/viewer/new')} data-testid="button-start-new-session">
                       Start New Session
                     </Button>
                   </CardContent>
@@ -219,7 +219,7 @@ export default function AgentDashboard() {
                 <CardContent className="space-y-3">
                   <Button
                     className="w-full uppercase font-black gap-2"
-                    onClick={handleGoToViewer}
+                    onClick={() => setLocation('/agent/viewer/new')}
                     data-testid="button-start-showing"
                   >
                     🎯 Start Showing Session

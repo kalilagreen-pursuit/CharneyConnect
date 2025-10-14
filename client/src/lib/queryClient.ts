@@ -574,3 +574,75 @@ export const useSessionStatus = (sessionId: string | null) => {
     refetchInterval: 10000, // Refetch every 10 seconds to keep tracker updated
   });
 };
+
+// Type for toured unit response
+type TouredUnitResponse = {
+  id: string;
+  sessionId: string;
+  unitId: string;
+  unitNumber?: string;
+  viewedAt: string;
+  agentNotes?: string;
+  clientInterestLevel?: string;
+};
+
+// Mark a unit as toured
+const markUnitToured = async (sessionId: string, unitId: string): Promise<TouredUnitResponse> => {
+  const response = await apiRequest("POST", "/api/toured-units", {
+    sessionId,
+    unitId,
+  });
+  return response.json();
+};
+
+// Fetch list of toured units for a session
+const fetchTouredUnits = async (sessionId: string): Promise<TouredUnitResponse[]> => {
+  const response = await apiRequest(
+    "GET",
+    `/api/showing-sessions/${sessionId}/toured-units`,
+    undefined
+  );
+  return response.json();
+};
+
+// Hook to mark a unit as toured during a showing session
+export const useMarkUnitToured = (sessionId: string | null) => {
+  const queryClientInstance = queryClient;
+
+  return useMutation({
+    mutationFn: (unitId: string) => {
+      if (!sessionId) throw new Error("No active session");
+      return markUnitToured(sessionId, unitId);
+    },
+    onSuccess: () => {
+      if (sessionId) {
+        // Invalidate session status to update 'Units Toured' count in bottom tracker
+        queryClientInstance.invalidateQueries({
+          queryKey: ["/api/showing-sessions", sessionId],
+        });
+        // Invalidate toured units list for sidebar/context display
+        queryClientInstance.invalidateQueries({
+          queryKey: ["touredUnits", sessionId],
+        });
+      }
+      console.log("Unit marked as toured successfully");
+    },
+    onError: (error) => {
+      console.error("Failed to mark unit as toured:", error);
+    },
+  });
+};
+
+// Hook to fetch the current list of toured units for sidebar/context
+export const useTouredUnits = (sessionId: string | null) => {
+  return useQuery<TouredUnitResponse[]>({
+    queryKey: ["touredUnits", sessionId],
+    queryFn: () => {
+      if (!sessionId) throw new Error("No session ID provided");
+      return fetchTouredUnits(sessionId);
+    },
+    enabled: !!sessionId,
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 5000, // Refetch every 5 seconds during active session
+  });
+};

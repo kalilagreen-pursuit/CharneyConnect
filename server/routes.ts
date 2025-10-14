@@ -1173,8 +1173,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { agentId, projectId, status } = req.query;
 
+      console.log(`[API] GET /api/leads - Filters:`, { agentId, projectId, status });
+
       // NOTE: storage.getAllLeads() pulls from both 'leads' and 'threads' tables
       let leads = await storage.getAllLeads();
+      console.log(`[API] Total leads from database: ${leads.length}`);
 
       // 1. Filter by Agent ID (MUST be preserved, critical for the workflow)
       if (agentId) {
@@ -1188,34 +1191,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[API] Leads after status filter: ${leads.length}`);
       }
 
-      // 3. Filter by Project ID (robust array check for targetLocations)
+      // 3. Filter by Project ID (convert UUID to project name)
       if (projectId) {
-        // First, get the project name from the UUID
-        const project = await storage.getProjectById(projectId as string);
-        const projectName = project?.name;
-
-        if (projectName) {
-          leads = leads.filter((lead) => {
-            // Robust check: ensure targetLocations exists and is an array
-            if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
-              return lead.targetLocations.some(
-                (loc) => loc.toLowerCase() === projectName.toLowerCase(),
-              );
-            }
-            return false;
-          });
-          console.log(
-            `[API] Leads after projectId filter (${projectName}): ${leads.length}`,
-          );
-        } else {
-          console.warn(`[API] Project not found for ID: ${projectId}`);
+        try {
+          // Get the project name from the UUID
+          const project = await storage.getProjectById(projectId as string);
+          
+          if (project && project.name) {
+            const projectName = project.name;
+            console.log(`[API] Converting projectId ${projectId} to project name: ${projectName}`);
+            
+            leads = leads.filter((lead) => {
+              // Robust check: ensure targetLocations exists and is an array
+              if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
+                const hasMatch = lead.targetLocations.some(
+                  (loc) => loc.toLowerCase() === projectName.toLowerCase(),
+                );
+                if (hasMatch) {
+                  console.log(`[API] Lead ${lead.id} (${lead.name}) matches project ${projectName}`);
+                }
+                return hasMatch;
+              }
+              return false;
+            });
+            console.log(`[API] Leads after projectId filter (${projectName}): ${leads.length}`);
+          } else {
+            console.warn(`[API] Project not found for UUID: ${projectId}`);
+            // If project not found, return empty array to avoid showing wrong data
+            leads = [];
+          }
+        } catch (projectError) {
+          console.error(`[API] Error fetching project:`, projectError);
+          leads = [];
         }
       }
 
       // DEMO FAIL-SAFE: If no leads match filters, inject a mock qualified lead for agent-001
       if (leads.length === 0 && agentId === 'agent-001' && status === 'qualified') {
-        console.log(`[API] No leads found - injecting demo fail-safe lead for Sarah Chen`);
-        const project = projectId ? await storage.getProjectById(projectId as string) : null;
+        console.log(`[API] DEMO FAIL-SAFE ACTIVATED - No leads found, injecting demo lead for Sarah Chen`);
+        
+        let projectName = "THE JACKSON"; // Default
+        if (projectId) {
+          try {
+            const project = await storage.getProjectById(projectId as string);
+            if (project?.name) {
+              projectName = project.name;
+            }
+          } catch (err) {
+            console.warn(`[API] Could not get project name for demo lead, using default: ${projectName}`);
+          }
+        }
+        
         const demoLead = {
           id: "demo-lead-andrew",
           name: "Andrew K.",
@@ -1226,7 +1252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           agentId: "agent-001",
           targetPriceMin: "400000",
           targetPriceMax: "1500000",
-          targetLocations: project?.name ? [project.name] : ["THE JACKSON"],
+          targetLocations: [projectName],
           targetBedrooms: 2,
           targetBathrooms: 2,
           leadScore: 85,
@@ -1241,13 +1267,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedAt: new Date(),
         };
         leads = [demoLead];
-        console.log(`[API] Demo lead injected: Andrew K. (agent-001) for project: ${project?.name || 'THE JACKSON'}`);
+        console.log(`[API] Demo lead injected: Andrew K. for project: ${projectName}`);
       }
 
       console.log(`[API] Final leads returned: ${leads.length}`);
       res.json(leads);
     } catch (error) {
-      console.error("Error fetching leads:", error);
+      console.error("[API] Error fetching leads:", error);
       res.status(500).json({ error: "Failed to fetch leads" });
     }
   });

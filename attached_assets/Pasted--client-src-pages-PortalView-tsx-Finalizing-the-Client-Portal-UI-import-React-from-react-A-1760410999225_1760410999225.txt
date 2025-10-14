@@ -1,0 +1,56 @@
+// client/src/pages/PortalView.tsx (Finalizing the Client Portal UI)
+import React from 'react';
+// Assuming a hook to fetch the actual portal details by token exists
+// const { data: portalData, isLoading } = usePortalDetails(linkToken); 
+
+const PortalView: React.FC = ({ token }) => {
+    // Mock data based on the token for demonstration
+    const clientName = "Andrew K.";
+    const agentName = "Sarah Chen";
+    const touredUnits = [
+        { name: 'Unit 803', price: '$1,250,000' }, 
+        { name: 'Unit 12A', price: '$1,400,000' }
+    ];
+
+    return (
+        <div className="min-h-screen bg-gray-50 p-10">
+            <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-lg overflow-hidden">
+                
+                {/* Header (Branding) */}
+                <header className="bg-indigo-700 text-white p-6 text-center">
+                    <h1 className="text-3xl font-light">THE JACKSON RESIDENCES</h1>
+                    <p className="text-lg mt-1">Your Personalized Tour Summary</p>
+                </header>
+
+                <div className="p-8">
+                    <p className="text-xl mb-6">Hello, **{clientName}**.</p>
+                    <p className="text-gray-600 mb-8">
+                        Thank you for touring The Jackson with **{agentName}**. Below is a summary of the units we viewed today.
+                    </p>
+
+                    <h2 className="text-2xl font-semibold border-b pb-2 mb-4">Units Toured ({touredUnits.length})</h2>
+                    <ul className="space-y-4">
+                        {touredUnits.map((unit, index) => (
+                            <li key={index} className="flex justify-between items-center p-4 border rounded-lg bg-gray-50">
+                                <span className="font-medium text-lg text-indigo-800">{unit.name}</span>
+                                <span className="text-gray-700">{unit.price}</span>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <div className="mt-10 p-6 bg-yellow-50 border-l-4 border-yellow-500 rounded">
+                        <h3 className="font-bold text-lg mb-2">Next Steps</h3>
+                        <p className="text-sm">
+                            **{agentName}** will be in touch shortly to discuss these units further. This link is valid for 30 days.
+                        </p>
+                    </div>
+                </div>
+
+                <footer className="p-6 bg-gray-100 text-center text-sm text-gray-500">
+                    <p>Contact **{agentName}** directly at [Agent Email/Phone]</p>
+                </footer>
+            </div>
+        </div>
+    );
+};
+export default PortalView;

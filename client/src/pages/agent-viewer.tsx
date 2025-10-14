@@ -147,6 +147,9 @@ export default function AgentViewer() {
   const sessionId = activeVisitId; // Assuming activeVisitId can be used as sessionId
   const markTouredMutation = useMarkUnitToured(sessionId);
   const { data: touredUnits = [] } = useTouredUnits(sessionId);
+  
+  // Session status for real-time metrics in bottom tracker
+  const { data: sessionStatus } = useSessionStatus(sessionId);
 
   // Import the log unit view mutation
   const logUnitViewMutation = useLogUnitView(activeVisitId);
@@ -793,22 +796,34 @@ export default function AgentViewer() {
                     </h4>
                     {touredUnits.length > 0 ? (
                       <ul className="space-y-2 max-h-48 overflow-y-auto">
-                        {touredUnits.map((touredUnit) => (
-                          <li
-                            key={touredUnit.id}
-                            className="text-sm flex items-center gap-2 p-2 bg-muted/50 rounded"
-                            data-testid={`toured-unit-${touredUnit.unitId}`}
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                            <span className="font-medium">
-                              Unit {touredUnit.unitNumber || touredUnit.unitId.slice(0, 8)}
-                            </span>
-                          </li>
-                        ))}
+                        {touredUnits.map((touredUnit) => {
+                          // Find the matching unit to get the full details
+                          const matchingUnit = units.find(u => u.id === touredUnit.unitId);
+                          return (
+                            <li
+                              key={touredUnit.id}
+                              className="text-sm flex items-center gap-2 p-2 bg-muted/50 rounded hover:bg-muted transition-colors cursor-pointer"
+                              data-testid={`toured-unit-${touredUnit.unitId}`}
+                              onClick={() => handleUnitSelect(touredUnit.unitId)}
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium block">
+                                  Unit {touredUnit.unitNumber || matchingUnit?.unitNumber || touredUnit.unitId.slice(0, 8)}
+                                </span>
+                                {matchingUnit && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {matchingUnit.bedrooms}BD · {matchingUnit.bathrooms}BA
+                                  </span>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
                       </ul>
                     ) : (
                       <p className="text-xs text-muted-foreground">
-                        No units toured yet.
+                        No units toured yet. Check the box on unit cards to mark them as toured.
                       </p>
                     )}
                   </div>
@@ -1103,10 +1118,10 @@ export default function AgentViewer() {
                 </div>
 
                 {units.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    No units found for this project
-                  </div>
-                )}
+                    <div className="text-center py-12 text-muted-foreground">
+                      No units found for this project
+                    </div>
+                  )}
                 </div>
                 ) : (
                   <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
@@ -1121,6 +1136,7 @@ export default function AgentViewer() {
                     </div>
                   </div>
                 )}
+              </TabsContent>
               </TabsContent>
 
               <TabsContent value="active-deals" className="mt-0 space-y-4">
@@ -1476,34 +1492,53 @@ export default function AgentViewer() {
 
       {/* Footer - Session Tracker */}
       <div className="flex-shrink-0 border-t-4 border-primary bg-card p-4 shadow-xl">
-        <div className="flex items-center justify-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            Showing Session Active:{" "}
-            {activeVisitId ? (
-              <span className="font-bold text-primary">YES</span>
-            ) : (
-              <span className="font-medium">NO</span>
-            )}
-          </span>
-          {activeVisitId && (
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              Session:{" "}
+              {activeVisitId ? (
+                <span className="font-bold text-primary">ACTIVE</span>
+              ) : (
+                <span className="font-medium">INACTIVE</span>
+              )}
+            </span>
+          </div>
+          {activeVisitId && sessionStatus && (
             <>
               <span className="text-muted-foreground">|</span>
-              <span className="text-sm text-muted-foreground">
-                Started:{" "}
-                <span className="font-medium">
-                  {/* TODO: Format and display start time */}
-                  N/A
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  Started:{" "}
+                  <span className="font-medium">
+                    {new Date(sessionStatus.startTime).toLocaleTimeString([], { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </span>
                 </span>
-              </span>
+              </div>
               <span className="text-muted-foreground">|</span>
-              <span className="text-sm text-muted-foreground">
-                Duration:{" "}
-                <span className="font-medium">
-                  {/* TODO: Calculate and display duration */}
-                  00:00:00
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  Units Viewed:{" "}
+                  <span className="font-medium font-mono">
+                    {viewedUnits.length}
+                  </span>
                 </span>
-              </span>
+              </div>
+              <span className="text-muted-foreground">|</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-muted-foreground">
+                  Units Toured:{" "}
+                  <span className="font-medium font-mono text-green-600">
+                    {touredUnits.length}
+                  </span>
+                </span>
+              </div>
             </>
           )}
         </div>

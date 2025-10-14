@@ -219,10 +219,10 @@ export default function AgentDashboard() {
                 <CardContent className="space-y-3">
                   <Button
                     className="w-full uppercase font-black gap-2"
-                    onClick={() => setLocation('/agent/viewer/new')}
+                    onClick={handleGoToViewer}
                     data-testid="button-start-showing"
                   >
-                    🎯 Start Showing Session
+                    🎯 Start New Showing Session
                   </Button>
                   <Link href="/leads">
                     <Button

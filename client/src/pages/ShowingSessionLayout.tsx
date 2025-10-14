@@ -525,8 +525,8 @@ export default function ShowingSessionLayout() {
                       matchLevel === 'good' && "border-l-8 border-l-yellow-600 bg-yellow-50/50"
                     )}
                     onClick={() => {
-                      setSelectedUnitId(unit.id);
-                      setShowUnitSheet(true);
+                      // Navigate to 3D viewer with unit ID
+                      setLocation(`/agent/viewer?unit=${unit.id}&projectId=${currentProjectId}`);
                     }}
                   >
                     {unitMatch && unitMatch.matchScore > 0 && (
@@ -623,6 +623,18 @@ export default function ShowingSessionLayout() {
                           </label>
                         </div>
                       )}
+
+                      <Button
+                        size="lg"
+                        className="w-full uppercase mt-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLocation(`/agent/viewer?unit=${unit.id}&projectId=${currentProjectId}`);
+                        }}
+                      >
+                        <Maximize2 className="h-4 w-4 mr-2" />
+                        View in 3D
+                      </Button>
                     </div>
                   </Card>
                 );

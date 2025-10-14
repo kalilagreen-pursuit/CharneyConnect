@@ -355,10 +355,9 @@ export default function AgentViewer() {
     return activeDeals.filter((deal) => deal.dealStage === stageFilter);
   }, [activeDeals, stageFilter]);
 
-  // Handle unit selection from card
+  // Handle unit selection from card - navigate to 3D viewer
   const handleUnitSelect = (unitId: string) => {
     console.log(`[${actionId}] Unit selected: ${unitId}`);
-    setSelectedUnitId(unitId);
 
     // Log the unit view if there's an active showing session
     if (activeVisitId && !viewedUnitIds.has(unitId)) {
@@ -375,10 +374,8 @@ export default function AgentViewer() {
       });
     }
 
-    // Switch to 3D viewer tab if coming from Active Deals
-    if (activeTab === "active-deals") {
-      setActiveTab("all-units");
-    }
+    // Navigate to 3D viewer with unit ID
+    setLocation(`/agent/viewer?unit=${unitId}&projectId=${currentProjectId}`);
   };
 
   // Handle unit tour tracking checkbox change - immediate response for better UX

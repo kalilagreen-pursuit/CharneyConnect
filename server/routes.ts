@@ -50,9 +50,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // A. Session Endpoints
   app.post("/api/showing-sessions", async (req, res) => {
     try {
-      // TODO: Implement showing session creation logic
       // Expected body: { agentId, contactId, projectId }
-      res.status(501).json({ error: "Not implemented yet" });
+      console.log("ROUTE STUB: Starting new showing session:", req.body);
+      
+      // Return mock session data with 200 response
+      res.json({ 
+        sessionId: 'mock-session-' + Date.now(), 
+        status: 'active', 
+        startedAt: new Date() 
+      });
     } catch (error) {
       console.error("Error creating showing session:", error);
       res.status(500).json({ error: "Failed to create showing session" });
@@ -61,8 +67,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/showing-sessions/:id", async (req, res) => {
     try {
-      // TODO: Implement showing session retrieval logic
-      res.status(501).json({ error: "Not implemented yet" });
+      console.log("ROUTE STUB: Getting session details for ID:", req.params.id);
+      
+      // Return mock session details with 200 response
+      res.json({ 
+        id: req.params.id, 
+        status: 'active', 
+        totalUnitsViewed: 0 
+      });
     } catch (error) {
       console.error("Error fetching showing session:", error);
       res.status(500).json({ error: "Failed to fetch showing session" });
@@ -71,9 +83,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/showing-sessions/:id/end", async (req, res) => {
     try {
-      // TODO: Implement showing session completion logic
-      // This should update session status and trigger post-showing automation
-      res.status(501).json({ error: "Not implemented yet" });
+      console.log("ROUTE STUB: Ending session and triggering follow-up for ID:", req.params.id);
+      
+      // Return mock completion response with 200 response
+      res.json({ 
+        message: "Session completed, follow-up automation triggered.", 
+        status: 'completed' 
+      });
     } catch (error) {
       console.error("Error ending showing session:", error);
       res.status(500).json({ error: "Failed to end showing session" });

@@ -11,7 +11,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { contacts, deals, activities, leads, agents } from "@shared/schema";
+import { contacts, deals, activities, leads, agents, portalLinks } from "@shared/schema";
 
 // FIXED: Add the missing import for Google Generative AI
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -139,6 +139,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching agent dashboard:", error);
       res.status(500).json({ error: "Failed to fetch dashboard data" });
+    }
+  });
+
+  // D. Portal Link Generation
+  app.post("/api/portal-links", async (req, res) => {
+    try {
+      const portalLinkSchema = z.object({
+        sessionId: z.string().uuid(),
+        contactId: z.string().uuid(),
+        touredUnitIds: z.array(z.string().uuid()).optional(),
+      });
+
+      const validation = portalLinkSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: "Invalid request data",
+          details: validation.error.message 
+        });
+      }
+
+      const { sessionId, contactId, touredUnitIds = [] } = validation.data;
+
+      // Generate a unique, short token (8 characters)
+      const linkToken = Math.random().toString(36).substring(2, 10);
+      
+      // Set expiration date (30 days from now)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+
+      // Create the portal link record in database
+      const newPortalLink = await db.insert(portalLinks).values({
+        sessionId,
+        contactId,
+        linkToken,
+        touredUnitIds,
+        sentAt: new Date(),
+        expiresAt,
+      }).returning();
+
+      console.log(`Portal link generated with token: ${linkToken} for session: ${sessionId}`);
+
+      res.json({ 
+        linkToken: newPortalLink[0].linkToken,
+        portalUrl: `/portal/${newPortalLink[0].linkToken}`,
+        expiresAt: newPortalLink[0].expiresAt,
+      });
+    } catch (error) {
+      console.error("Error generating portal link:", error);
+      res.status(500).json({ error: "Failed to generate portal link" });
     }
   });
 

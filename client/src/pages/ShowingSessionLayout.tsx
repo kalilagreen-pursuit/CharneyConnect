@@ -628,7 +628,7 @@ export default function ShowingSessionLayout() {
                         size="lg"
                         className="w-full uppercase mt-2"
                         onClick={(e) => {
-                          e.stopPropagation();
+                          e.stopPropagation(); // Prevent card onClick from also firing
                           setLocation(`/agent/viewer?unit=${unit.id}&projectId=${currentProjectId}`);
                         }}
                       >

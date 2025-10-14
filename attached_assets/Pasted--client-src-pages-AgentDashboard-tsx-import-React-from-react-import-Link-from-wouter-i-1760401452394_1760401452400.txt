@@ -1,0 +1,102 @@
+// client/src/pages/AgentDashboard.tsx
+
+import React from 'react';
+import { Link } from 'wouter'; 
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useDashboardMetrics, useActiveClients } from '@/lib/queryClient'; 
+
+const SARAH_CHEN_ID = "agent-001"; 
+
+const AgentDashboard: React.FC = () => {
+    const { data: metrics, isLoading: isMetricsLoading } = useDashboardMetrics(SARAH_CHEN_ID);
+    const { data: activeClients, isLoading: isClientsLoading } = useActiveClients(SARAH_CHEN_ID);
+    
+    // Fallback/placeholder data for initial loading
+    const activeSessions = metrics?.activeSessions ?? 0;
+    const pendingFollowUps = metrics?.pendingFollowUps ?? 0;
+
+    return (
+        <div className="p-8 space-y-8 max-w-7xl mx-auto">
+            
+            {/* Header: Agent Profile */}
+            <header className="flex justify-between items-center border-b pb-4">
+                <div>
+                    <h1 className="text-3xl font-bold">Welcome, Sarah Chen!</h1>
+                    <p className="text-gray-500">SENIOR SALES AGENT | The Jackson</p>
+                </div>
+                {/*  */}
+            </header>
+
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-3 gap-6">
+                <MetricCard title="Active Sessions" value={isMetricsLoading ? '...' : activeSessions} color="text-indigo-600" />
+                <MetricCard title="Pending Follow-ups" value={isMetricsLoading ? '...' : pendingFollowUps} color="text-red-600" />
+                <MetricCard title="Projects Qualified" value={isMetricsLoading ? '...' : metrics?.projectCount ?? 0} color="text-green-600" />
+            </div>
+
+            {/* Main Content: Active Clients & Quick Actions */}
+            <div className="grid grid-cols-3 gap-8">
+                
+                {/* 1. Active Clients Grid */}
+                <div className="col-span-2 space-y-4">
+                    <h2 className="text-2xl font-semibold">Active Clients</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                        {isClientsLoading && <p className="col-span-2">Loading clients...</p>}
+                        
+                        {/* Render active clients */}
+                        {activeClients?.map(client => (
+                            <Card key={client.id} className="shadow-md hover:shadow-lg transition-shadow">
+                                <CardHeader>
+                                    <CardTitle>{client.name}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm">Lead Score: {client.leadScore}</p>
+                                    <p className="text-sm">Next Follow-up: {client.nextFollowUpDate}</p>
+                                    {/* Link directly to the unified viewer page */}
+                                    <Link href={`/agent/viewer/${client.id}`}>
+                                        <Button size="sm" className="w-full mt-3">Start/Resume Session</Button>
+                                    </Link>
+                                </CardContent>
+                            </Card>
+                        ))}
+                        
+                        {/* Fallback for no clients */}
+                        {!isClientsLoading && activeClients?.length === 0 && (
+                            <p className="col-span-2 text-gray-500">No active clients found. Start a new session!</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* 2. Quick Actions Card */}
+                <Card className="shadow-lg bg-white">
+                    <CardHeader>
+                        <CardTitle>Quick Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {/* Link to start a new session (the unified viewer) */}
+                        <Link href="/agent/viewer/new">
+                            <Button className="w-full">🎯 Start New Showing Session</Button>
+                        </Link>
+                        {/* Link to follow-up tasks */}
+                        <Link href="/tasks">
+                            <Button variant="outline" className="w-full">📧 View Follow-up Tasks ({pendingFollowUps})</Button>
+                        </Link>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+};
+
+// Simple Metric Card Component (Define this alongside or in a utility file)
+const MetricCard = ({ title, value, color }) => (
+    <Card className="text-center shadow-lg">
+        <CardContent className="p-4">
+            <p className={`text-5xl font-extrabold ${color}`}>{value}</p>
+            <CardTitle className="mt-2 text-md font-medium">{title}</CardTitle>
+        </CardContent>
+    </Card>
+);
+
+export default AgentDashboard;

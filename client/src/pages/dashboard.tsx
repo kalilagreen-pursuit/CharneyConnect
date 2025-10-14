@@ -13,43 +13,43 @@ import FloorplanViewer3D from "@/components/FloorplanViewer3D";
 import { QuickProspectWorkflow } from "@/components/quick-prospect-workflow";
 
 const statusConfig: Record<UnitStatus, { label: string; color: string; bgColor: string }> = {
-  available: { 
-    label: "Available", 
-    color: "text-white dark:text-white", 
-    bgColor: "bg-status-available border-status-available" 
+  available: {
+    label: "Available",
+    color: "text-white dark:text-white",
+    bgColor: "bg-status-available border-status-available"
   },
-  on_hold: { 
-    label: "On Hold", 
-    color: "text-gray-900 dark:text-gray-900", 
-    bgColor: "bg-status-on-hold border-status-on-hold" 
+  on_hold: {
+    label: "On Hold",
+    color: "text-gray-900 dark:text-gray-900",
+    bgColor: "bg-status-on-hold border-status-on-hold"
   },
-  contract: { 
-    label: "Contract", 
-    color: "text-white dark:text-white", 
-    bgColor: "bg-status-contract border-status-contract" 
+  contract: {
+    label: "Contract",
+    color: "text-white dark:text-white",
+    bgColor: "bg-status-contract border-status-contract"
   },
-  sold: { 
-    label: "Sold", 
-    color: "text-white dark:text-white", 
-    bgColor: "bg-status-sold border-status-sold" 
+  sold: {
+    label: "Sold",
+    color: "text-white dark:text-white",
+    bgColor: "bg-status-sold border-status-sold"
   },
 };
 
-function UnitCard({ unit, onViewIn3D, onAddProspect }: { 
-  unit: UnitWithDetails; 
+function UnitCard({ unit, onViewIn3D, onAddProspect }: {
+  unit: UnitWithDetails;
   onViewIn3D?: (projectId: string, unitNumber: string) => void;
   onAddProspect?: (unitId: string, unitNumber: string) => void;
 }) {
   const config = statusConfig[unit.status as UnitStatus] || statusConfig.available;
-  
+
   return (
-    <Card 
-      className="hover-elevate active-elevate-2 transition-all duration-200" 
+    <Card
+      className="hover-elevate active-elevate-2 transition-all duration-200"
       data-testid={`card-unit-${unit.id}`}
     >
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-        <CardTitle 
-          className="text-lg font-black uppercase tracking-tight" 
+        <CardTitle
+          className="text-lg font-black uppercase tracking-tight"
           data-testid={`text-unit-number-${unit.id}`}
         >
           Unit {unit.unitNumber}
@@ -62,7 +62,7 @@ function UnitCard({ unit, onViewIn3D, onAddProspect }: {
         <div className="text-2xl font-mono font-bold" data-testid={`text-price-${unit.id}`}>
           {formatCurrency(typeof unit.price === 'string' ? parseFloat(unit.price) : unit.price)}
         </div>
-        
+
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Building2 className="h-4 w-4" />
@@ -76,7 +76,7 @@ function UnitCard({ unit, onViewIn3D, onAddProspect }: {
             </span>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-3 gap-2 pt-2 border-t">
           <div className="flex flex-col items-center gap-1">
             <Bed className="h-4 w-4 text-muted-foreground" />
@@ -153,21 +153,21 @@ function UnitCardSkeleton() {
   );
 }
 
-function StatCard({ 
-  title, 
-  value, 
-  trend, 
-  onClick, 
-  isActive 
-}: { 
-  title: string; 
-  value: string | number; 
+function StatCard({
+  title,
+  value,
+  trend,
+  onClick,
+  isActive
+}: {
+  title: string;
+  value: string | number;
   trend?: string;
   onClick?: () => void;
   isActive?: boolean;
 }) {
   return (
-    <Card 
+    <Card
       data-testid={`card-stat-${title.toLowerCase().replace(/\s+/g, '-')}`}
       className={`transition-all ${onClick ? 'cursor-pointer hover-elevate active-elevate-2' : ''} ${isActive ? 'ring-2 ring-primary' : ''}`}
       onClick={onClick}
@@ -192,28 +192,43 @@ function StatCard({
 }
 
 export default function Dashboard() {
-  const { data: units, isLoading } = useQuery<UnitWithDetails[]>({
-    queryKey: ["/api/units"],
-  });
-
-  const [showFilters, setShowFilters] = useState(false);
-  const [activeStatusFilter, setActiveStatusFilter] = useState<string | null>(null);
-  const [selectedBuilding, setSelectedBuilding] = useState<string>("all");
-  const [selectedBedrooms, setSelectedBedrooms] = useState<string>("all");
-  const [selectedBathrooms, setSelectedBathrooms] = useState<string>("all");
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000000]);
-  const [sqftRange, setSqftRange] = useState<[number, number]>([0, 3000]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedUnitNumber, setSelectedUnitNumber] = useState<string | null>(null);
   const [show3DViewer, setShow3DViewer] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [selectedUnitNumber, setSelectedUnitNumber] = useState<string>('');
   const [showQuickProspect, setShowQuickProspect] = useState(false);
-  const [selectedUnitForProspect, setSelectedUnitForProspect] = useState<{ unitId: string; unitNumber: string } | null>(null);
+  const [selectedUnitForProspect, setSelectedUnitForProspect] = useState<{
+    unitId: string;
+    unitNumber: string;
+  } | null>(null);
   const [prospectMatchedUnits, setProspectMatchedUnits] = useState<UnitWithDetails[]>([]);
   const [currentProspectContext, setCurrentProspectContext] = useState<{
     leadId: string;
     contactId: string;
     prospectName: string;
   } | null>(null);
+
+  // Filter states
+  const [activeStatusFilter, setActiveStatusFilter] = useState<string | null>(null); // Changed from statusFilter
+  const [selectedBuilding, setSelectedBuilding] = useState<string>("all"); // Added
+  const [selectedBedrooms, setSelectedBedrooms] = useState<string>("all"); // Changed from bedroomFilter
+  const [selectedBathrooms, setSelectedBathrooms] = useState<string>("all"); // Added
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000000]);
+  const [sqftRange, setSqftRange] = useState<[number, number]>([0, 3000]); // Added
+
+  const { data: units, isLoading } = useQuery<UnitWithDetails[]>({
+    queryKey: ["/api/units", selectedProjectId],
+    queryFn: async () => {
+      const url = new URL('/api/units', window.location.origin);
+      if (selectedProjectId) {
+        url.searchParams.set('projectId', selectedProjectId);
+      }
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error(`Failed to fetch units: ${response.statusText}`);
+      }
+      return response.json();
+    },
+  });
 
   const { buildings, bedroomOptions, bathroomOptions, minPrice, maxPrice, minSqft, maxSqft } = useMemo(() => {
     if (!units) return {
@@ -229,7 +244,7 @@ export default function Dashboard() {
     const buildingSet = new Set(units.map(u => u.building));
     const bedroomSet = new Set(units.map(u => u.bedrooms));
     const bathroomSet = new Set(units.map(u => u.bathrooms));
-    
+
     return {
       buildings: Array.from(buildingSet).sort(),
       bedroomOptions: Array.from(bedroomSet).sort((a, b) => a - b),
@@ -247,7 +262,7 @@ export default function Dashboard() {
     return units.filter(unit => {
       // Status filter (quick filter from stat cards)
       if (activeStatusFilter && unit.status !== activeStatusFilter) return false;
-      
+
       // Advanced filters
       if (selectedBuilding !== "all" && unit.building !== selectedBuilding) return false;
       if (selectedBedrooms !== "all" && unit.bedrooms !== parseInt(selectedBedrooms)) return false;
@@ -268,8 +283,8 @@ export default function Dashboard() {
   } : null;
 
   const hasActiveFilters = activeStatusFilter !== null ||
-    selectedBuilding !== "all" || 
-    selectedBedrooms !== "all" || 
+    selectedBuilding !== "all" ||
+    selectedBedrooms !== "all" ||
     selectedBathrooms !== "all" ||
     priceRange[0] !== minPrice ||
     priceRange[1] !== maxPrice ||
@@ -291,12 +306,12 @@ export default function Dashboard() {
   };
 
   const handleProspectCreated = (result: { leadId: string; contactId: string; prospectName: string; matchedUnits: any[] }) => {
-    console.log('[Dashboard] Prospect created with matched units', { 
-      leadId: result.leadId, 
+    console.log('[Dashboard] Prospect created with matched units', {
+      leadId: result.leadId,
       contactId: result.contactId,
-      matchedCount: result.matchedUnits.length 
+      matchedCount: result.matchedUnits.length
     });
-    
+
     if (result.matchedUnits.length > 0) {
       // Store matched units and prospect context
       setProspectMatchedUnits(result.matchedUnits);
@@ -305,14 +320,14 @@ export default function Dashboard() {
         contactId: result.contactId,
         prospectName: result.prospectName,
       });
-      
+
       // Open 3D viewer with first match
       const firstUnit = result.matchedUnits[0];
       setSelectedProjectId(firstUnit.project?.id || '');
       setSelectedUnitNumber(firstUnit.unitNumber);
       setShow3DViewer(true);
     }
-    
+
     // Close the prospect form and clear selected unit
     setShowQuickProspect(false);
     setSelectedUnitForProspect(null);
@@ -392,32 +407,32 @@ export default function Dashboard() {
               </>
             ) : stats ? (
               <>
-                <StatCard 
-                  title="Total Units" 
+                <StatCard
+                  title="Total Units"
                   value={stats.total}
                   onClick={() => setActiveStatusFilter(null)}
                   isActive={activeStatusFilter === null}
                 />
-                <StatCard 
-                  title="Available" 
+                <StatCard
+                  title="Available"
                   value={stats.available}
                   onClick={() => handleStatusFilterClick("available")}
                   isActive={activeStatusFilter === "available"}
                 />
-                <StatCard 
-                  title="On Hold" 
+                <StatCard
+                  title="On Hold"
                   value={stats.onHold}
                   onClick={() => handleStatusFilterClick("on_hold")}
                   isActive={activeStatusFilter === "on_hold"}
                 />
-                <StatCard 
-                  title="Contract" 
+                <StatCard
+                  title="Contract"
                   value={stats.contract}
                   onClick={() => handleStatusFilterClick("contract")}
                   isActive={activeStatusFilter === "contract"}
                 />
-                <StatCard 
-                  title="Sold" 
+                <StatCard
+                  title="Sold"
                   value={stats.sold}
                   onClick={() => handleStatusFilterClick("sold")}
                   isActive={activeStatusFilter === "sold"}
@@ -581,7 +596,7 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
-            
+
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {[...Array(8)].map((_, i) => (
@@ -591,9 +606,9 @@ export default function Dashboard() {
             ) : filteredUnits && filteredUnits.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-testid="grid-units">
                 {filteredUnits.map((unit) => (
-                  <UnitCard 
-                    key={unit.id} 
-                    unit={unit} 
+                  <UnitCard
+                    key={unit.id}
+                    unit={unit}
                     onViewIn3D={(projectId, unitNumber) => {
                       setSelectedProjectId(projectId);
                       setSelectedUnitNumber(unitNumber);
@@ -611,7 +626,7 @@ export default function Dashboard() {
                     {hasActiveFilters ? 'No Units Match Your Filters' : 'No Units Available'}
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    {hasActiveFilters 
+                    {hasActiveFilters
                       ? 'Try adjusting your filter criteria to see more results.'
                       : 'There are currently no units in the system. Units will appear here once they are added to the inventory.'
                     }

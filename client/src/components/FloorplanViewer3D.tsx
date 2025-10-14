@@ -191,7 +191,14 @@ export default function FloorplanViewer3D({
 
   const fetchAndUpdateUnitColors = async (projectId: string) => {
     try {
-      const response = await fetch("/api/units");
+      const url = new URL('/api/units', window.location.origin);
+      url.searchParams.set('projectId', projectId);
+      url.searchParams.set('status', 'available');
+      
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error(`Failed to fetch units: ${response.statusText}`);
+      }
       const units = await response.json();
 
       const hasMatchedUnits = matchedUnitNumbers.length > 0;
@@ -266,7 +273,13 @@ export default function FloorplanViewer3D({
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/units");
+      const url = new URL('/api/units', window.location.origin);
+      url.searchParams.set('projectId', currentProject.id);
+      
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        throw new Error(`Failed to fetch units: ${response.statusText}`);
+      }
       const units = await response.json();
 
       const unit = units.find(

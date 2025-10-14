@@ -45,18 +45,32 @@ export function TasksPanel({ leadId }: TasksPanelProps) {
     },
   });
 
-  const getPriorityColor = (priority: string) => {
+  function getPriorityColor(priority: string): string {
     switch (priority?.toLowerCase()) {
       case "high":
-        return "bg-destructive/10 text-destructive border-destructive/20";
+        return "text-primary"; // Charney Red for high priority
       case "medium":
-        return "bg-accent/10 text-accent-foreground border-accent/20";
+        return "text-status-on-hold"; // Charney Amber for medium
       case "low":
-        return "bg-secondary/10 text-secondary-foreground border-secondary/20";
+        return "text-muted-foreground";
       default:
-        return "bg-muted text-muted-foreground";
+        return "text-muted-foreground";
     }
   };
+
+  function getPriorityBadgeVariant(priority: string): "default" | "secondary" | "outline" {
+    switch (priority) {
+      case "high":
+        return "default";
+      case "medium":
+        return "secondary";
+      case "low":
+        return "outline";
+      default:
+        return "outline";
+    }
+  };
+
 
   const handleCompleteTask = (taskId: string, currentStatus: string) => {
     if (currentStatus !== "completed") {

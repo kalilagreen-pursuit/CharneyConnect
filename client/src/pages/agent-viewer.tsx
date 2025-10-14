@@ -219,19 +219,19 @@ export default function AgentViewer() {
       enabled: !!activeLeadId,
       queryFn: async () => {
         if (!activeLeadId) return null;
-        
+
         // Check cache first
         const cached = preferenceCache.get(activeLeadId);
         if (cached) {
           console.log(`[preference-cache] Using cached preferences for lead ${activeLeadId}`);
           return cached;
         }
-        
+
         // Fetch from API if not cached
         const response = await fetch(`/api/leads/${activeLeadId}`);
         if (!response.ok) return null;
         const data = await response.json();
-        
+
         // Store in cache
         preferenceCache.set(activeLeadId, data);
         return data;
@@ -1469,6 +1469,41 @@ export default function AgentViewer() {
                 </TabsContent>
               </Tabs>
             </div>
+          </div>
+        </div>
+
+        {/* 3. Footer - Session Tracker */}
+        <div className="flex-shrink-0 border-t-4 border-primary bg-card p-4 shadow-xl">
+          <div className="flex items-center justify-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              Showing Session Active:{" "}
+              {activeVisitId ? (
+                <span className="font-bold text-primary">YES</span>
+              ) : (
+                <span className="font-medium">NO</span>
+              )}
+            </span>
+            {activeVisitId && (
+              <>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-sm text-muted-foreground">
+                  Started:{" "}
+                  <span className="font-medium">
+                    {/* TODO: Format and display start time */}
+                    N/A
+                  </span>
+                </span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-sm text-muted-foreground">
+                  Duration:{" "}
+                  <span className="font-medium">
+                    {/* TODO: Calculate and display duration */}
+                    00:00:00
+                  </span>
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>

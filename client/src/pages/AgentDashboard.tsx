@@ -68,7 +68,8 @@ export default function AgentDashboard() {
   const handleGoToViewer = () => {
     // Store agent context
     agentContextStore.setAgent(AGENT_ID, AGENT_NAME.split(' ')[0] + ' ' + AGENT_NAME.split(' ')[1]);
-    setLocation("/agent/viewer");
+    // Navigate to project selection (required before showing session)
+    setLocation("/agent/project-select");
   };
 
   return (

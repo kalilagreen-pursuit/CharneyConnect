@@ -131,9 +131,9 @@ export function getMatchedUnitsWithScores(
  * Get visual indicator class based on match score
  */
 export function getMatchIndicatorClass(matchScore: number): string {
-  if (matchScore >= 90) return "border-l-4 border-l-green-500 bg-green-50/50";
-  if (matchScore >= 70) return "border-l-4 border-l-blue-500 bg-blue-50/50";
-  if (matchScore >= 50) return "border-l-4 border-l-amber-500 bg-amber-50/50";
+  if (matchScore >= 90) return "border-l-4 border-l-status-available bg-status-available/10";
+  if (matchScore >= 70) return "border-l-4 border-l-status-contract bg-status-contract/10";
+  if (matchScore >= 50) return "border-l-4 border-l-status-on-hold bg-status-on-hold/10";
   return "";
 }
 

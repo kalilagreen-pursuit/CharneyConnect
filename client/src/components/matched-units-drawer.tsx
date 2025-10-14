@@ -46,6 +46,20 @@ export function MatchedUnitsDrawer({
     }
   };
 
+  function getMatchBadgeVariant(score: number): "default" | "secondary" | "outline" {
+    if (score >= 90) return "default";
+    if (score >= 70) return "default";
+    if (score >= 50) return "secondary";
+    return "outline";
+  }
+
+  function getMatchScoreColor(score: number): string {
+    if (score >= 90) return "text-status-available"; // Charney Green
+    if (score >= 70) return "text-status-contract"; // Charney Blue
+    if (score >= 50) return "text-status-on-hold"; // Charney Amber
+    return "text-muted-foreground";
+  }
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",

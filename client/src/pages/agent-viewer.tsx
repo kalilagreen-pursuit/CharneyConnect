@@ -1308,15 +1308,28 @@ export default function AgentViewer() {
                     )}
                   </>
                 ) : (
-                <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
-                  <div className="text-center space-y-3">
-                      <Maximize2 className="h-16 w-16 mx-auto text-muted-foreground" />
-                      <p className="text-xl font-bold uppercase text-muted-foreground">
-                        3D Viewer</p>
-                      <p className="text-sm text-muted-foreground max-w-md">
-                        3D floor plan visualization will be displayed here. Toggle back to Unit Grid to see the unit cards.
-                      </p>
-                    </div>
+                  <div className="h-[calc(100vh-300px)] min-h-[500px]">
+                    <FloorplanViewer3D
+                      projectId={currentProjectId}
+                      unitNumber={unitIdFromUrl ? units.find(u => u.id === unitIdFromUrl)?.unitNumber : undefined}
+                      embedded={true}
+                      onUnitClick={handleUnitSelect}
+                      matchedUnitNumbers={Array.from(unitMatches.keys())
+                        .filter(id => {
+                          const match = unitMatches.get(id);
+                          return match && match.matchScore >= 50;
+                        })
+                        .map(id => units.find(u => u.id === id)?.unitNumber)
+                        .filter((num): num is string => num !== undefined)}
+                      prospectContext={activeLead && activeLeadId ? {
+                        leadId: activeLeadId,
+                        contactId: activeLeadId,
+                        prospectName: `${activeLead.firstName} ${activeLead.lastName}`
+                      } : undefined}
+                      activeVisitId={activeVisitId}
+                      viewedUnitIds={viewedUnitIds}
+                      vizMode={isGalleryMode ? 'GALLERY' : 'LIVE'}
+                    />
                   </div>
                 )}
               </TabsContent>

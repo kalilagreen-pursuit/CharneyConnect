@@ -462,7 +462,9 @@ export const showingSessions = pgTable("showing_sessions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export type ShowingSession = typeof showingSessions.$inferSelect;
+export type ShowingSession = typeof showingSessions.$inferSelect & {
+  startTime?: Date;
+};
 export const insertShowingSessionSchema = createInsertSchema(showingSessions)
   .omit({ id: true, createdAt: true })
   .extend({

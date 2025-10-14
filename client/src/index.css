@@ -37,7 +37,7 @@
 
   --sidebar-primary-foreground: 0 0% 100%;
 
-  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent: 33 35% 90%;
 
   --sidebar-accent-foreground: 0 0% 0%;
 
@@ -87,10 +87,10 @@
   --font-sans: 'Franklin Gothic', 'Arial Narrow', Arial, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: 'Courier New', Menlo, monospace;
-  
+
   /* Charney Border Radius - Smaller per brand */
   --radius: .25rem; /* 4px per Charney design system */
-  
+
   /* Charney Spacing */
   --spacing-xs: 8px;
   --spacing-sm: 16px;
@@ -98,7 +98,7 @@
   --spacing-lg: 40px;
   --spacing-xl: 60px;
   --spacing-2xl: 80px;
-  
+
   --shadow-2xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.03);
   --shadow-xs: 0px 1px 3px 0px rgba(0, 0, 0, 0.05);
   --shadow-sm: 0px 2px 4px 0px rgba(0, 0, 0, 0.04);
@@ -107,7 +107,7 @@
   --shadow-lg: 0px 8px 24px 0px rgba(0, 0, 0, 0.12);
   --shadow-xl: 0px 16px 32px 0px rgba(0, 0, 0, 0.10);
   --shadow-2xl: 0px 24px 48px 0px rgba(0, 0, 0, 0.12);
-  
+
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
@@ -255,29 +255,22 @@
   * {
     @apply border-border;
   }
-
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply bg-background text-foreground;
   }
-  
-  /* Charney Brand Typography */
-  h1, h2, h3 {
-    @apply uppercase font-black tracking-tight;
+
+  /* Touch optimization */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
-  
-  h1 {
-    @apply text-4xl md:text-6xl;
-    letter-spacing: -1.5px;
-  }
-  
-  h2 {
-    @apply text-3xl md:text-5xl;
-    letter-spacing: -1px;
-  }
-  
-  h3 {
-    @apply text-2xl md:text-3xl;
-    letter-spacing: -0.5px;
+
+  /* Ensure minimum touch targets on mobile */
+  @media (pointer: coarse) {
+    button, a, input[type="checkbox"], input[type="radio"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
   }
 }
 
@@ -286,15 +279,15 @@
   .accent-bar {
     @apply w-full h-1.5 bg-primary;
   }
-  
+
   .text-charney-red {
     @apply text-primary;
   }
-  
+
   .bg-charney-red {
     @apply bg-primary;
   }
-  
+
   .bg-charney-cream {
     @apply bg-background;
   }

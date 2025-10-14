@@ -234,22 +234,22 @@ export function StartShowingDialog({
 
               <div className="flex gap-2 pt-2">
                 <Button 
-                  variant="outline" 
-                  onClick={() => setIsCreating(false)} 
-                  disabled={createMutation.isPending}
-                  className="flex-1"
-                  data-testid="button-back-to-search"
-                >
-                  ← Back to Search
-                </Button>
-                <Button 
-                  onClick={handleCreateSubmit} 
-                  disabled={!newLeadData.firstName || !newLeadData.lastName || createMutation.isPending}
-                  className="flex-1 uppercase font-black min-h-[48px]"
-                  data-testid="button-save-and-start"
-                >
-                  {createMutation.isPending ? 'SAVING...' : 'SAVE & START'}
-                </Button>
+                    variant="outline" 
+                    onClick={() => setIsCreating(false)} 
+                    disabled={createMutation.isPending}
+                    className="flex-1 min-h-[48px] touch-manipulation"
+                    data-testid="button-back-to-search"
+                  >
+                    ← Back to Search
+                  </Button>
+                  <Button 
+                    onClick={handleCreateSubmit} 
+                    disabled={!newLeadData.firstName || !newLeadData.lastName || createMutation.isPending}
+                    className="flex-1 uppercase font-black min-h-[48px] touch-manipulation"
+                    data-testid="button-save-and-start"
+                  >
+                    {createMutation.isPending ? 'SAVING...' : 'SAVE & START'}
+                  </Button>
               </div>
             </div>
           )}

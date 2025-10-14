@@ -213,7 +213,7 @@ export default function AgentViewer() {
   if (unitsError) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
-        <div className="text-center space-y-4 p-6">
+        <div className="text-center space-y-4 p-6 max-w-md">
           <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
           <p className="text-lg font-bold uppercase text-destructive">
             Failed to Load Units
@@ -221,8 +221,20 @@ export default function AgentViewer() {
           <p className="text-sm text-muted-foreground">
             {unitsError.message || "An error occurred while loading unit data"}
           </p>
-          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", currentProjectId] })} size="lg" className="min-h-[44px]">
-            Retry
+          <Button 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", currentProjectId] })} 
+            size="lg" 
+            className="min-h-[48px] w-full touch-manipulation"
+          >
+            Retry Loading Units
+          </Button>
+          <Button 
+            onClick={handleBack} 
+            variant="outline" 
+            size="lg" 
+            className="min-h-[48px] w-full touch-manipulation"
+          >
+            Return to Project Select
           </Button>
         </div>
       </div>
@@ -721,7 +733,7 @@ export default function AgentViewer() {
               <p className="text-sm text-muted-foreground">Loading Client...</p>
             )}
 
-            {activeLead ? (
+            {!isLeadLoading && activeLead && (
               <>
                 <p
                   className="font-bold text-primary text-xl mb-1"
@@ -829,13 +841,21 @@ export default function AgentViewer() {
                   </div>
                 )}
               </>
-            ) : (
-              !isLeadLoading && (
-                <p className="text-sm text-destructive">
-                  No active client selected.
+            ) : !isLeadLoading ? (
+              <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                <p className="text-sm text-destructive font-medium">
+                  Error loading client details
                 </p>
-              )
-            )}
+                <Button 
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/leads", activeLeadId] })}
+                  size="sm"
+                  variant="outline"
+                  className="mt-2 w-full min-h-[40px]"
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : null}
           </>
         ) : (
           <div className="space-y-4">
@@ -1039,7 +1059,7 @@ export default function AgentViewer() {
 
                           {/* Tour Tracking Checkbox */}
                           {activeVisitId && (
-                            <div className="flex items-center space-x-2 mt-2 p-2 rounded-md hover:bg-accent">
+                            <div className="flex items-center space-x-2 mt-2 p-3 rounded-md hover:bg-accent touch-manipulation">
                               <Checkbox
                                 id={`tour-checkbox-${unit.id}`}
                                 checked={isToured}
@@ -1049,11 +1069,11 @@ export default function AgentViewer() {
                                     checked as boolean,
                                   )
                                 }
-                                className="h-5 w-5"
+                                className="h-6 w-6 min-h-[24px] min-w-[24px]"
                               />
                               <label
                                 htmlFor={`tour-checkbox-${unit.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer py-2"
                               >
                                 Toured
                               </label>

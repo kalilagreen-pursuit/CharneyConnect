@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users, Calendar, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { agentContextStore } from "@/lib/localStores";
-import { useDashboardMetrics, useActiveClients } from "@/lib/queryClient";
+import { useDashboardMetrics, useActiveClients, queryClient } from "@/lib/queryClient";
 import type { Lead, UnitWithDetails } from "@shared/schema";
 import { useMemo } from "react";
 
@@ -32,10 +32,10 @@ export default function AgentDashboard() {
   const [, setLocation] = useLocation();
 
   // Fetch dashboard metrics
-  const { data: metrics, isLoading: isMetricsLoading } = useDashboardMetrics(AGENT_ID);
+  const { data: metrics, isLoading: isMetricsLoading, isError: isMetricsError } = useDashboardMetrics(AGENT_ID);
 
   // Fetch active clients (qualified leads) for an agent
-  const { data: activeClients = [], isLoading: isClientsLoading } = useActiveClients(AGENT_ID);
+  const { data: activeClients = [], isLoading: isClientsLoading, isError: isClientsError } = useActiveClients(AGENT_ID);
 
   // Format active clients with computed fields
   const formattedClients = useMemo(() => {
@@ -104,23 +104,37 @@ export default function AgentDashboard() {
       <div className="p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <MetricCard
-              title="Active Sessions"
-              value={isMetricsLoading ? '...' : activeSessions}
-              color="text-primary"
-            />
-            <MetricCard
-              title="Pending Follow-ups"
-              value={isMetricsLoading ? '...' : pendingFollowUps}
-              color="text-destructive"
-            />
-            <MetricCard
-              title="Projects Qualified"
-              value={isMetricsLoading ? '...' : projectCount}
-              color="text-green-600"
-            />
-          </div>
+          {isMetricsError ? (
+            <Card className="p-8 text-center">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+              <p className="text-lg font-bold text-destructive mb-2">Failed to Load Metrics</p>
+              <p className="text-sm text-muted-foreground mb-4">Unable to fetch dashboard data</p>
+              <Button 
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", AGENT_ID, "dashboard"] })}
+                className="min-h-[48px]"
+              >
+                Retry
+              </Button>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <MetricCard
+                title="Active Sessions"
+                value={isMetricsLoading ? '...' : activeSessions}
+                color="text-primary"
+              />
+              <MetricCard
+                title="Pending Follow-ups"
+                value={isMetricsLoading ? '...' : pendingFollowUps}
+                color="text-destructive"
+              />
+              <MetricCard
+                title="Projects Qualified"
+                value={isMetricsLoading ? '...' : projectCount}
+                color="text-green-600"
+              />
+            </div>
+          )}
 
           {/* Main Content: Active Clients & Quick Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -133,7 +147,21 @@ export default function AgentDashboard() {
                 <p className="text-muted-foreground" data-testid="loading-clients">Loading clients...</p>
               )}
 
-              {!isClientsLoading && formattedClients.length > 0 && (
+              {isClientsError && (
+                <Card className="shadow-lg p-8 text-center" data-testid="card-clients-error">
+                  <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+                  <p className="text-destructive font-bold mb-2">Failed to Load Active Clients</p>
+                  <p className="text-sm text-muted-foreground mb-4">There was an error fetching your client list</p>
+                  <Button 
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", AGENT_ID, "active-clients"] })}
+                    className="min-h-[48px]"
+                  >
+                    Retry Loading Clients
+                  </Button>
+                </Card>
+              )}
+
+              {!isClientsLoading && !isClientsError && formattedClients.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {formattedClients.map(client => (
                     <Card
@@ -168,7 +196,7 @@ export default function AgentDashboard() {
                 </div>
               )}
 
-              {!isClientsLoading && formattedClients.length === 0 && (
+              {!isClientsLoading && !isClientsError && formattedClients.length === 0 && (
                 <Card className="shadow-lg" data-testid="card-no-clients">
                   <CardContent className="py-12 text-center">
                     <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />

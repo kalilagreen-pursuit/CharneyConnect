@@ -37,14 +37,20 @@ const PortalView: React.FC = () => {
   const params = useParams();
   const linkToken = params?.token;
 
-  const { data: portalData, isLoading, error } = useQuery<PortalData>({
+  const { data: portalData, isLoading, error, refetch } = useQuery<PortalData>({
     queryKey: ['/api/portals', linkToken],
     queryFn: async () => {
       const response = await fetch(`/api/portals/${linkToken}`);
-      if (!response.ok) throw new Error('Failed to fetch portal data');
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Portal not found');
+        }
+        throw new Error('Failed to fetch portal data');
+      }
       return response.json();
     },
     enabled: !!linkToken,
+    retry: 1,
   });
 
   const formatPrice = (price: string | number): string => {
@@ -78,14 +84,25 @@ const PortalView: React.FC = () => {
     );
   }
 
-  if (error || !portalData) {
+  if (error || (!isLoading && !portalData)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="max-w-md p-8 text-center">
-          <h2 className="text-2xl font-bold text-destructive mb-4">Portal Not Found</h2>
+        <Card className="max-w-md p-8 text-center space-y-4">
+          <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+          <h2 className="text-2xl font-bold text-destructive">Portal Not Found</h2>
           <p className="text-muted-foreground">
-            This portal link may have expired or is invalid. Please contact your agent for a new link.
+            {error ? (error as Error).message : 'This portal link may have expired or is invalid.'}
           </p>
+          <p className="text-sm text-muted-foreground">
+            Please contact your agent for a new link.
+          </p>
+          <Button 
+            onClick={() => refetch()} 
+            className="w-full min-h-[48px] touch-manipulation"
+            variant="outline"
+          >
+            Try Again
+          </Button>
         </Card>
       </div>
     );

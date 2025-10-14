@@ -10,8 +10,20 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
-import { contacts, deals, activities, leads, agents, portalLinks, showingSessions, touredUnits, units, tasks, floorPlans, projects } from "@shared/schema";
+import { eq, and, sql, desc, asc } from "drizzle-orm";
+import {
+  units,
+  floorPlans,
+  projects,
+  agents,
+  showingSessions,
+  touredUnits,
+  contacts,
+  leads,
+  activities,
+  tasks,
+} from "@shared/schema";
+import { PIPELINE_STAGES, ALL_STAGES, CONFIRMED_STAGES, QUALIFIED_STAGES } from "../shared/pipeline-stages";
 
 // FIXED: Add the missing import for Google Generative AI
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -58,9 +70,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validation = sessionSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Invalid request data",
-          details: validation.error.message 
+          details: validation.error.message
         });
       }
 
@@ -89,9 +101,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Showing session created: ${newSession.id} for agent ${agentId} with lead ${lead.name}`);
 
-      res.json({ 
-        sessionId: newSession.id, 
-        status: newSession.status, 
+      res.json({
+        sessionId: newSession.id,
+        status: newSession.status,
         startedAt: newSession.startedAt,
         contactName: lead.name
       });
@@ -125,9 +137,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         duration = Math.floor((Date.now() - session.startedAt.getTime()) / 60000);
       }
 
-      res.json({ 
-        id: session.id, 
-        status: session.status, 
+      res.json({
+        id: session.id,
+        status: session.status,
         totalUnitsViewed: Number(touredUnitsCount[0]?.count || 0),
         startedAt: session.startedAt,
         completedAt: session.completedAt,
@@ -195,8 +207,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Session ${sessionId} completed - Duration: ${duration}min, Units viewed: ${totalViewed}`);
 
-      res.json({ 
-        message: "Session completed, follow-up automation triggered.", 
+      res.json({
+        message: "Session completed, follow-up automation triggered.",
         status: 'completed',
         totalUnitsViewed: totalViewed,
         duration,
@@ -294,9 +306,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validation = touredUnitSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Invalid request data",
-          details: validation.error.message 
+          details: validation.error.message
         });
       }
 
@@ -379,14 +391,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
         wss.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) { 
+          if (client.readyState === WebSocket.OPEN) {
             client.send(message);
           }
         });
       }
 
-      res.json({ 
-        message: "Unit view logged successfully.", 
+      res.json({
+        message: "Unit view logged successfully.",
         viewedAt: newTouredUnit.viewedAt,
         id: newTouredUnit.id
       });
@@ -437,7 +449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         floor: row.unit.floor,
       }));
 
-      res.json(touredUnitsData); 
+      res.json(touredUnitsData);
     } catch (error) {
       console.error("Error fetching toured units:", error);
       res.status(500).json({ error: "Failed to fetch toured units" });
@@ -500,9 +512,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectCount: projectsWithLeads.length
       });
 
-      res.json({ 
-        activeSessions: Number(activeSessions[0]?.count || 0), 
-        pendingFollowUps: Number(pendingFollowUps[0]?.count || 0), 
+      res.json({
+        activeSessions: Number(activeSessions[0]?.count || 0),
+        pendingFollowUps: Number(pendingFollowUps[0]?.count || 0),
         projectCount: projectsWithLeads.length,
         recentActivity: recentActivity.map(activity => ({
           type: activity.type,
@@ -527,9 +539,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validation = portalLinkSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Invalid request data",
-          details: validation.error.message 
+          details: validation.error.message
         });
       }
 
@@ -554,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Portal link generated with token: ${linkToken} for session: ${sessionId}`);
 
-      res.json({ 
+      res.json({
         linkToken: newPortalLink[0].linkToken,
         portalUrl: `/portal/${newPortalLink[0].linkToken}`,
         expiresAt: newPortalLink[0].expiresAt,
@@ -576,9 +588,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validation = portalLinkSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Invalid request data",
-          details: validation.error.message 
+          details: validation.error.message
         });
       }
 
@@ -603,7 +615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Portal link generated with token: ${linkToken} for session: ${sessionId}`);
 
-      res.json({ 
+      res.json({
         linkToken: newPortalLink[0].linkToken,
         portalUrl: `/portal/${newPortalLink[0].linkToken}`,
         expiresAt: newPortalLink[0].expiresAt,
@@ -776,6 +788,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching active clients:", error);
       res.status(500).json({ error: "Failed to fetch active clients" });
+    }
+  });
+
+  // NEW ENDPOINT: Get pipeline stage configurations
+  app.get("/api/pipeline-stages", async (req, res) => {
+    try {
+      res.json({
+        allStages: ALL_STAGES,
+        confirmedStages: CONFIRMED_STAGES,
+        qualifiedStages: QUALIFIED_STAGES,
+        stageMap: PIPELINE_STAGES
+      });
+    } catch (error) {
+      console.error("Error fetching pipeline stages:", error);
+      res.status(500).json({ error: "Failed to fetch pipeline stages" });
     }
   });
 
@@ -1740,7 +1767,7 @@ PRIORITY WORKFLOW - Next Best Action (NBA):
 
 CORE CAPABILITIES:
 - Property details and unit specifications
-- Objection handling and closing techniques  
+- Objection handling and closing techniques
 - Buyer qualification and matching strategies
 - Market intelligence and competitive positioning
 

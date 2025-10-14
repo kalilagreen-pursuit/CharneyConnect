@@ -93,6 +93,77 @@ export default function AgentViewer() {
   const [visibleUnitIds, setVisibleUnitIds] = useState<Set<string>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
 
+  // Get agentId from the context store, with a fallback for the demo
+  const agentId = agentContextStore.getAgentId() || "agent-001";
+
+  // Showing session state
+  const [activeVisitId, setActiveVisitId] = useState<string | null>(null);
+  const [showStartShowingDialog, setShowStartShowingDialog] = useState(false);
+  const [selectedLeadForShowing, setSelectedLeadForShowing] = useState<
+    string | null
+  >(null);
+
+  // View mode toggle state (Grid vs 3D)
+  const [viewMode, setViewMode] = useState<'grid' | '3d'>('grid');
+
+  // Visualization mode state (LIVE 3D vs PRE-CONSTRUCTION GALLERY)
+  const [isGalleryMode, setIsGalleryMode] = useState(false);
+
+  // NEW: Fetch the agent's data using useQuery
+  const { data: agentData, isLoading: isLoadingAgent } = useQuery<Agent>({
+    queryKey: ["/api/agents", agentId],
+    queryFn: async () => {
+      const response = await fetch(`/api/agents/${agentId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch agent data");
+      }
+      return response.json();
+    },
+    enabled: !!agentId, // Only run the query if we have an agentId
+  });
+
+  // Fetch units specific to this agent and project
+  const [currentProjectId, setCurrentProjectId] = useState(
+    () => agentContextStore.getProjectId() || PROJECTS[0].id,
+  );
+  
+  const { data: units = [], isLoading, error: unitsError } = useQuery<UnitWithDetails[]>({
+    queryKey: ["/api/agents", agentId, "units", currentProjectId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/agents/${agentId}/units?projectId=${currentProjectId}`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch agent units");
+      return response.json();
+    },
+    enabled: !!agentId && !!currentProjectId,
+    retry: 2,
+  });
+
+  // Fetch showing itinerary (viewed units in current session)
+  const { data: viewedUnits = [] } = useShowingItinerary(activeVisitId);
+
+  // Tour tracking hooks for showing session
+  const sessionId = activeVisitId; // Assuming activeVisitId can be used as sessionId
+  const markTouredMutation = useMarkUnitToured(sessionId);
+  const { data: touredUnits = [] } = useTouredUnits(sessionId);
+
+  // Import the log unit view mutation
+  const logUnitViewMutation = useLogUnitView(activeVisitId);
+
+  // Computed values
+  const agentName = agentData?.name || "Loading Agent...";
+  const agentRole = agentData?.role || "...";
+  const currentProject =
+    PROJECTS.find((p) => p.id === currentProjectId) || PROJECTS[0];
+  const projectName = currentProject.name;
+  const projectId = currentProjectId;
+
+  // Create a Set for quick lookup
+  const viewedUnitIds = useMemo(() => {
+    return new Set(viewedUnits.map((vu) => vu.unitId));
+  }, [viewedUnits]);
+
   // Setup intersection observer for lazy loading
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
@@ -131,68 +202,9 @@ export default function AgentViewer() {
     []
   );
 
-  // Get agentId from the context store, with a fallback for the demo
-  const agentId = agentContextStore.getAgentId() || "agent-001";
-
-  // Showing session state
-  const [activeVisitId, setActiveVisitId] = useState<string | null>(null);
-  const [showStartShowingDialog, setShowStartShowingDialog] = useState(false);
-  const [selectedLeadForShowing, setSelectedLeadForShowing] = useState<
-    string | null
-  >(null);
-
-  // Visualization mode state (LIVE 3D vs PRE-CONSTRUCTION GALLERY)
-  const [isGalleryMode, setIsGalleryMode] = useState(false);
-
-  // Fetch showing itinerary (viewed units in current session)
-  const { data: viewedUnits = [] } = useShowingItinerary(activeVisitId);
-
-  // Create a Set for quick lookup
-  const viewedUnitIds = useMemo(() => {
-    return new Set(viewedUnits.map((vu) => vu.unitId));
-  }, [viewedUnits]);
-
-  // NEW: Fetch the agent's data using useQuery
-  const { data: agentData, isLoading: isLoadingAgent } = useQuery<Agent>({
-    queryKey: ["/api/agents", agentId],
-    queryFn: async () => {
-      const response = await fetch(`/api/agents/${agentId}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch agent data");
-      }
-      return response.json();
-    },
-    enabled: !!agentId, // Only run the query if we have an agentId
-  });
-
-  // AFTER (REPLACE WITH THIS):
-  const agentName = agentData?.name || "Loading Agent...";
-  const agentRole = agentData?.role || "...";
-  const [currentProjectId, setCurrentProjectId] = useState(
-    () => agentContextStore.getProjectId() || PROJECTS[0].id,
-  );
-  const currentProject =
-    PROJECTS.find((p) => p.id === currentProjectId) || PROJECTS[0];
-  const projectName = currentProject.name;
-  const projectId = currentProjectId;
-
   console.log(
     `[${actionId}] Agent Viewer initialized - Agent: ${agentName} (${agentId}), Project: ${projectName}`,
   );
-
-  // Fetch units specific to this agent and project
-  const { data: units = [], isLoading, error: unitsError } = useQuery<UnitWithDetails[]>({
-    queryKey: ["/api/agents", agentId, "units", currentProjectId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/agents/${agentId}/units?projectId=${currentProjectId}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch agent units");
-      return response.json();
-    },
-    enabled: !!agentId && !!currentProjectId,
-    retry: 2,
-  });
 
   // Show error state if units failed to load
   if (unitsError) {
@@ -322,14 +334,6 @@ export default function AgentViewer() {
     if (stageFilter === "all") return activeDeals;
     return activeDeals.filter((deal) => deal.dealStage === stageFilter);
   }, [activeDeals, stageFilter]);
-
-  // Import the log unit view mutation
-  const logUnitViewMutation = useLogUnitView(activeVisitId);
-
-  // Tour tracking hooks for showing session
-  const sessionId = activeVisitId; // Assuming activeVisitId can be used as sessionId
-  const markTouredMutation = useMarkUnitToured(sessionId);
-  const { data: touredUnits = [] } = useTouredUnits(sessionId);
 
   // Handle unit selection from card
   const handleUnitSelect = (unitId: string) => {
@@ -871,6 +875,29 @@ export default function AgentViewer() {
               </TabsList>
 
               <TabsContent value="all-units" className="mt-0">
+                {/* View Mode Toggle */}
+                <div className="flex justify-end mb-4 gap-2">
+                  <Button 
+                    variant={viewMode === 'grid' ? 'default' : 'outline'} 
+                    onClick={() => setViewMode('grid')}
+                    size="sm"
+                    className="uppercase font-bold"
+                  >
+                    <LayoutGrid className="h-4 w-4 mr-2" />
+                    Unit Grid
+                  </Button>
+                  <Button 
+                    variant={viewMode === '3d' ? 'default' : 'outline'} 
+                    onClick={() => setViewMode('3d')}
+                    size="sm"
+                    className="uppercase font-bold"
+                  >
+                    <Maximize2 className="h-4 w-4 mr-2" />
+                    3D Viewer
+                  </Button>
+                </div>
+
+                {viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {units.map((unit) => {
                     const unitMatch = unitMatches.get(unit.id);
@@ -1078,6 +1105,20 @@ export default function AgentViewer() {
                 {units.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     No units found for this project
+                  </div>
+                )}
+                </div>
+                ) : (
+                  <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
+                    <div className="text-center space-y-3">
+                      <Maximize2 className="h-16 w-16 mx-auto text-muted-foreground" />
+                      <p className="text-xl font-bold uppercase text-muted-foreground">
+                        3D Viewer
+                      </p>
+                      <p className="text-sm text-muted-foreground max-w-md">
+                        3D floor plan visualization will be displayed here. Toggle back to Unit Grid to see the unit cards.
+                      </p>
+                    </div>
                   </div>
                 )}
               </TabsContent>

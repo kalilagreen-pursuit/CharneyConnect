@@ -7,7 +7,6 @@ import {
   useEndShowing,
   useShowingItinerary,
   useLogUnitView,
-  useLeadsForShowing,
   useMarkUnitToured,
   useTouredUnits,
   useGeneratePortal, // Import useGeneratePortal
@@ -42,6 +41,7 @@ import {
   CheckCircle,
   Star,
   Search,
+  Menu, // Import Menu icon
 } from "lucide-react";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
 import { LeadQualificationSheet } from "@/components/lead-qualification-sheet";
@@ -83,6 +83,9 @@ export default function AgentViewer() {
   const endShowingMutation = useEndShowing();
   const generatePortalMutation = useGeneratePortal(); // Added mutation
   const endSessionMutation = useEndSession(); // Added mutation
+
+  // State for sidebar visibility
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Get agentId from the context store, with a fallback for the demo
   const agentId = agentContextStore.getAgentId() || "agent-001";
@@ -554,7 +557,24 @@ export default function AgentViewer() {
   return (
     <div className="flex h-screen overflow-hidden">
       {/* 1. Left Sidebar - Client Context */}
-      <div className="w-80 bg-card border-r p-6 flex-shrink-0 overflow-y-auto">
+      <aside
+        className={cn(
+          "w-80 bg-card border-r p-6 flex-shrink-0 overflow-y-auto transition-transform duration-300 ease-in-out",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        )}
+        style={{ maxWidth: isSidebarOpen ? "320px" : "0px", minWidth: isSidebarOpen ? "320px" : "0px" }}
+      >
+        <button
+          onClick={() => setIsSidebarOpen(false)}
+          className={cn(
+            "absolute top-1/2 right-2 transform -translate-y-1/2 z-50 p-1 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200",
+            !isSidebarOpen && "hidden md:block",
+          )}
+          aria-label="Close sidebar"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+
         <h3 className="text-xl font-black uppercase mb-1">
           Agent: {agentName}
         </h3>
@@ -694,7 +714,7 @@ export default function AgentViewer() {
             </div>
           </div>
         )}
-      </div>
+      </aside>
 
       {/* 2. Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -703,6 +723,14 @@ export default function AgentViewer() {
           <div className="px-6 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden"
+                  onClick={() => setIsSidebarOpen(true)}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -959,7 +987,7 @@ export default function AgentViewer() {
 
                             {/* Tour Tracking Checkbox */}
                             {activeVisitId && (
-                              <div className="flex items-center space-x-2 mt-2">
+                              <div className="flex items-center space-x-2 mt-2 p-2 rounded-md hover:bg-accent">
                                 <Checkbox
                                   id={`tour-checkbox-${unit.id}`}
                                   checked={isToured}
@@ -969,6 +997,7 @@ export default function AgentViewer() {
                                       checked as boolean,
                                     )
                                   }
+                                  className="h-5 w-5"
                                 />
                                 <label
                                   htmlFor={`tour-checkbox-${unit.id}`}
@@ -1014,8 +1043,8 @@ export default function AgentViewer() {
 
                             {/* View Details Button */}
                             <Button
-                              size="sm"
-                              className="w-full uppercase"
+                              size="lg"
+                              className="w-full uppercase mt-3"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleViewDetails(unit);
@@ -1047,7 +1076,7 @@ export default function AgentViewer() {
                         variant={stageFilter === "all" ? "default" : "outline"}
                         onClick={() => setStageFilter("all")}
                         data-testid="filter-all"
-                        className="uppercase"
+                        className="uppercase px-4 py-2 min-h-[36px]"
                       >
                         All: {dealCountsByStage.all}
                       </Button>
@@ -1056,7 +1085,7 @@ export default function AgentViewer() {
                         variant={stageFilter === "new" ? "default" : "outline"}
                         onClick={() => setStageFilter("new")}
                         data-testid="filter-new"
-                        className="uppercase"
+                        className="uppercase px-4 py-2 min-h-[36px]"
                       >
                         New: {dealCountsByStage.new}
                       </Button>
@@ -1067,7 +1096,7 @@ export default function AgentViewer() {
                         }
                         onClick={() => setStageFilter("contacted")}
                         data-testid="filter-contacted"
-                        className="uppercase"
+                        className="uppercase px-4 py-2 min-h-[36px]"
                       >
                         Contacted: {dealCountsByStage.contacted}
                       </Button>
@@ -1078,7 +1107,7 @@ export default function AgentViewer() {
                         }
                         onClick={() => setStageFilter("qualified")}
                         data-testid="filter-qualified"
-                        className="uppercase"
+                        className="uppercase px-4 py-2 min-h-[36px]"
                       >
                         Qualified: {dealCountsByStage.qualified}
                       </Button>
@@ -1089,7 +1118,7 @@ export default function AgentViewer() {
                         }
                         onClick={() => setStageFilter("proposal")}
                         data-testid="filter-proposal"
-                        className="uppercase"
+                        className="uppercase px-4 py-2 min-h-[36px]"
                       >
                         Proposal: {dealCountsByStage.proposal}
                       </Button>
@@ -1100,7 +1129,7 @@ export default function AgentViewer() {
                         }
                         onClick={() => setStageFilter("negotiation")}
                         data-testid="filter-negotiation"
-                        className="uppercase"
+                        className="uppercase px-4 py-2 min-h-[36px]"
                       >
                         Negotiation: {dealCountsByStage.negotiation}
                       </Button>
@@ -1111,7 +1140,7 @@ export default function AgentViewer() {
                         }
                         onClick={() => setStageFilter("closed_won")}
                         data-testid="filter-closed-won"
-                        className="uppercase"
+                        className="uppercase px-4 py-2 min-h-[36px]"
                       >
                         Closed Won: {dealCountsByStage.closed_won}
                       </Button>
@@ -1122,7 +1151,7 @@ export default function AgentViewer() {
                         }
                         onClick={() => setStageFilter("closed_lost")}
                         data-testid="filter-closed-lost"
-                        className="uppercase"
+                        className="uppercase px-4 py-2 min-h-[36px]"
                       >
                         Closed Lost: {dealCountsByStage.closed_lost}
                       </Button>
@@ -1290,7 +1319,7 @@ export default function AgentViewer() {
 
                               {/* Tour Tracking Checkbox */}
                               {activeVisitId && (
-                                <div className="flex items-center space-x-2 mt-2">
+                                <div className="flex items-center space-x-2 mt-2 p-2 rounded-md hover:bg-accent">
                                   <Checkbox
                                     id={`tour-checkbox-${unit.id}`}
                                     checked={isToured}
@@ -1300,6 +1329,7 @@ export default function AgentViewer() {
                                         checked as boolean,
                                       )
                                     }
+                                    className="h-5 w-5"
                                   />
                                   <label
                                     htmlFor={`tour-checkbox-${unit.id}`}
@@ -1323,14 +1353,14 @@ export default function AgentViewer() {
                                     <Button
                                       size="icon"
                                       variant="ghost"
-                                      className="h-6 w-6"
+                                      className="h-8 w-8"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleEditLead(unit.dealId);
                                       }}
                                       data-testid={`button-edit-lead-${unit.unitNumber}`}
                                     >
-                                      <Edit className="h-3 w-3" />
+                                      <Edit className="h-4 w-4" />
                                     </Button>
                                   </div>
                                 </div>
@@ -1343,8 +1373,8 @@ export default function AgentViewer() {
 
                               {/* View Details Button */}
                               <Button
-                                size="sm"
-                                className="w-full uppercase"
+                                size="lg"
+                                className="w-full uppercase mt-3"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleViewDetails(unit);

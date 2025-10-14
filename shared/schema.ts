@@ -119,7 +119,7 @@ export const deals = pgTable("Deals", {
 
 export type Deal = typeof deals.$inferSelect;
 
-// Activities table (existing)
+// Activities table (existing - note: table name is capitalized in database)
 export const activities = pgTable("Activities", {
   id: uuid("id").primaryKey().defaultRandom(),
   dealId: uuid("deal_id").notNull(),

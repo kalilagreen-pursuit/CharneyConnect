@@ -68,7 +68,7 @@ const PROJECTS = [
 ];
 
 export default function AgentViewer() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedUnitData, setSelectedUnitData] =
     useState<UnitWithDetails | null>(null);
@@ -89,6 +89,15 @@ export default function AgentViewer() {
 
   // State for sidebar visibility
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Auto-open dialog when route is /agent/viewer/new
+  useEffect(() => {
+    if (location === '/agent/viewer/new' || location === '/agent/viewer/new/') {
+      setShowStartShowingDialog(true);
+      // Clean up the URL after opening dialog
+      setLocation('/agent/viewer');
+    }
+  }, [location, setLocation]);
 
   // Virtualization state - track which units are visible
   const [visibleUnitIds, setVisibleUnitIds] = useState<Set<string>>(new Set());
@@ -841,7 +850,7 @@ export default function AgentViewer() {
                                   </div>
                                 )}
                                 <span className="text-xs text-muted-foreground block mt-1">
-                                  {new Date(touredUnit.viewedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  Toured at {new Date(touredUnit.viewedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               </div>
                             </li>
@@ -1205,7 +1214,7 @@ export default function AgentViewer() {
                   </div>
                 )}
               </div>
-            ) : (
+                ) : (
                   <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
                     <div className="text-center space-y-3">
                       <Maximize2 className="h-16 w-16 mx-auto text-muted-foreground" />
@@ -1657,6 +1666,22 @@ export default function AgentViewer() {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
+                  </span>
+                </span>
+              </div>
+
+              <div className="h-6 w-px bg-border"></div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  <span className="text-muted-foreground">Duration:</span>{" "}
+                  <span className="font-bold font-mono">
+                    {(() => {
+                      const start = new Date(sessionStatus.startTime).getTime();
+                      const now = Date.now();
+                      const durationMinutes = Math.floor((now - start) / 60000);
+                      return `${durationMinutes}m`;
+                    })()}
                   </span>
                 </span>
               </div>

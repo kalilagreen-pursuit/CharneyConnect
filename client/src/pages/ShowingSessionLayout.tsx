@@ -62,7 +62,7 @@ export default function ShowingSessionLayout() {
   useEffect(() => {
     if (location === '/agent/viewer/new' || location === '/showing/new') {
       setShowClientSelector(true);
-      setLocation('/showing');
+      // Do NOT redirect to /showing here - stay on /showing/new until session is created
     }
   }, [location]);
 

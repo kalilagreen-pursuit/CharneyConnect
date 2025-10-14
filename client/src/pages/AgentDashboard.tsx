@@ -229,7 +229,6 @@ export default function AgentDashboard() {
                   <Button
                     className="w-full uppercase font-black gap-2"
                     onClick={() => {
-                      // Navigate to unified showing session with /new route to trigger client selector
                       agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
                       setLocation('/showing/new');
                     }}

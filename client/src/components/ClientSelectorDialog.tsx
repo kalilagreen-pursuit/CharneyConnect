@@ -80,12 +80,14 @@ export function ClientSelectorDialog({ isOpen, onClose, agentId, onSessionStart 
 
       const session = await response.json();
 
+      const sessionId = session.id || session.sessionId;
+      
       toast({
         title: "Session Started",
         description: `Showing session started for ${selectedLead?.name || 'client'}`,
       });
 
-      onSessionStart(session.id || session.sessionId, selectedLeadId, selectedProjectId);
+      onSessionStart(sessionId, selectedLeadId, selectedProjectId);
       handleClose();
     } catch (error) {
       console.error("Error starting session:", error);

@@ -14,7 +14,7 @@ class SupabaseRealtimeService {
 
   subscribeToUnits(callback: RealtimeCallback): () => void {
     const channelName = 'units-realtime';
-    
+
     if (this.channels.has(channelName)) {
       console.log('[Supabase Realtime] Already subscribed to units channel');
       return () => this.unsubscribe(channelName);
@@ -42,8 +42,11 @@ class SupabaseRealtimeService {
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('[Supabase Realtime] Subscription status:', status);
+        if (err) {
+          console.error('[Supabase Realtime] Subscription error:', err);
+        }
       });
 
     this.channels.set(channelName, channel);
@@ -53,7 +56,7 @@ class SupabaseRealtimeService {
 
   subscribeToLeads(callback: RealtimeCallback): () => void {
     const channelName = 'leads-realtime';
-    
+
     if (this.channels.has(channelName)) {
       console.log('[Supabase Realtime] Already subscribed to leads channel');
       return () => this.unsubscribe(channelName);
@@ -82,8 +85,11 @@ class SupabaseRealtimeService {
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('[Supabase Realtime] Subscription status:', status);
+        if (err) {
+          console.error('[Supabase Realtime] Subscription error:', err);
+        }
       });
 
     this.channels.set(channelName, channel);

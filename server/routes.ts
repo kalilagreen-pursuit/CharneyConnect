@@ -45,6 +45,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/showings", showingsRoutes);
   app.use("/api/automations", automationsRoutes);
 
+  // --- SHOWING SESSIONS API ENDPOINTS ---
+  
+  // A. Session Endpoints
+  app.post("/api/showing-sessions", async (req, res) => {
+    try {
+      // TODO: Implement showing session creation logic
+      // Expected body: { agentId, contactId, projectId }
+      res.status(501).json({ error: "Not implemented yet" });
+    } catch (error) {
+      console.error("Error creating showing session:", error);
+      res.status(500).json({ error: "Failed to create showing session" });
+    }
+  });
+
+  app.get("/api/showing-sessions/:id", async (req, res) => {
+    try {
+      // TODO: Implement showing session retrieval logic
+      res.status(501).json({ error: "Not implemented yet" });
+    } catch (error) {
+      console.error("Error fetching showing session:", error);
+      res.status(500).json({ error: "Failed to fetch showing session" });
+    }
+  });
+
+  app.post("/api/showing-sessions/:id/end", async (req, res) => {
+    try {
+      // TODO: Implement showing session completion logic
+      // This should update session status and trigger post-showing automation
+      res.status(501).json({ error: "Not implemented yet" });
+    } catch (error) {
+      console.error("Error ending showing session:", error);
+      res.status(500).json({ error: "Failed to end showing session" });
+    }
+  });
+
+  // B. Tour Tracking Endpoints
+  app.post("/api/toured-units", async (req, res) => {
+    try {
+      // TODO: Implement toured unit logging logic
+      // Expected body: { sessionId, unitId, agentNotes?, clientInterestLevel? }
+      res.status(501).json({ error: "Not implemented yet" });
+    } catch (error) {
+      console.error("Error logging toured unit:", error);
+      res.status(500).json({ error: "Failed to log toured unit" });
+    }
+  });
+
+  app.get("/api/showing-sessions/:id/toured-units", async (req, res) => {
+    try {
+      // TODO: Implement toured units retrieval for a session
+      res.status(501).json({ error: "Not implemented yet" });
+    } catch (error) {
+      console.error("Error fetching toured units:", error);
+      res.status(500).json({ error: "Failed to fetch toured units" });
+    }
+  });
+
+  // C. Dashboard Endpoints
+  app.get("/api/agents/:id/dashboard", async (req, res) => {
+    try {
+      // TODO: Implement aggregated dashboard data
+      // Should return: active sessions, pending tasks, recent activities, stats
+      res.status(501).json({ error: "Not implemented yet" });
+    } catch (error) {
+      console.error("Error fetching agent dashboard:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard data" });
+    }
+  });
+
+  app.get("/api/agents/:id/active-clients", async (req, res) => {
+    try {
+      // TODO: Implement active clients retrieval
+      // Should return clients with ongoing or recent showing sessions
+      res.status(501).json({ error: "Not implemented yet" });
+    } catch (error) {
+      console.error("Error fetching active clients:", error);
+      res.status(500).json({ error: "Failed to fetch active clients" });
+    }
+  });
+
   // --- YOUR EXISTING API ENDPOINTS (PRESERVED) ---
 
   // Agents endpoints

@@ -1,0 +1,79 @@
+✅ Found It: agent-viewer.tsx
+Now let me read the actual code to see what's happening:
+
+
+Opened client/src/pages/agent-viewer.tsx
+
+Considered API endpoint functionality (7 seconds)
+✅ FOUND THE CODE - The Endpoint is ALREADY CORRECT!
+Looking at lines 176-191, the agent-viewer.tsx is ALREADY using the correct endpoint:
+
+const { data: units = [], isLoading, error: unitsError } = useQuery<UnitWithDetails[]>({
+  queryKey: ["/api/units", currentProjectId, "available"],
+  queryFn: async () => {
+    const url = new URL('/api/units', window.location.origin);
+    url.searchParams.set('projectId', currentProjectId);
+    url.searchParams.set('status', 'available');
+    
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw new Error(`Failed to fetch units: ${response.statusText}`);
+    }
+    return response.json();
+  },
+  enabled: !!currentProjectId,
+  retry: 2,
+});
+This is the CORRECT endpoint! /api/units?projectId=...&status=available
+
+So the problem is NOT the API endpoint. Let me read more of the file to see where the 3D viewer rendering happens and what could be causing it to crash:
+
+
+Opened client/src/pages/agent-viewer.tsx
+
+Determined viewer component status (6 seconds)
+🎯 FOUND THE REAL ISSUE!
+Looking at lines 1311-1348, I can see that the 3D viewer is just a PLACEHOLDER - it's not actually implemented! It just shows a message:
+
+<div className="h-[60vh] flex items-center justify-center">
+  <p>3D floor plan visualization will be displayed here.</p>
+</div>
+But wait - you mentioned earlier that there IS a working 3D viewer with three.js. Let me search for that actual 3D component:
+
+
+Diagnosed missing 3D viewer
+🔍 The 3D Viewer Component is MISSING!
+There's NO 3D viewer component in the codebase! The agent-viewer.tsx just has a placeholder. But according to replit.md, there SHOULD be a 3D building viewer with three.js.
+
+Let me check the App.tsx routes to see if there's supposed to be a separate 3D viewer page:
+
+
+Executed rg -i -n 'Route|3d|viewer' client/src/App.tsx
+
+Decided on 3D viewer component location
+💡 I Found the Problem - The 3D Viewer Was Never Built!
+Looking at the routes:
+
+/agent/viewer → AgentViewer component (which only has a PLACEHOLDER for 3D)
+/showing → ShowingSessionLayout component
+The ShowingSessionLayout page has "VIEW IN 3D" buttons, but according to replit.md there SHOULD be a 3D building visualization. Let me check ShowingSessionLayout to see if it has the 3D component:
+
+
+Executed rg -C 2 -n 'Building3D|three|Three|3D|Viewer' client/src/pages/ShowingSessionLayout.tsx
+
+Decided on 3D viewer implementation (4 seconds)
+🎯 MYSTERY SOLVED!
+Here's what's happening:
+
+✅ ShowingSessionLayout "VIEW IN 3D" button routes to: /agent/viewer?unit=${unitId}&projectId=${projectId}
+✅ AgentViewer loads units correctly using the RIGHT API endpoint
+❌ BUT AgentViewer has NO 3D viewer component - just a placeholder that says "3D floor plan visualization will be displayed here"
+The Real Problem:
+The 3D building viewer component was never built! According to replit.md, there should be a three.js 3D visualization, but it doesn't exist in the code.
+
+Here's What You Need:
+Option 1: Build the 3D Viewer (requires time/effort)
+
+Implement three.js 3D building visualization
+Add it to AgentViewer component
+Show unit highlighting

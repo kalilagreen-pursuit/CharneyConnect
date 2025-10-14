@@ -78,7 +78,10 @@ export default function ShowingSessionLayout() {
     }
   }, [activeSessionId, sendMessage]);
 
-  // Fetch units for current project
+  // Fetch session status first
+  const { data: sessionStatus } = useSessionStatus(activeSessionId);
+  
+  // Fetch units for current project - now depends on session being properly loaded
   const { data: units = [], isLoading: unitsLoading, isError: unitsError, error: unitsFetchError } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/agents", agentId, "units", currentProjectId],
     queryFn: async () => {
@@ -97,7 +100,8 @@ export default function ShowingSessionLayout() {
       console.log('[ShowingSession] Units fetched:', data.length);
       return data;
     },
-    enabled: !!currentProjectId,
+    // Only enable when we have both a session and a project ID
+    enabled: !!activeSessionId && !!currentProjectId && !!sessionStatus,
     retry: 2,
     retryDelay: 1000,
   });
@@ -116,7 +120,6 @@ export default function ShowingSessionLayout() {
 
   // Fetch toured units
   const { data: touredUnits = [], isLoading: isTouredLoading } = useTouredUnits(activeSessionId);
-  const { data: sessionStatus } = useSessionStatus(activeSessionId);
 
   // WebSocket integration for real-time toured units
   useEffect(() => {

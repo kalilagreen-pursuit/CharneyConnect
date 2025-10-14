@@ -807,40 +807,53 @@ export default function AgentViewer() {
                 {/* Toured Units List */}
                 {activeVisitId && (
                   <div className="mt-6 pt-4 border-t">
-                    <h4 className="text-md font-bold uppercase mb-3">
-                      Toured Units ({touredUnits.length})
+                    <h4 className="text-md font-bold uppercase mb-3 flex items-center justify-between">
+                      <span>Toured Units</span>
+                      <Badge variant="secondary" className="ml-2">
+                        {touredUnits.length}
+                      </Badge>
                     </h4>
                     {touredUnits.length > 0 ? (
-                      <ul className="space-y-2 max-h-48 overflow-y-auto">
+                      <ul className="space-y-2 max-h-64 overflow-y-auto pr-2">
                         {touredUnits.map((touredUnit) => {
                           // Find the matching unit to get the full details
                           const matchingUnit = units.find(u => u.id === touredUnit.unitId);
                           return (
                             <li
                               key={touredUnit.id}
-                              className="text-sm flex items-center gap-2 p-2 bg-muted/50 rounded hover:bg-muted transition-colors cursor-pointer"
+                              className="text-sm flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors cursor-pointer group"
                               data-testid={`toured-unit-${touredUnit.unitId}`}
                               onClick={() => handleUnitSelect(touredUnit.unitId)}
                             >
-                              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 fill-green-600" />
                               <div className="flex-1 min-w-0">
-                                <span className="font-medium block">
+                                <span className="font-bold block text-gray-900 group-hover:text-green-700">
                                   Unit {touredUnit.unitNumber || matchingUnit?.unitNumber || touredUnit.unitId.slice(0, 8)}
                                 </span>
                                 {matchingUnit && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {matchingUnit.bedrooms}BD · {matchingUnit.bathrooms}BA
-                                  </span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-muted-foreground">
+                                      {matchingUnit.bedrooms}BD · {matchingUnit.bathrooms}BA
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatPrice(matchingUnit.price)}
+                                    </span>
+                                  </div>
                                 )}
+                                <span className="text-xs text-muted-foreground block mt-1">
+                                  {new Date(touredUnit.viewedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
                               </div>
                             </li>
                           );
                         })}
                       </ul>
                     ) : (
-                      <p className="text-xs text-muted-foreground">
-                        No units toured yet. Check the box on unit cards to mark them as toured.
-                      </p>
+                      <div className="p-4 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20 text-center">
+                        <p className="text-xs text-muted-foreground">
+                          No units toured yet. Check the "Toured" box on unit cards to mark them.
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}
@@ -885,7 +898,51 @@ export default function AgentViewer() {
       </aside>
 
       {/* 2. Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header Bar with Controls */}
+        <div className="flex-shrink-0 bg-card border-b p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                variant="outline"
+                size="icon"
+                className="md:hidden"
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+              <div>
+                <h2 className="text-xl font-black uppercase">{projectName}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {units.length} units available
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {activeVisitId ? (
+                <Button
+                  onClick={handleEndSession}
+                  variant="destructive"
+                  className="uppercase font-bold"
+                  disabled={endSessionMutation.isPending}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {endSessionMutation.isPending ? 'Ending...' : 'End Session'}
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setShowStartShowingDialog(true)}
+                  className="uppercase font-bold bg-green-600 hover:bg-green-700"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Start Showing
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Unit Cards Grid */}
         <div
           className="flex-1 overflow-auto bg-background"
@@ -1149,7 +1206,7 @@ export default function AgentViewer() {
                 )}
               </div>
             ) : (
-                  <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
+              <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
                     <div className="text-center space-y-3">
                       <Maximize2 className="h-16 w-16 mx-auto text-muted-foreground" />
                       <p className="text-xl font-bold uppercase text-muted-foreground">
@@ -1496,46 +1553,106 @@ export default function AgentViewer() {
         </div>
 
         {/* 3. Right Panel (Preferences & Notes) */}
-        <div className="w-80 bg-gray-50 border-l p-6 flex-shrink-0 overflow-y-auto">
-          <h4 className="text-lg font-bold mb-4 border-b pb-2">Client Preferences</h4>
-          {/* Display Preferences from activeClient.preferences */}
-          <ul className="text-sm space-y-1">
-            <li>Budget: $1M - $1.5M</li>
-            <li>Beds: 2+</li>
-            <li>Views: City</li>
-          </ul>
+        <div className="w-80 bg-card border-l p-6 flex-shrink-0 overflow-y-auto">
+          <h4 className="text-lg font-bold uppercase mb-4 border-b pb-2">Client Preferences</h4>
+          
+          {activeLead && activeLead.preferences ? (
+            <div className="space-y-3">
+              <div className="p-3 bg-primary/5 rounded-lg">
+                <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Budget Range</p>
+                <p className="text-sm font-bold">
+                  {activeLead.preferences.max_price 
+                    ? `Up to ${formatPrice(activeLead.preferences.max_price)}`
+                    : 'Not specified'}
+                </p>
+              </div>
+              
+              <div className="p-3 bg-primary/5 rounded-lg">
+                <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Bedrooms</p>
+                <p className="text-sm font-bold">
+                  {activeLead.preferences.min_beds 
+                    ? `${activeLead.preferences.min_beds}+ Bedrooms`
+                    : 'Not specified'}
+                </p>
+              </div>
+              
+              <div className="p-3 bg-primary/5 rounded-lg">
+                <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Desired Views</p>
+                <p className="text-sm font-bold">
+                  {activeLead.preferences.desired_views?.length 
+                    ? activeLead.preferences.desired_views.join(', ')
+                    : 'Not specified'}
+                </p>
+              </div>
+              
+              {activeLead.preferences.desired_features?.length > 0 && (
+                <div className="p-3 bg-primary/5 rounded-lg">
+                  <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Features</p>
+                  <div className="flex flex-wrap gap-1">
+                    {activeLead.preferences.desired_features.map((feature, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-xs">
+                        {feature}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {activeLead ? 'No preferences set for this client' : 'Select a client to view preferences'}
+            </p>
+          )}
 
-          <h4 className="text-lg font-bold mt-6 mb-4 border-b pb-2">Quick Notes</h4>
+          <h4 className="text-lg font-bold uppercase mt-6 mb-4 border-b pb-2">Session Notes</h4>
           <textarea
-            placeholder="Enter quick notes about this client/showing..."
-            className="w-full h-32 p-2 border rounded resize-none text-sm"
+            placeholder="Enter quick notes about this showing session..."
+            className="w-full h-32 p-3 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+            disabled={!activeVisitId}
           />
+          {!activeVisitId && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Start a showing session to enable notes
+            </p>
+          )}
         </div>
       </div>
 
 
       {/* Footer - Session Tracker */}
       <div className="flex-shrink-0 border-t-4 border-primary bg-card p-4 shadow-xl">
-        <div className="flex items-center justify-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              Session:{" "}
+        <div className="flex items-center justify-center gap-6 flex-wrap">
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10">
+            <Clock className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">
               {activeVisitId ? (
-                <span className="font-bold text-primary">ACTIVE</span>
+                <span className="text-green-600 font-bold uppercase">● ACTIVE SESSION</span>
               ) : (
-                <span className="font-medium">INACTIVE</span>
+                <span className="text-muted-foreground uppercase">○ No Active Session</span>
               )}
             </span>
           </div>
+          
+          {activeVisitId && activeLead && (
+            <>
+              <div className="h-6 w-px bg-border"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-muted-foreground">Client:</span>
+                <span className="text-sm font-bold text-foreground">
+                  {activeLead.firstName} {activeLead.lastName}
+                </span>
+              </div>
+            </>
+          )}
+          
           {activeVisitId && sessionStatus && (
             <>
-              <span className="text-muted-foreground">|</span>
+              <div className="h-6 w-px bg-border"></div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Started:{" "}
-                  <span className="font-medium">
+                <span className="text-sm">
+                  <span className="text-muted-foreground">Started:</span>{" "}
+                  <span className="font-medium font-mono">
                     {new Date(sessionStatus.startTime).toLocaleTimeString([], {
                       hour: '2-digit',
                       minute: '2-digit'
@@ -1543,22 +1660,24 @@ export default function AgentViewer() {
                   </span>
                 </span>
               </div>
-              <span className="text-muted-foreground">|</span>
+              
+              <div className="h-6 w-px bg-border"></div>
               <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Units Viewed:{" "}
-                  <span className="font-medium font-mono">
+                <Eye className="h-4 w-4 text-blue-600" />
+                <span className="text-sm">
+                  <span className="text-muted-foreground">Viewed:</span>{" "}
+                  <span className="font-bold font-mono text-blue-600">
                     {viewedUnits.length}
                   </span>
                 </span>
               </div>
-              <span className="text-muted-foreground">|</span>
+              
+              <div className="h-6 w-px bg-border"></div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-muted-foreground">
-                  Units Toured:{" "}
-                  <span className="font-medium font-mono text-green-600">
+                <CheckCircle className="h-4 w-4 text-green-600 fill-green-600" />
+                <span className="text-sm">
+                  <span className="text-muted-foreground">Toured:</span>{" "}
+                  <span className="font-bold font-mono text-green-600">
                     {touredUnits.length}
                   </span>
                 </span>

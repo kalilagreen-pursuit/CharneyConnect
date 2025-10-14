@@ -79,15 +79,27 @@ export default function ShowingSessionLayout() {
   }, [activeSessionId, sendMessage]);
 
   // Fetch units for current project
-  const { data: units = [], isLoading: unitsLoading, isError: unitsError } = useQuery<UnitWithDetails[]>({
+  const { data: units = [], isLoading: unitsLoading, isError: unitsError, error: unitsFetchError } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/agents", agentId, "units", currentProjectId],
     queryFn: async () => {
-      if (!currentProjectId) return [];
+      if (!currentProjectId) {
+        console.log('[ShowingSession] No project selected, returning empty units');
+        return [];
+      }
+      console.log('[ShowingSession] Fetching units for project:', currentProjectId);
       const response = await fetch(`/api/agents/${agentId}/units?projectId=${currentProjectId}`);
-      if (!response.ok) throw new Error("Failed to fetch units");
-      return response.json();
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[ShowingSession] Failed to fetch units:', response.status, errorText);
+        throw new Error(`Failed to fetch units: ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log('[ShowingSession] Units fetched:', data.length);
+      return data;
     },
     enabled: !!currentProjectId,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   // Fetch active lead data
@@ -274,15 +286,40 @@ export default function ShowingSessionLayout() {
 
   // Error handling for critical data fetching
   if (unitsError || leadError) {
-    toast({
-      title: "Error Loading Data",
-      description: "Could not load essential session data. Please try refreshing.",
-      variant: "destructive",
-    });
+    const errorMessage = unitsError 
+      ? `Units Error: ${unitsFetchError?.message || 'Unknown error'}` 
+      : 'Lead data error';
+    
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <AlertCircle className="h-8 w-8 mr-4 text-destructive" />
-        <p className="text-lg font-semibold text-destructive">Failed to load session data.</p>
+      <div className="flex h-screen w-screen items-center justify-center bg-background p-6">
+        <Card className="max-w-md p-8 text-center space-y-4">
+          <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+          <h2 className="text-2xl font-bold text-destructive">Failed to Load Session Data</h2>
+          <p className="text-sm text-muted-foreground">{errorMessage}</p>
+          <div className="space-y-2">
+            <Button 
+              onClick={() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", currentProjectId] });
+                queryClient.invalidateQueries({ queryKey: ["/api/leads", activeLeadId] });
+              }}
+              className="w-full"
+            >
+              Retry Loading
+            </Button>
+            <Button 
+              onClick={() => {
+                setActiveSessionId(null);
+                setActiveLeadId(null);
+                setCurrentProjectId(null);
+                setLocation('/agent/dashboard');
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              Return to Dashboard
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }

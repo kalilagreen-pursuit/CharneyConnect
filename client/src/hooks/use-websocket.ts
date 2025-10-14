@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { queryClient } from '@/lib/queryClient';
 
@@ -41,14 +40,14 @@ export function useWebSocket() {
 
       ws.onmessage = (event) => {
         setLastMessage(event);
-        
+
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
-          
+
           if (message.type === 'unit_update') {
             // Invalidate units query to trigger refetch
             queryClient.invalidateQueries({ queryKey: ['/api/units'] });
-            
+
             // Show visual feedback
             const unitId = message.data?.id;
             if (unitId) {
@@ -63,7 +62,7 @@ export function useWebSocket() {
           } else if (message.type === 'lead_update') {
             // Invalidate leads query to trigger refetch
             queryClient.invalidateQueries({ queryKey: ['/api/leads'] });
-            
+
             // Show visual feedback
             const leadId = message.data?.id;
             if (leadId) {
@@ -87,12 +86,12 @@ export function useWebSocket() {
 
       ws.onclose = () => {
         console.log('WebSocket disconnected');
-        
+
         // Attempt to reconnect
         if (reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++;
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-          
+
           reconnectTimeoutRef.current = setTimeout(() => {
             console.log(`Reconnecting... (attempt ${reconnectAttempts.current})`);
             connect();

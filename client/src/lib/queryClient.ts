@@ -593,6 +593,16 @@ export const useEndSession = () => {
   });
 };
 
+// Fetch session status
+const fetchSessionStatus = async (sessionId: string): Promise<ShowingSession> => {
+  const response = await apiRequest(
+    "GET",
+    `/api/showing-sessions/${sessionId}`,
+    undefined
+  );
+  return response.json();
+};
+
 // Hook to fetch current session status (for bottom tracker/context)
 export const useSessionStatus = (sessionId: string | null) => {
   return useQuery<ShowingSession>({
@@ -603,7 +613,7 @@ export const useSessionStatus = (sessionId: string | null) => {
     },
     enabled: !!sessionId,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 10000, // Refetch every 10 seconds to keep tracker updated
+    refetchInterval: 1000, // Refetch every second for live duration updates
   });
 };
 

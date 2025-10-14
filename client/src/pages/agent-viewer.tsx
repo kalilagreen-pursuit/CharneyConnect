@@ -9,8 +9,9 @@ import {
   useLogUnitView,
   useMarkUnitToured,
   useTouredUnits,
-  useGeneratePortal, // Import useGeneratePortal
-  useEndSession, // Import useEndSession
+  useGeneratePortal,
+  useEndSession,
+  useSessionStatus, // Import useSessionStatus for duration tracking
 } from "@/lib/queryClient";
 import { Agent } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -144,8 +145,35 @@ export default function AgentViewer() {
   // Visualization mode state (LIVE 3D vs PRE-CONSTRUCTION GALLERY)
   const [isGalleryMode, setIsGalleryMode] = useState(false);
 
+  // Fetch showing session status (for duration tracking)
+  const { data: sessionStatus } = useSessionStatus(activeVisitId);
+
   // Fetch showing itinerary (viewed units in current session)
   const { data: viewedUnits = [] } = useShowingItinerary(activeVisitId);
+  
+  // Calculate session duration
+  const sessionDuration = useMemo(() => {
+    if (!sessionStatus?.startedAt) return '00:00:00';
+    const start = new Date(sessionStatus.startedAt).getTime();
+    const now = Date.now();
+    const diff = now - start;
+    const hours = Math.floor(diff / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, [sessionStatus]);
+  
+  // Update session duration every second when active
+  useEffect(() => {
+    if (!activeVisitId) return;
+    const interval = setInterval(() => {
+      // Force re-render to update duration
+      queryClient.invalidateQueries({
+        queryKey: ["/api/showing-sessions", activeVisitId],
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeVisitId]);
 
   // Create a Set for quick lookup
   const viewedUnitIds = useMemo(() => {
@@ -841,9 +869,11 @@ export default function AgentViewer() {
       </aside>
 
       {/* 2. Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm">
+      <div className="flex-1 flex overflow-hidden">
+        {/* Main Viewer Section */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -1537,40 +1567,120 @@ export default function AgentViewer() {
           </div>
         </div>
 
-        {/* 3. Footer - Session Tracker */}
-        <div className="flex-shrink-0 border-t-4 border-primary bg-card p-4 shadow-xl">
-          <div className="flex items-center justify-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              Showing Session Active:{" "}
-              {activeVisitId ? (
-                <span className="font-bold text-primary">YES</span>
-              ) : (
-                <span className="font-medium">NO</span>
+        {/* Footer - Session Tracker */}
+          <div className="flex-shrink-0 border-t-4 border-primary bg-card p-4 shadow-xl">
+            <div className="flex items-center justify-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                Showing Session Active:{" "}
+                {activeVisitId ? (
+                  <span className="font-bold text-primary">YES</span>
+                ) : (
+                  <span className="font-medium">NO</span>
+                )}
+              </span>
+              {activeVisitId && sessionStatus && (
+                <>
+                  <span className="text-muted-foreground">|</span>
+                  <span className="text-sm text-muted-foreground">
+                    Started:{" "}
+                    <span className="font-medium">
+                      {new Date(sessionStatus.startedAt).toLocaleTimeString()}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground">|</span>
+                  <span className="text-sm text-muted-foreground">
+                    Duration:{" "}
+                    <span className="font-medium font-mono">
+                      {sessionDuration}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground">|</span>
+                  <span className="text-sm text-muted-foreground">
+                    Units Viewed:{" "}
+                    <span className="font-bold text-primary">
+                      {viewedUnits.length}
+                    </span>
+                  </span>
+                </>
               )}
-            </span>
-            {activeVisitId && (
-              <>
-                <span className="text-muted-foreground">|</span>
-                <span className="text-sm text-muted-foreground">
-                  Started:{" "}
-                  <span className="font-medium">
-                    {/* TODO: Format and display start time */}
-                    N/A
-                  </span>
-                </span>
-                <span className="text-muted-foreground">|</span>
-                <span className="text-sm text-muted-foreground">
-                  Duration:{" "}
-                  <span className="font-medium">
-                    {/* TODO: Calculate and display duration */}
-                    00:00:00
-                  </span>
-                </span>
-              </>
-            )}
+            </div>
           </div>
         </div>
+
+        {/* Right Panel - Notes & Preferences Stub */}
+        <aside className="w-80 bg-card border-l p-6 flex-shrink-0 overflow-y-auto">
+          <h3 className="text-lg font-black uppercase mb-4 border-b pb-2">
+            Session Notes
+          </h3>
+          
+          {activeVisitId ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Quick notes and observations during the showing session
+                </p>
+                <textarea 
+                  className="w-full min-h-[120px] p-2 text-sm border rounded-md bg-background"
+                  placeholder="Add session notes here..."
+                  disabled
+                />
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-bold uppercase mb-3">
+                  Client Preferences Snapshot
+                </h4>
+                {activeLead?.preferences ? (
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex justify-between">
+                      <span className="text-muted-foreground">Min Beds:</span>
+                      <span className="font-semibold">{activeLead.preferences.min_beds || 'N/A'}</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-muted-foreground">Max Price:</span>
+                      <span className="font-semibold">
+                        {activeLead.preferences.max_price 
+                          ? `$${(activeLead.preferences.max_price / 1000).toFixed(0)}K` 
+                          : 'N/A'}
+                      </span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-muted-foreground">Views:</span>
+                      <span className="font-semibold">
+                        {activeLead.preferences.desired_views?.join(', ') || 'N/A'}
+                      </span>
+                    </li>
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No preferences set</p>
+                )}
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-bold uppercase mb-3">
+                  Session Summary
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Units Toured:</span>
+                    <span className="font-bold text-primary">{touredUnits.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total Viewed:</span>
+                    <span className="font-bold">{viewedUnits.length}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 bg-muted/50 rounded-lg text-center">
+              <p className="text-sm text-muted-foreground">
+                Session notes will appear here when a showing session is active
+              </p>
+            </div>
+          )}
+        </aside>
       </div>
 
       {/* Unit Sheet Drawer */}

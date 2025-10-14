@@ -465,6 +465,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(leads.agentId, agentId))
         .groupBy(leads.targetLocations);
 
+      // Get recent activity (latest toured units from recent sessions)
+      const recentActivity = await db
+        .select({
+          type: sql<string>`'toured'`,
+          detail: sql<string>`concat('Toured Unit ', ${units.unitNumber})`,
+          time: touredUnits.viewedAt,
+          sessionId: touredUnits.sessionId,
+        })
+        .from(touredUnits)
+        .innerJoin(showingSessions, eq(touredUnits.sessionId, showingSessions.id))
+        .innerJoin(units, eq(touredUnits.unitId, units.id))
+        .where(eq(showingSessions.agentId, agentId))
+        .orderBy(sql`${touredUnits.viewedAt} DESC`)
+        .limit(5);
+
       console.log(`Dashboard stats for agent ${agentId}:`, {
         activeSessions: activeSessions[0]?.count,
         pendingFollowUps: pendingFollowUps[0]?.count,
@@ -474,7 +489,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         activeSessions: Number(activeSessions[0]?.count || 0), 
         pendingFollowUps: Number(pendingFollowUps[0]?.count || 0), 
-        projectCount: projectsWithLeads.length
+        projectCount: projectsWithLeads.length,
+        recentActivity: recentActivity.map(activity => ({
+          type: activity.type,
+          detail: activity.detail,
+          time: activity.time ? new Date(activity.time).toLocaleString() : 'Unknown',
+        }))
       });
     } catch (error) {
       console.error("Error fetching agent dashboard:", error);
@@ -1093,7 +1113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // DEMO FAIL-SAFE: If no leads match filters, inject a mock qualified lead for agent-001
       if (leads.length === 0 && agentId === 'agent-001' && status === 'qualified') {
         console.log(`[API] No leads found - injecting demo fail-safe lead for Sarah Chen`);
-        const project = await storage.getProjectById(projectId as string);
+        const project = projectId ? await storage.getProjectById(projectId as string) : null;
         const demoLead = {
           id: "demo-lead-andrew",
           name: "Andrew K.",
@@ -1104,20 +1124,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           agentId: "agent-001",
           targetPriceMin: "400000",
           targetPriceMax: "1500000",
-          targetLocations: project?.name ? [project.name] : [],
+          targetLocations: project?.name ? [project.name] : ["THE JACKSON"],
+          targetBedrooms: 2,
+          targetBathrooms: 2,
           leadScore: 85,
           value: null,
           company: null,
           address: null,
           timeFrameToBuy: "3-6 months",
-          preferenceScore: 0,
-          lastContactedAt: null,
-          nextFollowUpDate: null,
+          preferenceScore: 85,
+          lastContactedAt: new Date(Date.now() - 3600000), // 1 hour ago
+          nextFollowUpDate: new Date(Date.now() + 86400000), // tomorrow
           createdAt: new Date(),
           updatedAt: new Date(),
         };
         leads = [demoLead];
-        console.log(`[API] Demo lead injected: Andrew K. (agent-001)`);
+        console.log(`[API] Demo lead injected: Andrew K. (agent-001) for project: ${project?.name || 'THE JACKSON'}`);
       }
 
       console.log(`[API] Final leads returned: ${leads.length}`);

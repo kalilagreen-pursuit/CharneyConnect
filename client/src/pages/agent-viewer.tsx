@@ -918,7 +918,7 @@ export default function AgentViewer() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               {activeVisitId ? (
                 <Button
@@ -1206,7 +1206,7 @@ export default function AgentViewer() {
                 )}
               </div>
             ) : (
-              <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
+                  <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
                     <div className="text-center space-y-3">
                       <Maximize2 className="h-16 w-16 mx-auto text-muted-foreground" />
                       <p className="text-xl font-bold uppercase text-muted-foreground">
@@ -1555,7 +1555,7 @@ export default function AgentViewer() {
         {/* 3. Right Panel (Preferences & Notes) */}
         <div className="w-80 bg-card border-l p-6 flex-shrink-0 overflow-y-auto">
           <h4 className="text-lg font-bold uppercase mb-4 border-b pb-2">Client Preferences</h4>
-          
+
           {activeLead && activeLead.preferences ? (
             <div className="space-y-3">
               <div className="p-3 bg-primary/5 rounded-lg">
@@ -1566,7 +1566,7 @@ export default function AgentViewer() {
                     : 'Not specified'}
                 </p>
               </div>
-              
+
               <div className="p-3 bg-primary/5 rounded-lg">
                 <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Bedrooms</p>
                 <p className="text-sm font-bold">
@@ -1575,7 +1575,7 @@ export default function AgentViewer() {
                     : 'Not specified'}
                 </p>
               </div>
-              
+
               <div className="p-3 bg-primary/5 rounded-lg">
                 <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Desired Views</p>
                 <p className="text-sm font-bold">
@@ -1584,7 +1584,7 @@ export default function AgentViewer() {
                     : 'Not specified'}
                 </p>
               </div>
-              
+
               {activeLead.preferences.desired_features?.length > 0 && (
                 <div className="p-3 bg-primary/5 rounded-lg">
                   <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Features</p>
@@ -1632,7 +1632,7 @@ export default function AgentViewer() {
               )}
             </span>
           </div>
-          
+
           {activeVisitId && activeLead && (
             <>
               <div className="h-6 w-px bg-border"></div>
@@ -1644,7 +1644,7 @@ export default function AgentViewer() {
               </div>
             </>
           )}
-          
+
           {activeVisitId && sessionStatus && (
             <>
               <div className="h-6 w-px bg-border"></div>
@@ -1660,7 +1660,7 @@ export default function AgentViewer() {
                   </span>
                 </span>
               </div>
-              
+
               <div className="h-6 w-px bg-border"></div>
               <div className="flex items-center gap-2">
                 <Eye className="h-4 w-4 text-blue-600" />
@@ -1671,7 +1671,7 @@ export default function AgentViewer() {
                   </span>
                 </span>
               </div>
-              
+
               <div className="h-6 w-px bg-border"></div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-600 fill-green-600" />

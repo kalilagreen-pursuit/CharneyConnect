@@ -185,7 +185,9 @@ export default function ShowingSessionLayout() {
     setActiveLeadId(leadId);
     setCurrentProjectId(projectId);
     agentContextStore.setProject(projectId, PROJECTS.find(p => p.id === projectId)?.name || '');
-    // The WebSocket subscription is now handled by the useEffect hook
+    
+    // Navigate to the session-specific URL
+    setLocation(`/showing/${sessionId}`);
   };
 
   const handleEndSessionClick = () => {

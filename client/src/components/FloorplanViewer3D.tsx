@@ -193,7 +193,6 @@ export default function FloorplanViewer3D({
     try {
       const url = new URL('/api/units', window.location.origin);
       url.searchParams.set('projectId', projectId);
-      url.searchParams.set('status', 'available');
       
       const response = await fetch(url.toString());
       if (!response.ok) {

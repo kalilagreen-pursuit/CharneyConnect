@@ -166,7 +166,11 @@ export default function AgentDashboard() {
                   {formattedClients.map(client => (
                     <Card
                       key={client.id}
-                      className="shadow-lg hover-elevate active-elevate-2 transition-all"
+                      className="shadow-lg hover-elevate active-elevate-2 transition-all cursor-pointer"
+                      onClick={() => {
+                        agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
+                        setLocation('/showing/new');
+                      }}
                       data-testid={`card-client-${client.id}`}
                     >
                       <CardHeader>
@@ -184,7 +188,11 @@ export default function AgentDashboard() {
                         <Button
                           size="sm"
                           className="w-full uppercase font-black gap-2"
-                          onClick={handleGoToViewer}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
+                            setLocation('/showing/new');
+                          }}
                           data-testid={`button-start-session-${client.id}`}
                         >
                           Start/Resume Session

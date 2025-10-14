@@ -11,7 +11,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
-import { contacts, deals, activities, leads, agents, portalLinks, showingSessions, touredUnits, units, tasks } from "@shared/schema";
+import { contacts, deals, activities, leads, agents, portalLinks, showingSessions, touredUnits, units, tasks, floorPlans, projects } from "@shared/schema";
 
 // FIXED: Add the missing import for Google Generative AI
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -339,6 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
         .limit(1);
 
+      let newTouredUnit;
       if (existing) {
         // Update existing record instead of creating duplicate
         const [updated] = await db
@@ -350,26 +351,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
           .where(eq(touredUnits.id, existing.id))
           .returning();
+        newTouredUnit = updated;
 
         console.log(`Unit ${unit.unitNumber} toured again in session ${sessionId}`);
-
-        return res.json({ 
-          message: "Unit view updated successfully.", 
-          viewedAt: updated.viewedAt,
-          id: updated.id
-        });
+      } else {
+        // Create new toured unit record
+        const [created] = await db.insert(touredUnits).values({
+          sessionId,
+          unitId,
+          agentNotes,
+          clientInterestLevel,
+          viewedAt: new Date(),
+        }).returning();
+        newTouredUnit = created;
+        console.log(`Unit ${unit.unitNumber} marked as toured in session ${sessionId}`);
       }
 
-      // Create new toured unit record
-      const [newTouredUnit] = await db.insert(touredUnits).values({
-        sessionId,
-        unitId,
-        agentNotes,
-        clientInterestLevel,
-        viewedAt: new Date(),
-      }).returning();
-
-      console.log(`Unit ${unit.unitNumber} marked as toured in session ${sessionId}`);
+      // Broadcast WebSocket event for real-time updates
+      if (wss) {
+        const message = JSON.stringify({
+          type: 'unit_toured',
+          data: {
+            sessionId,
+            unitId,
+            newTouredUnit
+          }
+        });
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) { 
+            client.send(message);
+          }
+        });
+      }
 
       res.json({ 
         message: "Unit view logged successfully.", 
@@ -1278,7 +1291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Always inject Andrew K. to ensure the demo workflow works
       if (leads.length === 0 && agentId === 'agent-001' && status === 'qualified' && projectId) {
         console.log(`[API] 🚨 DEMO FAIL-SAFE ACTIVATED - Injecting Andrew K. for agent-001`);
-        
+
         const demoLead = {
           id: "demo-lead-andrew-k",
           name: "Andrew K.",
@@ -1825,6 +1838,7 @@ Be professional, confident, and focused on closing deals while maintaining compl
 
   (global as any).broadcastUnitUpdate = broadcastUnitUpdate;
   (global as any).broadcastLeadUpdate = broadcastLeadUpdate;
+  (global as any).wss = wss; // Make wss available globally for the broadcast in api/toured-units
 
   return httpServer;
 }

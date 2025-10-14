@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient, useEndSession, useGeneratePortal, useTouredUnits, useSessionStatus } from "@/lib/queryClient";
@@ -27,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { getMatchedUnitsWithScores, getMatchIndicatorClass } from "@/lib/preference-matcher";
 import { ClientSelectorDialog } from "@/components/ClientSelectorDialog";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 const PROJECTS = [
   { id: "2320eeb4-596b-437d-b4cb-830bdb3c3b01", name: "THE JACKSON" },
@@ -37,7 +37,7 @@ const PROJECTS = [
 export default function ShowingSessionLayout() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  
+
   // Session state
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
@@ -50,6 +50,9 @@ export default function ShowingSessionLayout() {
   const agentId = agentContextStore.getAgentId() || "agent-001";
   const agentName = agentContextStore.getAgentName() || "Agent";
 
+  // WebSocket Hook
+  const { lastMessage, sendMessage } = useWebSocket("ws://localhost:8080"); // Adjust URL as needed
+
   // Auto-open client selector if coming from /new route
   useEffect(() => {
     if (location === '/agent/viewer/new' || location === '/showing/new') {
@@ -59,7 +62,7 @@ export default function ShowingSessionLayout() {
   }, [location, setLocation]);
 
   // Fetch units for current project
-  const { data: units = [], isLoading: unitsLoading } = useQuery<UnitWithDetails[]>({
+  const { data: units = [], isLoading: unitsLoading, isError: unitsError } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/agents", agentId, "units", currentProjectId],
     queryFn: async () => {
       if (!currentProjectId) return [];
@@ -71,7 +74,7 @@ export default function ShowingSessionLayout() {
   });
 
   // Fetch active lead data
-  const { data: activeLead = null, isLoading: isLeadLoading } = useQuery<Lead | null>({
+  const { data: activeLead = null, isLoading: isLeadLoading, isError: leadError } = useQuery<Lead | null>({
     queryKey: ["/api/leads", activeLeadId],
     enabled: !!activeLeadId,
     queryFn: async () => {
@@ -83,8 +86,27 @@ export default function ShowingSessionLayout() {
   });
 
   // Fetch toured units
-  const { data: touredUnits = [] } = useTouredUnits(activeSessionId);
+  const { data: touredUnits = [], isLoading: isTouredLoading } = useTouredUnits(activeSessionId);
   const { data: sessionStatus } = useSessionStatus(activeSessionId);
+
+  // WebSocket integration for real-time toured units
+  useEffect(() => {
+    if (activeSessionId && lastMessage) {
+      try {
+        const messageData = JSON.parse(lastMessage.data);
+        if (messageData.type === "unit_toured" && messageData.sessionId === activeSessionId) {
+          queryClient.invalidateQueries({ queryKey: ["/api/showing-sessions", activeSessionId, "toured-units"] });
+          toast({
+            title: "Unit Toured (Real-time)",
+            description: `Unit ${messageData.unitNumber} was toured by the client.`,
+            duration: 3000,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to parse WebSocket message:", error);
+      }
+    }
+  }, [lastMessage, activeSessionId, toast]);
 
   // Mutations
   const endSessionMutation = useEndSession();
@@ -103,6 +125,7 @@ export default function ShowingSessionLayout() {
     setActiveLeadId(leadId);
     setCurrentProjectId(projectId);
     agentContextStore.setProject(projectId, PROJECTS.find(p => p.id === projectId)?.name || '');
+    sendMessage(JSON.stringify({ type: "subscribe", sessionId: sessionId })); // Subscribe to session events
   };
 
   const handleEndSession = async () => {
@@ -134,7 +157,7 @@ export default function ShowingSessionLayout() {
       // Clear state
       setActiveSessionId(null);
       setActiveLeadId(null);
-      
+
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "dashboard"] });
     } catch (error) {
@@ -147,7 +170,7 @@ export default function ShowingSessionLayout() {
     }
   };
 
-  const handleTourUnit = async (unitId: string, isToured: boolean) => {
+  const handleTourUnit = useCallback(async (unitId: string, isToured: boolean) => {
     if (!activeSessionId) return;
 
     if (isToured) {
@@ -163,13 +186,18 @@ export default function ShowingSessionLayout() {
 
         if (!response.ok) throw new Error("Failed to mark unit as toured");
 
-        queryClient.invalidateQueries({ queryKey: ["/api/showing-sessions", activeSessionId, "toured-units"] });
+        // No need to invalidate queries here, WebSocket will handle it
+        // queryClient.invalidateQueries({ queryKey: ["/api/showing-sessions", activeSessionId, "toured-units"] });
 
         toast({
           title: "Unit Toured",
           description: "Unit marked as toured in this session.",
           duration: 2000,
         });
+
+        // Optionally send a message to the server via WebSocket if your backend expects it
+        // sendMessage(JSON.stringify({ type: "unit_toured", sessionId: activeSessionId, unitId }));
+
       } catch (error) {
         console.error("Error marking unit as toured:", error);
         toast({
@@ -179,10 +207,11 @@ export default function ShowingSessionLayout() {
         });
       }
     }
-  };
+  }, [activeSessionId, toast, sendMessage]); // Added sendMessage to dependencies
 
   const formatPrice = (price: string | number): string => {
     const numPrice = typeof price === "string" ? parseFloat(price) : price;
+    if (isNaN(numPrice)) return "N/A";
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
@@ -191,16 +220,34 @@ export default function ShowingSessionLayout() {
     }).format(numPrice);
   };
 
+  // Error handling for critical data fetching
+  if (unitsError || leadError) {
+    toast({
+      title: "Error Loading Data",
+      description: "Could not load essential session data. Please try refreshing.",
+      variant: "destructive",
+    });
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <AlertCircle className="h-8 w-8 mr-4 text-destructive" />
+        <p className="text-lg font-semibold text-destructive">Failed to load session data.</p>
+      </div>
+    );
+  }
+
+  // Loading states
+  const isLoading = unitsLoading || isLeadLoading || isTouredLoading;
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Mobile overlay */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
-      
+
       {/* LEFT SIDEBAR - Client Context */}
       <aside className={cn(
         "fixed md:relative z-50 md:z-auto w-80 h-full bg-card border-r p-6 flex-shrink-0 overflow-y-auto transition-transform duration-300",
@@ -208,7 +255,9 @@ export default function ShowingSessionLayout() {
       )}>
         <h3 className="text-xl font-black uppercase mb-4">Client Context</h3>
 
-        {activeLead ? (
+        {isLoading ? (
+          <p className="text-muted-foreground">Loading client context...</p>
+        ) : activeLead ? (
           <>
             <p className="font-bold text-primary text-xl mb-1">{activeLead.firstName} {activeLead.lastName}</p>
             <p className="text-sm text-muted-foreground mb-4">
@@ -226,7 +275,7 @@ export default function ShowingSessionLayout() {
                   <li>
                     <span className="text-muted-foreground">Max Price:</span>{" "}
                     <span className="font-semibold">
-                      {activeLead.preferences.max_price ? `$${(activeLead.preferences.max_price / 1000).toFixed(0)}K` : "N/A"}
+                      {activeLead.preferences.max_price ? formatPrice(activeLead.preferences.max_price) : "N/A"}
                     </span>
                   </li>
                   <li>
@@ -300,7 +349,11 @@ export default function ShowingSessionLayout() {
               </Button>
               <div>
                 <h2 className="text-xl font-black uppercase">{currentProject?.name || 'Select Project'}</h2>
-                <p className="text-sm text-muted-foreground">{units.length} units available</p>
+                {isLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading units...</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{units.length} units available</p>
+                )}
               </div>
             </div>
 
@@ -329,133 +382,141 @@ export default function ShowingSessionLayout() {
 
         {/* Units Grid */}
         <div className="flex-1 overflow-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {units.map(unit => {
-              const unitMatch = unitMatches.get(unit.id);
-              const matchLevel = unitMatch
-                ? unitMatch.matchScore >= 90 ? 'perfect'
-                : unitMatch.matchScore >= 70 ? 'strong'
-                : unitMatch.matchScore >= 50 ? 'good'
-                : 'none'
-                : 'none';
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-muted-foreground">Loading units...</p>
+            </div>
+          ) : units.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-muted-foreground">No units found for this project.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {units.map(unit => {
+                const unitMatch = unitMatches.get(unit.id);
+                const matchLevel = unitMatch
+                  ? unitMatch.matchScore >= 90 ? 'perfect'
+                  : unitMatch.matchScore >= 70 ? 'strong'
+                  : unitMatch.matchScore >= 50 ? 'good'
+                  : 'none'
+                  : 'none';
 
-              const isToured = touredUnits.some(tu => tu.unitId === unit.id);
+                const isToured = touredUnits.some(tu => tu.unitId === unit.id);
 
-              return (
-                <Card
-                  key={unit.id}
-                  className={cn(
-                    "p-4 cursor-pointer hover:shadow-xl transition-all",
-                    matchLevel === 'perfect' && "border-l-8 border-l-green-600 bg-green-50/50",
-                    matchLevel === 'strong' && "border-l-8 border-l-blue-600 bg-blue-50/50",
-                    matchLevel === 'good' && "border-l-8 border-l-yellow-600 bg-yellow-50/50"
-                  )}
-                  onClick={() => {
-                    setSelectedUnitId(unit.id);
-                    setShowUnitSheet(true);
-                  }}
-                >
-                  {unitMatch && unitMatch.matchScore > 0 && (
-                    <div className="absolute top-3 right-3">
+                return (
+                  <Card
+                    key={unit.id}
+                    className={cn(
+                      "p-4 cursor-pointer hover:shadow-xl transition-all relative", // Added relative for absolute positioning
+                      matchLevel === 'perfect' && "border-l-8 border-l-green-600 bg-green-50/50",
+                      matchLevel === 'strong' && "border-l-8 border-l-blue-600 bg-blue-50/50",
+                      matchLevel === 'good' && "border-l-8 border-l-yellow-600 bg-yellow-50/50"
+                    )}
+                    onClick={() => {
+                      setSelectedUnitId(unit.id);
+                      setShowUnitSheet(true);
+                    }}
+                  >
+                    {unitMatch && unitMatch.matchScore > 0 && (
                       <div className={cn(
-                        "px-3 py-1 rounded-full text-xs font-black uppercase shadow-lg",
+                        "absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-black uppercase shadow-lg",
                         matchLevel === 'perfect' && "bg-green-600 text-white",
                         matchLevel === 'strong' && "bg-blue-600 text-white",
                         matchLevel === 'good' && "bg-yellow-600 text-white"
                       )}>
                         {unitMatch.matchScore}% Match
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-xl font-black uppercase">Unit {unit.unitNumber}</h3>
-                        {isToured && (
-                          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500 mt-1">
-                            <CheckCircle className="h-3 w-3 mr-1 fill-green-600" />
-                            TOURED
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="text-2xl font-bold">{formatPrice(unit.price)}</div>
-
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Bed className="h-4 w-4" />
-                        <span>{unit.bedrooms} BD</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Bath className="h-4 w-4" />
-                        <span>{unit.bathrooms} BA</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Maximize2 className="h-4 w-4" />
-                        <span>{unit.squareFeet.toLocaleString()} SF</span>
-                      </div>
-                    </div>
-
-                    {unitMatch && unitMatch.matchReasons.length > 0 && (
-                      <div className={cn(
-                        "p-3 rounded-lg border-2",
-                        matchLevel === 'perfect' && "bg-green-50 border-green-300",
-                        matchLevel === 'strong' && "bg-blue-50 border-blue-300",
-                        matchLevel === 'good' && "bg-yellow-50 border-yellow-300"
-                      )}>
-                        <div className="text-xs font-bold uppercase mb-2 flex items-center gap-1">
-                          <Star className={cn(
-                            "h-3 w-3",
-                            matchLevel === 'perfect' && "text-green-600 fill-green-600",
-                            matchLevel === 'strong' && "text-blue-600 fill-blue-600",
-                            matchLevel === 'good' && "text-yellow-600 fill-yellow-600"
-                          )} />
-                          Why This Matches
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-xl font-black uppercase">Unit {unit.unitNumber}</h3>
+                          {isToured && (
+                            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500 mt-1">
+                              <CheckCircle className="h-3 w-3 mr-1 fill-green-600" />
+                              TOURED
+                            </Badge>
+                          )}
                         </div>
-                        <ul className="text-xs space-y-1">
-                          {unitMatch.matchReasons.slice(0, 3).map((reason, idx) => (
-                            <li key={idx} className="flex items-start gap-1">
-                              <span className={cn(
-                                "mt-0.5",
-                                matchLevel === 'perfect' && "text-green-600",
-                                matchLevel === 'strong' && "text-blue-600",
-                                matchLevel === 'good' && "text-yellow-600"
-                              )}>✓</span>
-                              <span className="text-muted-foreground">{reason}</span>
-                            </li>
-                          ))}
-                        </ul>
                       </div>
-                    )}
 
-                    {activeSessionId && (
-                      <div className={cn(
-                        "flex items-center space-x-2 p-3 rounded-md border-2 transition-colors min-h-[48px]",
-                        isToured
-                          ? "bg-green-50 border-green-300"
-                          : "border-dashed border-muted-foreground/30"
-                      )}>
-                        <Checkbox
-                          checked={isToured}
-                          onCheckedChange={(checked) => handleTourUnit(unit.id, checked as boolean)}
-                          className="h-8 w-8"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <label className={cn(
-                          "text-sm font-medium cursor-pointer flex-1",
-                          isToured && "text-green-700"
-                        )}>
-                          {isToured ? "✓ Toured with Client" : "Mark as Toured"}
-                        </label>
+                      <div className="text-2xl font-bold">{formatPrice(unit.price)}</div>
+
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Bed className="h-4 w-4" />
+                          <span>{unit.bedrooms} BD</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Bath className="h-4 w-4" />
+                          <span>{unit.bathrooms} BA</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Maximize2 className="h-4 w-4" />
+                          <span>{unit.squareFeet.toLocaleString()} SF</span>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+
+                      {unitMatch && unitMatch.matchReasons.length > 0 && (
+                        <div className={cn(
+                          "p-3 rounded-lg border-2",
+                          matchLevel === 'perfect' && "bg-green-50 border-green-300",
+                          matchLevel === 'strong' && "bg-blue-50 border-blue-300",
+                          matchLevel === 'good' && "bg-yellow-50 border-yellow-300"
+                        )}>
+                          <div className="text-xs font-bold uppercase mb-2 flex items-center gap-1">
+                            <Star className={cn(
+                              "h-3 w-3",
+                              matchLevel === 'perfect' && "text-green-600 fill-green-600",
+                              matchLevel === 'strong' && "text-blue-600 fill-blue-600",
+                              matchLevel === 'good' && "text-yellow-600 fill-yellow-600"
+                            )} />
+                            Why This Matches
+                          </div>
+                          <ul className="text-xs space-y-1">
+                            {unitMatch.matchReasons.slice(0, 3).map((reason, idx) => (
+                              <li key={idx} className="flex items-start gap-1">
+                                <span className={cn(
+                                  "mt-0.5",
+                                  matchLevel === 'perfect' && "text-green-600",
+                                  matchLevel === 'strong' && "text-blue-600",
+                                  matchLevel === 'good' && "text-yellow-600"
+                                )}>✓</span>
+                                <span className="text-muted-foreground">{reason}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {activeSessionId && (
+                        <div className={cn(
+                          "flex items-center space-x-2 p-3 rounded-md border-2 transition-colors min-h-[48px]",
+                          isToured
+                            ? "bg-green-50 border-green-300"
+                            : "border-dashed border-muted-foreground/30"
+                        )}>
+                          <Checkbox
+                            checked={isToured}
+                            onCheckedChange={(checked) => handleTourUnit(unit.id, checked as boolean)}
+                            className="h-8 w-8"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <label className={cn(
+                            "text-sm font-medium cursor-pointer flex-1",
+                            isToured && "text-green-700"
+                          )}>
+                            {isToured ? "✓ Toured with Client" : "Mark as Toured"}
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Bottom Tracker */}

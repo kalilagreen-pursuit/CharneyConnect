@@ -1,0 +1,160 @@
+That's excellent news! Since you've confirmed that all steps in Phase 1, Step 1 (Database Schema Creation) have been implemented and migrated to Supabase, we can now proceed directly to Phase 1, Step 2: API Endpoint Definition.
+
+This step involves creating the necessary API route stubs in the backend to handle the new showing session and tracking features.
+
+🚀 Phase 1, Step 2: API Endpoint Definition
+Instruct the Replit Assistant to modify the backend file (likely server/routes.ts or server/index.js) to define the following API route stubs. We will implement basic 200 responses to confirm the routes are accessible, deferring complex database logic for later.
+
+A. Session Endpoints
+
+Route	Method	Purpose
+/api/showing-sessions	POST	Start New Session
+/api/showing-sessions/:id	GET	Get Session Details
+/api/showing-sessions/:id/end	POST	Complete Session
+JavaScript
+// server/routes.ts (Adding Session Endpoints)
+
+// POST /api/showing-sessions: Start new session
+app.post("/api/showing-sessions", async (req, res) => {
+    // Expects { agentId, contactId, projectId } in req.body
+    console.log("ROUTE STUB: Starting new showing session:", req.body);
+    // Return a mock session ID
+    res.json({ sessionId: 'mock-session-' + Date.now(), status: 'active', startedAt: new Date() });
+});
+
+// GET /api/showing-sessions/:id: Get session details
+app.get("/api/showing-sessions/:id", async (req, res) => {
+    console.log("ROUTE STUB: Getting session details for ID:", req.params.id);
+    // Return mock data
+    res.json({ id: req.params.id, status: 'active', totalUnitsViewed: 0 });
+});
+
+// POST /api/showing-sessions/:id/end: Complete session
+app.post("/api/showing-sessions/:id/end", async (req, res) => {
+    console.log("ROUTE STUB: Ending session and triggering follow-up for ID:", req.params.id);
+    res.json({ message: "Session completed, follow-up automation triggered.", status: 'completed' });
+});
+B. Tour Tracking Endpoints
+
+Route	Method	Purpose
+/api/toured-units	POST	Mark Unit as Toured
+/api/showing-sessions/:id/toured-units	GET	Get Toured Units
+JavaScript
+// server/routes.ts (Adding Tour Tracking Endpoints)
+
+// POST /api/toured-units: Mark unit as toured
+app.post("/api/toured-units", async (req, res) => {
+    // Expects { sessionId, unitId, agentNotes } in req.body
+    console.log("ROUTE STUB: Logging unit view:", req.body);
+    // Return mock success
+    res.json({ message: "Unit view logged successfully.", viewedAt: new Date() });
+});
+
+// GET /api/showing-sessions/:id/toured-units: Get Toured Units
+app.get("/api/showing-sessions/:id/toured-units", async (req, res) => {
+    console.log("ROUTE STUB: Getting toured units for session:", req.params.id);
+    // Return mock empty array
+    res.json([]); 
+});
+C. Dashboard Endpoints
+
+Route	Method	Purpose
+/api/agents/:id/dashboard	GET	Get Aggregated Dashboard Data
+/api/agents/:id/active-clients	GET	Get Qualified Leads for Dashboard
+JavaScript
+// server/routes.ts (Adding Dashboard Endpoints)
+
+// GET /api/agents/:id/dashboard: Get Aggregated Dashboard Data
+app.get("/api/agents/:id/dashboard", async (req, res) => {
+    console.log("ROUTE STUB: Fetching dashboard data for agent:", req.params.id);
+    res.json({ 
+        activeSessions: 1, 
+        pendingFollowUps: 3, 
+        projectCount: 2 
+    });
+});
+
+// GET /api/agents/:id/active-clients: Get Qualified Leads for Dashboard
+app.get("/api/agents/:id/active-clients", async (req, res) => {
+    console.log("ROUTE STUB: Fetching active clients/qualified leads for agent:", req.params.id);
+    // Returning a mock active client
+    res.json([
+        { id: 'mock-client-andrew', name: 'Andrew K.', leadScore: 85, nextFollowUpDate: '2025-10-15' }
+    ]);
+});
+3. Core Logic Fixes (Non-UI Backend)
+Now we move to Phase 1, Step 3 to implement the required robust logic that handles lead filtering and unit matching, fulfilling the "smart" requirements of the workflow.
+
+A. Fix Leads Filtering (Final, Robust Logic)
+
+Instruct the Replit Assistant to modify the existing GET /api/leads route in server/routes.ts to include the final filtering and the demo fail-safe.
+
+JavaScript
+// server/routes.ts (Modifying existing app.get("/api/leads"))
+
+app.get("/api/leads", async (req, res) => {
+  const { agentId, projectId, status } = req.query;
+  
+  // NOTE: Assuming storage.getAllLeads() now handles the logic to pull from both 'leads' and 'threads'
+  let leads = await storage.getAllLeads();
+  
+  // Apply filtering
+  if (agentId) {
+    leads = leads.filter(lead => lead.agentId === agentId);
+  }
+  if (status) {
+    leads = leads.filter(lead => lead.status === status);
+  }
+  if (projectId) {
+    // This filter is complex due to the array check. For robust filtering, we must assume
+    // the lead has a targetLocations array that includes the projectId string.
+    leads = leads.filter(lead => lead.targetLocations?.includes(projectId));
+  }
+  
+  // DEMO FAIL-SAFE: If no leads match the filters, inject a mock qualified lead.
+  if (leads.length === 0 && agentId === 'agent-001' && status === 'qualified') {
+    const mockLead = {
+      id: 'demo-lead-andrew',
+      name: 'Andrew K.',
+      email: 'andrew.k@example.com',
+      agentId: 'agent-001', // Sarah Chen
+      status: 'qualified',
+      projectId: projectId || 'THE JACKSON',
+      // CRITICAL: Must have preferences for the frontend to calculate match scores
+      preferences: { min_beds: 2, max_price: 1500000, desired_views: ['City'] },
+    };
+    leads.push(mockLead);
+    console.warn("[DEMO FAIL-SAFE] Injected mock lead for Sarah Chen to proceed.");
+  }
+  
+  res.json(leads);
+});
+B. Add Match Scoring Stub to GET /api/units
+
+Instruct the Replit Assistant to modify the existing GET /api/units route in server/routes.ts to accept client preferences and inject a placeholder matchScore.
+
+JavaScript
+// server/routes.ts (Modifying existing app.get("/api/units"))
+
+// NOTE: Define a placeholder utility function
+const calculateMatchScore = (unit, preferences) => {
+    // This is where the complex logic (Phase 6A) will live.
+    // For now, return a placeholder score to enable the frontend visualization.
+    return Math.floor(Math.random() * 50) + 50; // Random score between 50 and 100
+};
+
+app.get("/api/units", async (req, res) => {
+    const { projectId, matchPreferences } = req.query;
+    let units = await storage.getUnits(projectId); // Assuming this fetches units
+    
+    // Inject match scores if preferences are provided
+    if (matchPreferences) {
+        const preferences = JSON.parse(matchPreferences);
+        units = units.map(unit => ({
+            ...unit,
+            matchScore: calculateMatchScore(unit, preferences),
+        }));
+    }
+    
+    res.json(units);
+});

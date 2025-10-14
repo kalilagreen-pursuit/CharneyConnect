@@ -487,7 +487,7 @@ export default function ShowingSessionLayout() {
                             Why This Matches
                           </div>
                           <ul className="text-xs space-y-1">
-                            {unitMatch.matchReasons.slice(0, 3).map((reason, idx) => (
+                            {unitMatch.matchReasons.slice(0, 3).map((reason: string, idx: number) => (
                               <li key={idx} className="flex items-start gap-1">
                                 <span className={cn(
                                   "mt-0.5",

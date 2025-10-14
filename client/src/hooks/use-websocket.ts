@@ -1,4 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
+
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { queryClient } from '@/lib/queryClient';
 
 interface WebSocketMessage {
@@ -12,10 +13,19 @@ export function useWebSocket() {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const [lastMessage, setLastMessage] = useState<MessageEvent | null>(null);
+
+  const sendMessage = useCallback((message: string) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(message);
+    } else {
+      console.warn('WebSocket is not connected. Cannot send message.');
+    }
+  }, []);
 
   const connect = useCallback(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.host || 'localhost:5000';
+    const host = window.location.host;
     const wsUrl = `${protocol}//${host}/ws`;
 
     try {
@@ -28,6 +38,8 @@ export function useWebSocket() {
       };
 
       ws.onmessage = (event) => {
+        setLastMessage(event);
+        
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
           
@@ -103,5 +115,9 @@ export function useWebSocket() {
     };
   }, [connect]);
 
-  return wsRef;
+  return {
+    lastMessage,
+    sendMessage,
+    readyState: wsRef.current?.readyState ?? WebSocket.CLOSED
+  };
 }

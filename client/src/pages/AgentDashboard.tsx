@@ -111,7 +111,7 @@ export default function AgentDashboard() {
               <p className="text-sm text-muted-foreground mb-4">Unable to fetch dashboard data</p>
               <Button 
                 onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", AGENT_ID, "dashboard"] })}
-                className="min-h-[48px]"
+                className="min-h-[48px] touch-manipulation"
               >
                 Retry
               </Button>
@@ -154,7 +154,7 @@ export default function AgentDashboard() {
                   <p className="text-sm text-muted-foreground mb-4">There was an error fetching your client list</p>
                   <Button 
                     onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", AGENT_ID, "active-clients"] })}
-                    className="min-h-[48px]"
+                    className="min-h-[48px] touch-manipulation"
                   >
                     Retry Loading Clients
                   </Button>

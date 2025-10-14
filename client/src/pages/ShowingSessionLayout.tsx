@@ -18,6 +18,7 @@ import {
   Clock,
   Calendar,
   AlertCircle,
+  Timer,
 } from "lucide-react";
 import { UnitWithDetails, Lead } from "@shared/schema";
 import { agentContextStore } from "@/lib/localStores";
@@ -26,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { getMatchedUnitsWithScores, getMatchIndicatorClass } from "@/lib/preference-matcher";
 import { ClientSelectorDialog } from "@/components/ClientSelectorDialog";
 import { UnitSheetDrawer } from "@/components/unit-sheet-drawer";
+import { EndSessionDialog } from "@/components/EndSessionDialog";
 import { useWebSocket } from "@/hooks/use-websocket";
 
 const PROJECTS = [
@@ -46,6 +48,9 @@ export default function ShowingSessionLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [showUnitSheet, setShowUnitSheet] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState<string>("00:00:00");
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const [generatedPortalUrl, setGeneratedPortalUrl] = useState<string | null>(null);
 
   const agentId = agentContextStore.getAgentId() || "agent-001";
   const agentName = agentContextStore.getAgentName() || "Agent";
@@ -120,6 +125,33 @@ export default function ShowingSessionLayout() {
     }
   }, [lastMessage, activeSessionId, toast]);
 
+  // Session timer
+  useEffect(() => {
+    if (!activeSessionId || !sessionStatus?.startTime) {
+      setElapsedTime("00:00:00");
+      return;
+    }
+
+    const updateTimer = () => {
+      const startTime = new Date(sessionStatus.startTime).getTime();
+      const now = Date.now();
+      const elapsed = Math.floor((now - startTime) / 1000);
+
+      const hours = Math.floor(elapsed / 3600);
+      const minutes = Math.floor((elapsed % 3600) / 60);
+      const seconds = elapsed % 60;
+
+      setElapsedTime(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [activeSessionId, sessionStatus?.startTime]);
+
   // Mutations
   const endSessionMutation = useEndSession();
   const generatePortalMutation = useGeneratePortal();
@@ -140,6 +172,10 @@ export default function ShowingSessionLayout() {
     // The WebSocket subscription is now handled by the useEffect hook
   };
 
+  const handleEndSessionClick = () => {
+    setShowEndDialog(true);
+  };
+
   const handleEndSession = async () => {
     if (!activeSessionId || !activeLeadId) return;
 
@@ -157,8 +193,7 @@ export default function ShowingSessionLayout() {
       await endSessionMutation.mutateAsync(activeSessionId);
 
       const fullPortalUrl = `${window.location.origin}${portalResult.portalUrl}`;
-
-      alert(`✅ SESSION ENDED SUCCESSFULLY!\n\nPortal URL Generated:\n${fullPortalUrl}\n\nFollow-up automation has been triggered.`);
+      setGeneratedPortalUrl(fullPortalUrl);
 
       toast({
         title: "Session Ended Successfully!",
@@ -166,12 +201,16 @@ export default function ShowingSessionLayout() {
         duration: 8000,
       });
 
-      // Clear state
-      setActiveSessionId(null);
-      setActiveLeadId(null);
+      // Clear state after a delay to show portal URL
+      setTimeout(() => {
+        setShowEndDialog(false);
+        setActiveSessionId(null);
+        setActiveLeadId(null);
+        setGeneratedPortalUrl(null);
 
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "dashboard"] });
+        // Invalidate queries
+        queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "dashboard"] });
+      }, 3000);
     } catch (error) {
       console.error("Failed to end session:", error);
       toast({
@@ -376,7 +415,7 @@ export default function ShowingSessionLayout() {
             <div className="flex gap-2">
               {activeSessionId ? (
                 <Button
-                  onClick={handleEndSession}
+                  onClick={handleEndSessionClick}
                   variant="destructive"
                   className="uppercase font-black"
                   disabled={endSessionMutation.isPending || generatePortalMutation.isPending}
@@ -553,6 +592,14 @@ export default function ShowingSessionLayout() {
               <>
                 <div className="h-6 w-px bg-border"></div>
                 <div className="flex items-center gap-2">
+                  <Timer className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-mono font-bold text-primary">
+                    {elapsedTime}
+                  </span>
+                </div>
+
+                <div className="h-6 w-px bg-border"></div>
+                <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
                     Started: {new Date(sessionStatus.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -591,6 +638,21 @@ export default function ShowingSessionLayout() {
         agentName={agentName}
         activeVisitId={activeSessionId}
         vizMode="LIVE"
+      />
+
+      <EndSessionDialog
+        isOpen={showEndDialog}
+        onClose={() => setShowEndDialog(false)}
+        onConfirm={handleEndSession}
+        sessionData={{
+          clientName: activeLead ? `${activeLead.firstName} ${activeLead.lastName}` : 'Client',
+          projectName: currentProject?.name || 'Project',
+          touredUnitsCount: touredUnits.length,
+          elapsedTime: elapsedTime,
+          startTime: sessionStatus?.startTime || new Date().toISOString(),
+        }}
+        isEnding={endSessionMutation.isPending || generatePortalMutation.isPending}
+        portalUrl={generatedPortalUrl || undefined}
       />
     </div>
   );

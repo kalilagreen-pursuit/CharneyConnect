@@ -136,12 +136,12 @@ const PortalView: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-start justify-between flex-wrap gap-6">
             <div>
-              <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-4 leading-none">
+              <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight mb-4 leading-none">
                 {portalData.projectName || 'Luxury Residences'}
               </h1>
               <p className="text-xl md:text-2xl opacity-95 font-bold">Your Personalized Tour Summary</p>
             </div>
-            <Badge variant="secondary" className="bg-green-600 text-white text-base md:text-lg px-6 py-3 shadow-xl font-black uppercase">
+            <Badge variant="secondary" className="bg-green-600 text-white text-base md:text-lg px-6 py-3 shadow-xl font-black uppercase min-h-[48px] flex items-center">
               <CheckCircle className="h-5 w-5 mr-2 fill-white" />
               Tour Confirmed
             </Badge>

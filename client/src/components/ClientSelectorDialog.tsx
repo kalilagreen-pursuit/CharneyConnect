@@ -72,7 +72,7 @@ export function ClientSelectorDialog({ isOpen, onClose, agentId, onSessionStart 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           agentId,
-          contactId: selectedLeadId,
+          leadId: selectedLeadId,
           projectId: selectedProjectId,
         }),
       });

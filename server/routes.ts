@@ -52,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionSchema = z.object({
         agentId: z.string(),
-        contactId: z.string().uuid(),
+        leadId: z.string().uuid(),
         projectId: z.string().uuid(),
       });
 
@@ -64,35 +64,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { agentId, contactId, projectId } = validation.data;
+      const { agentId, leadId, projectId } = validation.data;
 
-      // Verify contact exists
-      const [contact] = await db
+      // Verify lead exists
+      const [lead] = await db
         .select()
-        .from(contacts)
-        .where(eq(contacts.id, contactId))
+        .from(leads)
+        .where(eq(leads.id, leadId))
         .limit(1);
 
-      if (!contact) {
-        return res.status(404).json({ error: "Contact not found" });
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
       }
 
       // Create new showing session in database
+      // Map leadId to contactId column for now (UUID placeholder)
       const [newSession] = await db.insert(showingSessions).values({
         agentId,
-        contactId,
+        contactId: leadId,  // Store leadId in contactId column
         projectId,
         status: 'in_progress',
         startedAt: new Date(),
       }).returning();
 
-      console.log(`Showing session created: ${newSession.id} for agent ${agentId} with contact ${contact.firstName} ${contact.lastName}`);
+      console.log(`Showing session created: ${newSession.id} for agent ${agentId} with lead ${lead.name}`);
 
       res.json({ 
         sessionId: newSession.id, 
         status: newSession.status, 
         startedAt: newSession.startedAt,
-        contactName: `${contact.firstName} ${contact.lastName}`
+        contactName: lead.name
       });
     } catch (error) {
       console.error("Error creating showing session:", error);

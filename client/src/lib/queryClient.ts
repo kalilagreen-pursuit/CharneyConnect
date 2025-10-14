@@ -529,7 +529,7 @@ export type ShowingSession = {
 // Type for starting a session payload
 type StartSessionPayload = {
   agentId: string;
-  contactId: string;
+  leadId: string;
   projectId: string;
 };
 
@@ -551,8 +551,8 @@ export const useStartSession = (agentId: string, projectId: string) => {
   const queryClientInstance = queryClient;
 
   return useMutation({
-    mutationFn: (contactId: string) =>
-      startNewShowingSession({ agentId, contactId, projectId }),
+    mutationFn: (leadId: string) =>
+      startNewShowingSession({ agentId, leadId, projectId }),
     onSuccess: () => {
       // Invalidate dashboard metrics to update 'Active Sessions' count
       queryClientInstance.invalidateQueries({

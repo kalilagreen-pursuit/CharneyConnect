@@ -249,6 +249,21 @@ export const leads = pgTable("leads", {
 
 export type Lead = typeof leads.$inferSelect & {
   toured_unit_ids?: string[]; // Array of Unit IDs checked off by the agent
+  firstName?: string;
+  lastName?: string;
+  preferences?: {
+    min_price?: number;
+    max_price?: number;
+    min_beds?: number;
+    max_beds?: number;
+    min_baths?: number;
+    max_baths?: number;
+    min_sqft?: number;
+    max_sqft?: number;
+    desired_views?: string[];
+    preferred_floors?: string[];
+    preferred_buildings?: string[];
+  };
 };
 
 // Client preferences interface for type safety

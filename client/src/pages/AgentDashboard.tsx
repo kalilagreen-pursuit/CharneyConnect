@@ -201,7 +201,7 @@ export default function AgentDashboard() {
                   <CardContent className="py-12 text-center">
                     <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <p className="text-muted-foreground mb-4">No active clients found.</p>
-                    <Button onClick={() => setLocation('/agent/viewer/new')} data-testid="button-start-new-session">
+                    <Button onClick={handleGoToViewer} data-testid="button-start-new-session">
                       Start New Session
                     </Button>
                   </CardContent>
@@ -224,21 +224,20 @@ export default function AgentDashboard() {
                   >
                     🎯 Start New Showing Session
                   </Button>
-                  <Link href="/leads">
-                    <Button
-                      variant="outline"
-                      className="w-full uppercase font-black gap-2"
-                      data-testid="button-follow-ups"
-                    >
-                      <AlertCircle className="h-4 w-4" />
-                      Follow-up Tasks
-                      {pendingFollowUps > 0 && (
-                        <Badge variant="destructive" className="ml-2">
-                          {pendingFollowUps}
-                        </Badge>
-                      )}
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="outline"
+                    className="w-full uppercase font-black gap-2"
+                    onClick={() => setLocation('/leads')}
+                    data-testid="button-follow-ups"
+                  >
+                    <AlertCircle className="h-4 w-4" />
+                    Follow-up Tasks
+                    {pendingFollowUps > 0 && (
+                      <Badge variant="destructive" className="ml-2">
+                        {pendingFollowUps}
+                      </Badge>
+                    )}
+                  </Button>
 
                   {/* Project Inventory Summary */}
                   <div className="pt-3 border-t space-y-2">

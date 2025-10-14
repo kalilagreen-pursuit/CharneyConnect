@@ -24,6 +24,21 @@ Charney CRM is a professional, data-focused CRM platform designed specifically f
 - PostgreSQL database (or Supabase account)
 - Environment variables configured (see `.env.example`)
 
+### New Agent Workflow Features
+
+**Showing Session Management**
+- Start showing sessions with client selection and preference matching
+- Real-time unit view tracking during sessions
+- Tour checkbox to mark units as toured
+- Automatic portal generation for clients after session ends
+- Post-showing automation triggers follow-up tasks
+
+**Client Portal**
+- Personalized link generated after each showing
+- Displays toured units with details
+- 30-day expiration for security
+- Mobile-optimized for client review
+
 ### Installation
 
 1. **Clone the repository**
@@ -108,8 +123,32 @@ Navigate to `/leads` to manage contacts, track deal progress, and view activity 
 ### Manager View
 Visit `/manager` for a Kanban-style overview with real-time unit status updates.
 
-### Agent View
-Use `/agent/select` to choose an agent, then `/agent/viewer` for 3D building visualization and unit interactions.
+### Agent Workflow (NEW)
+1. **Agent Dashboard** - `/agent/dashboard` - View metrics, active clients, and quick actions
+2. **Project Selection** - `/agent/project-select` - Choose which project to show
+3. **Agent Viewer** - `/agent/viewer` - Interactive showing session management:
+   - Start showing session with client selection
+   - View units with real-time preference matching
+   - Mark units as toured during walkthrough
+   - End session to generate client portal and trigger automation
+
+### Client Portal
+Access via generated link at `/portal/{token}` to review toured units from showing session.
+
+## 🔌 API Endpoints
+
+**Showing Sessions**
+- `POST /api/showing-sessions` - Start a new showing session
+- `POST /api/showing-sessions/:id/end` - End session and trigger automation
+- `GET /api/showing-sessions/:id` - Get session status
+- `GET /api/showing-sessions/:id/toured-units` - Get toured units list
+
+**Portal Generation**
+- `POST /api/portals/generate` - Generate client portal link
+
+**Agent Dashboard**
+- `GET /api/agents/:id/dashboard` - Get agent metrics
+- `GET /api/agents/:id/active-clients` - Get active client list
 
 ## 📦 Building for Production
 

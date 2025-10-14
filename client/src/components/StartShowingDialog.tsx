@@ -43,13 +43,13 @@ export function StartShowingDialog({
   });
 
   const { data: leads = [], isLoading } = useLeadsForShowing(agentId, projectId);
-  
+
   // Add Andrew K. as a mock lead if not present for demo purposes
   const leadsWithMock = useMemo(() => {
     const hasAndrewK = leads.some(lead => 
       lead.firstName === 'Andrew' && lead.lastName === 'K.'
     );
-    
+
     if (!hasAndrewK && !isLoading) {
       return [
         {
@@ -62,7 +62,7 @@ export function StartShowingDialog({
         ...leads
       ];
     }
-    
+
     return leads;
   }, [leads, isLoading]);
   const createMutation = useCreateQuickLead(agentId, projectId);
@@ -245,7 +245,7 @@ export function StartShowingDialog({
                 <Button 
                   onClick={handleCreateSubmit} 
                   disabled={!newLeadData.firstName || !newLeadData.lastName || createMutation.isPending}
-                  className="flex-1 uppercase font-black"
+                  className="flex-1 uppercase font-black min-h-[48px]"
                   data-testid="button-save-and-start"
                 >
                   {createMutation.isPending ? 'SAVING...' : 'SAVE & START'}

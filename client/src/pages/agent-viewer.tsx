@@ -181,7 +181,7 @@ export default function AgentViewer() {
   );
 
   // Fetch units specific to this agent and project
-  const { data: units = [], isLoading } = useQuery<UnitWithDetails[]>({
+  const { data: units = [], isLoading, error: unitsError } = useQuery<UnitWithDetails[]>({
     queryKey: ["/api/agents", agentId, "units", currentProjectId],
     queryFn: async () => {
       const response = await fetch(
@@ -190,8 +190,29 @@ export default function AgentViewer() {
       if (!response.ok) throw new Error("Failed to fetch agent units");
       return response.json();
     },
-    enabled: !!agentId && !!currentProjectId, // Only fetch when both IDs are available
+    enabled: !!agentId && !!currentProjectId,
+    retry: 2,
   });
+
+  // Show error state if units failed to load
+  if (unitsError) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center space-y-4 p-6">
+          <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+          <p className="text-lg font-bold uppercase text-destructive">
+            Failed to Load Units
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {unitsError.message || "An error occurred while loading unit data"}
+          </p>
+          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", currentProjectId] })} size="lg" className="min-h-[44px]">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch active deals for this agent and project
   const { data: activeDeals = [], isLoading: isLoadingDeals } = useQuery<
@@ -645,11 +666,13 @@ export default function AgentViewer() {
 
 
   if (isLoading || isLoadingAgent) {
-    // Check both unit loading and agent loading
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-lg text-muted-foreground">
-          Loading agent data...
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary mx-auto"></div>
+          <p className="text-lg font-bold uppercase text-muted-foreground">
+            Loading Agent Data...
+          </p>
         </div>
       </div>
     );
@@ -862,28 +885,30 @@ export default function AgentViewer() {
                 {!activeVisitId && (
                   <Button
                     variant="default"
+                    size="lg"
                     onClick={() => setShowStartShowingDialog(true)}
                     data-testid="button-start-showing"
-                    className="bg-primary hover:bg-primary/90"
+                    className="bg-primary hover:bg-primary/90 min-h-[44px] px-6 font-black uppercase"
                   >
-                    <Calendar className="mr-2 h-4 w-4" />
+                    <Calendar className="mr-2 h-5 w-5" />
                     START SHOWING
                   </Button>
                 )}
                 {activeVisitId && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="default" className="px-3 py-1.5">
-                      <Eye className="mr-1 h-3 w-3" />
+                  <div className="flex items-center gap-3">
+                    <Badge variant="default" className="px-4 py-2 text-sm min-h-[44px] flex items-center">
+                      <Eye className="mr-2 h-4 w-4" />
                       Showing Active ({viewedUnits.length} viewed)
                     </Badge>
                     <Button
                       variant="destructive"
-                      onClick={handleEndSession} // Use the new handleEndSession function
+                      size="lg"
+                      onClick={handleEndSession}
                       data-testid="button-end-showing"
-                      className="uppercase font-black"
-                      disabled={endSessionMutation.isPending} // Use endSessionMutation for pending state
+                      className="uppercase font-black min-h-[44px] px-6"
+                      disabled={endSessionMutation.isPending || generatePortalMutation.isPending}
                     >
-                      {endSessionMutation.isPending
+                      {endSessionMutation.isPending || generatePortalMutation.isPending
                         ? "PROCESSING..."
                         : "END SHOWING"}
                     </Button>
@@ -914,8 +939,9 @@ export default function AgentViewer() {
                   variant={
                     currentProjectId === project.id ? "default" : "outline"
                   }
+                  size="lg"
                   onClick={() => handleProjectChange(project.id)}
-                  className="font-black uppercase tracking-tight"
+                  className="font-black uppercase tracking-tight min-h-[44px] px-6"
                 >
                   {project.name}
                 </Button>

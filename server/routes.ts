@@ -180,16 +180,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId, contactId, touredUnitIds } = req.body;
 
-      console.log("Generating portal link for session:", sessionId, "with", touredUnitIds.length, "toured units");
+      console.log("Generating portal link for session:", sessionId, "with", touredUnitIds?.length || 0, "toured units");
 
       // Generate a unique token for the portal
       const linkToken = `portal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const portalUrl = `/portal/${linkToken}`;
 
-      // In production, you would:
-      // 1. Store the portal data in the database
-      // 2. Associate it with the session and toured units
-      // 3. Set an expiration date (e.g., 30 days)
+      // TODO: In production:
+      // 1. Store portal data in database with portalLinks table
+      // 2. Associate with session and toured units
+      // 3. Set expiration date (e.g., 30 days)
+      // 4. Store contactId and touredUnitIds for portal display
 
       res.json({
         portalUrl,

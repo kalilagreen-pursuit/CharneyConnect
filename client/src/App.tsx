@@ -16,6 +16,7 @@ import AgentViewer from "@/pages/agent-viewer";
 import ManagerView from "@/pages/manager-view";
 import UnitLeads from "@/pages/unit-leads";
 import BuyerPortalStub from "@/pages/portal/BuyerPortalStub";
+import PortalView from "@/pages/PortalView";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/manager" component={ManagerView} />
       <Route path="/unit/:projectId/:unitNumber/leads" component={UnitLeads} />
       <Route path="/portal/:leadId" component={BuyerPortalStub} />
+      <Route path="/portal/:token" component={PortalView} />
       <Route component={NotFound} />
     </Switch>
   );

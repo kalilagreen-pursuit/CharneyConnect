@@ -159,7 +159,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/units", async (req, res) => {
     try {
       const units = await storage.getAllUnits();
-      res.json(units);
+      
+      // Check if match preferences are provided
+      const matchPreferences = req.query.matchPreferences 
+        ? JSON.parse(req.query.matchPreferences as string)
+        : null;
+
+      if (matchPreferences) {
+        const { calculateMatchScore } = await import("./match-scoring");
+        // Add match score to each unit
+        const unitsWithScores = units.map(unit => ({
+          ...unit,
+          matchScore: calculateMatchScore(unit, matchPreferences)
+        }));
+        res.json(unitsWithScores);
+      } else {
+        // Return units without match scores
+        res.json(units.map(unit => ({ ...unit, matchScore: 0 })));
+      }
     } catch (error) {
       console.error("Error fetching units:", error);
       res.status(500).json({ error: "Failed to fetch units" });
@@ -584,6 +601,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           console.warn(`[API] Project not found for ID: ${projectId}`);
         }
+      }
+
+      // DEMO FAIL-SAFE: If no leads match filters, inject a qualified demo lead
+      if (leads.length === 0 && agentId && projectId) {
+        console.log(`[API] No leads found - injecting demo fail-safe lead`);
+        const project = await storage.getProjectById(projectId as string);
+        const demoLead = {
+          id: "demo-lead-failsafe",
+          name: "Andrew K.",
+          email: "andrew.k@demo.com",
+          phone: "(555) 999-0001",
+          status: "qualified",
+          pipelineStage: "qualified",
+          agentId: agentId as string,
+          targetPriceMin: "400000",
+          targetPriceMax: "800000",
+          targetLocations: project?.name ? [project.name] : [],
+          leadScore: 85,
+          value: null,
+          company: null,
+          address: null,
+          timeFrameToBuy: "3-6 months",
+          preferenceScore: 0,
+          lastContactedAt: null,
+          nextFollowUpDate: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        leads = [demoLead];
+        console.log(`[API] Demo lead injected: Andrew K.`);
       }
 
       console.log(`[API] Final leads returned: ${leads.length}`);

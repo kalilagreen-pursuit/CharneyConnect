@@ -1,0 +1,60 @@
+// client/src/pages/agent/viewer/UnitCardContainer.tsx (Modification)
+
+import React from 'react';
+import { useUnits, useTouredUnits } from '@/lib/queryClient'; // Import new hook
+import UnitCard from './UnitCard';
+
+const UnitCardContainer: React.FC<{ projectId: string, clientPreferences: any, sessionId: string | null }> = ({ projectId, clientPreferences, sessionId }) => {
+    
+    // 1. Fetch Units (already done, includes matchScore from Phase 1B)
+    const { data: units = [], isLoading: isUnitsLoading } = useUnits(projectId, clientPreferences); 
+    
+    // 2. Fetch Toured Units (new)
+    const { data: touredUnits = [], isLoading: isToursLoading } = useTouredUnits(sessionId);
+    
+    // Create a Set for quick O(1) lookup
+    const touredUnitIds = new Set(touredUnits.map(t => t.unitId));
+
+    if (isUnitsLoading || isToursLoading) return <p>Loading units and tour status...</p>;
+
+    return (
+        <div className="grid grid-cols-3 gap-6">
+            {units.map(unit => (
+                <UnitCard 
+                    key={unit.id} 
+                    unit={unit} 
+                    sessionId={sessionId} 
+                    isToured={touredUnitIds.has(unit.id)} // Pass the status down
+                />
+            ))}
+        </div>
+    );
+};
+export default UnitCardContainer;
+
+
+// client/src/pages/agent/viewer/AgentViewer.tsx (Modification to Sidebar)
+
+// ... inside the Sidebar section ...
+
+{/* Display Toured Units List */}
+<div className="mt-6 pt-4 border-t">
+    <h4 className="text-md font-bold mb-3">Toured Units ({sessionStatus?.totalUnitsViewed || 0})</h4>
+    {isSessionLoading ? (
+        <p className="text-sm">Loading...</p>
+    ) : (
+        <ul className="space-y-1 max-h-40 overflow-y-auto">
+            {touredUnits?.map(touredUnit => (
+                <li key={touredUnit.unitId} className="text-sm text-gray-700">
+                    ✅ {touredUnit.unitName} 
+                </li>
+            ))}
+            {(!touredUnits || touredUnits.length === 0) && sessionId && (
+                <p className="text-xs text-gray-500">No units checked off yet.</p>
+            )}
+        </ul>
+    )}
+</div>
+
+// ... ensure you import useTouredUnits and destructure the data in AgentViewer:
+const { data: touredUnits, isLoading: isToursLoading } = useTouredUnits(sessionId);

@@ -1147,9 +1147,8 @@ export default function AgentViewer() {
                     No units found for this project
                   </div>
                 )}
-                  )}
-                </div>
-                ) : (
+              </div>
+            ) : (
                   <div className="h-[60vh] flex items-center justify-center bg-muted rounded-lg border-2 border-dashed border-muted-foreground/20">
                     <div className="text-center space-y-3">
                       <Maximize2 className="h-16 w-16 mx-auto text-muted-foreground" />
@@ -1162,7 +1161,6 @@ export default function AgentViewer() {
                     </div>
                   </div>
                 )}
-              </TabsContent>
               </TabsContent>
 
               <TabsContent value="active-deals" className="mt-0 space-y-4">

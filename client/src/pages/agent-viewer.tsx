@@ -222,17 +222,17 @@ export default function AgentViewer() {
           <p className="text-sm text-muted-foreground">
             {unitsError.message || "An error occurred while loading unit data"}
           </p>
-          <Button 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", currentProjectId] })} 
-            size="lg" 
+          <Button
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId, "units", currentProjectId] })}
+            size="lg"
             className="min-h-[48px] w-full touch-manipulation"
           >
             Retry Loading Units
           </Button>
-          <Button 
-            onClick={handleBack} 
-            variant="outline" 
-            size="lg" 
+          <Button
+            onClick={handleBack}
+            variant="outline"
+            size="lg"
             className="min-h-[48px] w-full touch-manipulation"
           >
             Return to Project Select
@@ -851,7 +851,7 @@ export default function AgentViewer() {
                 <p className="text-sm text-destructive font-medium">
                   Error loading client details
                 </p>
-                <Button 
+                <Button
                   onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/leads", activeLeadId] })}
                   size="sm"
                   variant="outline"
@@ -917,8 +917,8 @@ export default function AgentViewer() {
               <TabsContent value="all-units" className="mt-0">
                 {/* View Mode Toggle */}
                 <div className="flex justify-end mb-4 gap-2">
-                  <Button 
-                    variant={viewMode === 'grid' ? 'default' : 'outline'} 
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'outline'}
                     onClick={() => setViewMode('grid')}
                     size="sm"
                     className="uppercase font-bold"
@@ -926,8 +926,8 @@ export default function AgentViewer() {
                     <LayoutGrid className="h-4 w-4 mr-2" />
                     Unit Grid
                   </Button>
-                  <Button 
-                    variant={viewMode === '3d' ? 'default' : 'outline'} 
+                  <Button
+                    variant={viewMode === '3d' ? 'default' : 'outline'}
                     onClick={() => setViewMode('3d')}
                     size="sm"
                     className="uppercase font-bold"
@@ -1537,9 +1537,9 @@ export default function AgentViewer() {
                 <span className="text-sm text-muted-foreground">
                   Started:{" "}
                   <span className="font-medium">
-                    {new Date(sessionStatus.startTime).toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
+                    {new Date(sessionStatus.startTime).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit'
                     })}
                   </span>
                 </span>

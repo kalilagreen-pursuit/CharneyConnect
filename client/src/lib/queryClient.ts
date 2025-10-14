@@ -556,12 +556,12 @@ export const useStartSession = (agentId: string, projectId: string) => {
   const queryClientInstance = queryClient;
 
   return useMutation({
-    mutationFn: (contactId: string) => 
+    mutationFn: (contactId: string) =>
       startNewShowingSession({ agentId, contactId, projectId }),
     onSuccess: () => {
       // Invalidate dashboard metrics to update 'Active Sessions' count
-      queryClientInstance.invalidateQueries({ 
-        queryKey: ["/api/agents", agentId, "dashboard"] 
+      queryClientInstance.invalidateQueries({
+        queryKey: ["/api/agents", agentId, "dashboard"]
       });
       console.log("Showing session started successfully");
     },
@@ -579,11 +579,11 @@ export const useEndSession = () => {
     mutationFn: (sessionId: string) => endShowingSession(sessionId),
     onSuccess: () => {
       // Invalidate dashboard queries to reflect new tasks/ended session
-      queryClientInstance.invalidateQueries({ 
-        queryKey: ["/api/agents"] 
+      queryClientInstance.invalidateQueries({
+        queryKey: ["/api/agents"]
       });
-      queryClientInstance.invalidateQueries({ 
-        queryKey: ["/api/tasks/count"] 
+      queryClientInstance.invalidateQueries({
+        queryKey: ["/api/tasks/count"]
       });
       console.log("Showing session ended successfully");
     },

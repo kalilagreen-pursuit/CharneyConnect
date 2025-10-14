@@ -10,8 +10,8 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
-import { contacts, deals, activities, leads, agents, portalLinks } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
+import { contacts, deals, activities, leads, agents, portalLinks, showingSessions, touredUnits } from "@shared/schema";
 
 // FIXED: Add the missing import for Google Generative AI
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -50,14 +50,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // A. Session Endpoints
   app.post("/api/showing-sessions", async (req, res) => {
     try {
-      // Expected body: { agentId, contactId, projectId }
-      console.log("ROUTE STUB: Starting new showing session:", req.body);
-      
-      // Return mock session data with 200 response
+      const sessionSchema = z.object({
+        agentId: z.string(),
+        contactId: z.string().uuid(),
+        projectId: z.string().uuid(),
+      });
+
+      const validation = sessionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: "Invalid request data",
+          details: validation.error.message 
+        });
+      }
+
+      const { agentId, contactId, projectId } = validation.data;
+
+      // Create new showing session in database
+      const [newSession] = await db.insert(showingSessions).values({
+        agentId,
+        contactId,
+        projectId,
+        status: 'in_progress',
+        startedAt: new Date(),
+      }).returning();
+
+      console.log(`Showing session created: ${newSession.id} for agent ${agentId}`);
+
       res.json({ 
-        sessionId: 'mock-session-' + Date.now(), 
-        status: 'active', 
-        startedAt: new Date() 
+        sessionId: newSession.id, 
+        status: newSession.status, 
+        startedAt: newSession.startedAt 
       });
     } catch (error) {
       console.error("Error creating showing session:", error);
@@ -67,13 +90,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/showing-sessions/:id", async (req, res) => {
     try {
-      console.log("ROUTE STUB: Getting session details for ID:", req.params.id);
-      
-      // Return mock session details with 200 response
+      const [session] = await db
+        .select()
+        .from(showingSessions)
+        .where(eq(showingSessions.id, req.params.id))
+        .limit(1);
+
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      // Get count of toured units for this session
+      const touredUnitsCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(touredUnits)
+        .where(eq(touredUnits.sessionId, req.params.id));
+
       res.json({ 
-        id: req.params.id, 
-        status: 'active', 
-        totalUnitsViewed: 0 
+        id: session.id, 
+        status: session.status, 
+        totalUnitsViewed: Number(touredUnitsCount[0]?.count || 0),
+        startedAt: session.startedAt,
+        completedAt: session.completedAt,
+        agentId: session.agentId,
+        contactId: session.contactId,
+        projectId: session.projectId
       });
     } catch (error) {
       console.error("Error fetching showing session:", error);
@@ -83,12 +124,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/showing-sessions/:id/end", async (req, res) => {
     try {
-      console.log("ROUTE STUB: Ending session and triggering follow-up for ID:", req.params.id);
-      
-      // Return mock completion response with 200 response
+      const sessionId = req.params.id;
+
+      // Get session details
+      const [session] = await db
+        .select()
+        .from(showingSessions)
+        .where(eq(showingSessions.id, sessionId))
+        .limit(1);
+
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      // Calculate duration
+      const duration = Math.floor((Date.now() - session.startedAt.getTime()) / 60000); // minutes
+
+      // Get count of toured units
+      const touredUnitsCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(touredUnits)
+        .where(eq(touredUnits.sessionId, sessionId));
+
+      // Update session status to completed
+      await db
+        .update(showingSessions)
+        .set({
+          status: 'completed',
+          completedAt: new Date(),
+          duration,
+          totalUnitsViewed: Number(touredUnitsCount[0]?.count || 0)
+        })
+        .where(eq(showingSessions.id, sessionId));
+
+      // Trigger follow-up automation
+      const { handleShowingComplete } = await import("./automation");
+      await handleShowingComplete(session.contactId, session.agentId, sessionId);
+
+      console.log(`Session ${sessionId} completed with ${touredUnitsCount[0]?.count || 0} units viewed`);
+
       res.json({ 
         message: "Session completed, follow-up automation triggered.", 
-        status: 'completed' 
+        status: 'completed',
+        totalUnitsViewed: Number(touredUnitsCount[0]?.count || 0),
+        duration
       });
     } catch (error) {
       console.error("Error ending showing session:", error);
@@ -126,13 +205,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // B. Tour Tracking Endpoints
   app.post("/api/toured-units", async (req, res) => {
     try {
-      // Expected body: { sessionId, unitId, agentNotes?, clientInterestLevel? }
-      console.log("ROUTE STUB: Logging unit view:", req.body);
-      
-      // Return mock success response with 200
+      const touredUnitSchema = z.object({
+        sessionId: z.string().uuid(),
+        unitId: z.string().uuid(),
+        agentNotes: z.string().optional(),
+        clientInterestLevel: z.enum(['low', 'medium', 'high', 'very_high']).optional(),
+      });
+
+      const validation = touredUnitSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: "Invalid request data",
+          details: validation.error.message 
+        });
+      }
+
+      const { sessionId, unitId, agentNotes, clientInterestLevel } = validation.data;
+
+      // Create toured unit record
+      const [newTouredUnit] = await db.insert(touredUnits).values({
+        sessionId,
+        unitId,
+        agentNotes,
+        clientInterestLevel,
+        viewedAt: new Date(),
+      }).returning();
+
+      console.log(`Unit ${unitId} marked as toured in session ${sessionId}`);
+
       res.json({ 
         message: "Unit view logged successfully.", 
-        viewedAt: new Date() 
+        viewedAt: newTouredUnit.viewedAt,
+        id: newTouredUnit.id
       });
     } catch (error) {
       console.error("Error logging toured unit:", error);
@@ -142,10 +246,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/showing-sessions/:id/toured-units", async (req, res) => {
     try {
-      console.log("ROUTE STUB: Getting toured units for session:", req.params.id);
-      
-      // Return mock empty array with 200 response
-      res.json([]); 
+      const sessionId = req.params.id;
+
+      // Fetch toured units with unit details
+      const result = await db
+        .select({
+          touredUnit: touredUnits,
+          unit: units,
+        })
+        .from(touredUnits)
+        .innerJoin(units, eq(touredUnits.unitId, units.id))
+        .where(eq(touredUnits.sessionId, sessionId));
+
+      const touredUnitsData = result.map(row => ({
+        id: row.touredUnit.id,
+        unitId: row.touredUnit.unitId,
+        unitNumber: row.unit.unitNumber,
+        viewedAt: row.touredUnit.viewedAt,
+        agentNotes: row.touredUnit.agentNotes,
+        clientInterestLevel: row.touredUnit.clientInterestLevel,
+      }));
+
+      res.json(touredUnitsData); 
     } catch (error) {
       console.error("Error fetching toured units:", error);
       res.status(500).json({ error: "Failed to fetch toured units" });
@@ -155,13 +277,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // C. Dashboard Endpoints
   app.get("/api/agents/:id/dashboard", async (req, res) => {
     try {
-      console.log("ROUTE STUB: Fetching dashboard data for agent:", req.params.id);
-      
-      // Return mock aggregated dashboard data with 200 response
+      const agentId = req.params.id;
+
+      // Count active sessions
+      const activeSessions = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(showingSessions)
+        .where(
+          and(
+            eq(showingSessions.agentId, agentId),
+            eq(showingSessions.status, 'in_progress')
+          )
+        );
+
+      // Count pending follow-up tasks
+      const pendingFollowUps = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(tasks)
+        .where(
+          and(
+            eq(tasks.agentId, agentId),
+            eq(tasks.status, 'pending'),
+            eq(tasks.automationSource, 'showing_complete')
+          )
+        );
+
+      // Count projects with active leads
+      const projectsWithLeads = await db
+        .select({ projectId: leads.targetLocations })
+        .from(leads)
+        .where(eq(leads.agentId, agentId))
+        .groupBy(leads.targetLocations);
+
+      console.log(`Dashboard stats for agent ${agentId}:`, {
+        activeSessions: activeSessions[0]?.count,
+        pendingFollowUps: pendingFollowUps[0]?.count,
+        projectCount: projectsWithLeads.length
+      });
+
       res.json({ 
-        activeSessions: 1, 
-        pendingFollowUps: 3, 
-        projectCount: 2 
+        activeSessions: Number(activeSessions[0]?.count || 0), 
+        pendingFollowUps: Number(pendingFollowUps[0]?.count || 0), 
+        projectCount: projectsWithLeads.length
       });
     } catch (error) {
       console.error("Error fetching agent dashboard:", error);
@@ -220,17 +377,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/agents/:id/active-clients", async (req, res) => {
     try {
-      console.log("ROUTE STUB: Fetching active clients/qualified leads for agent:", req.params.id);
-      
-      // Return mock active client data with 200 response
-      res.json([
-        { 
-          id: 'mock-client-andrew', 
-          name: 'Andrew K.', 
-          leadScore: 85, 
-          nextFollowUpDate: '2025-10-15' 
-        }
-      ]);
+      const agentId = req.params.id;
+
+      // Fetch qualified leads assigned to this agent
+      const qualifiedLeads = await db
+        .select()
+        .from(leads)
+        .where(
+          and(
+            eq(leads.agentId, agentId),
+            eq(leads.status, 'qualified')
+          )
+        );
+
+      console.log(`Found ${qualifiedLeads.length} active clients for agent ${agentId}`);
+
+      res.json(qualifiedLeads);
     } catch (error) {
       console.error("Error fetching active clients:", error);
       res.status(500).json({ error: "Failed to fetch active clients" });
@@ -282,15 +444,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if match preferences are provided
       if (matchPreferences) {
-        const preferences = JSON.parse(matchPreferences as string);
-        const { calculateMatchScore } = await import("./match-scoring");
-        
-        // Add match score to each unit
-        const unitsWithScores = units.map(unit => ({
-          ...unit,
-          matchScore: calculateMatchScore(unit, preferences)
-        }));
-        res.json(unitsWithScores);
+        try {
+          const preferences = JSON.parse(matchPreferences as string);
+          const { calculateMatchScore } = await import("./match-scoring");
+          
+          // Add match score to each unit
+          const unitsWithScores = units.map(unit => ({
+            ...unit,
+            matchScore: calculateMatchScore(unit, preferences)
+          }));
+          
+          // Sort by match score descending
+          unitsWithScores.sort((a, b) => b.matchScore - a.matchScore);
+          
+          res.json(unitsWithScores);
+        } catch (parseError) {
+          console.error("Error parsing match preferences:", parseError);
+          // Return units without scores if preferences are invalid
+          res.json(units.map(unit => ({ ...unit, matchScore: 0 })));
+        }
       } else {
         // Return units without match scores
         res.json(units.map(unit => ({ ...unit, matchScore: 0 })));

@@ -30,6 +30,34 @@ export async function handleLeadQualified(
   }
 }
 
+export async function handleShowingComplete(contactId: string, agentId: string, sessionId: string) {
+  try {
+    // Find the lead associated with this contact
+    const contact = await storage.getContactById(contactId);
+    if (!contact) return;
+
+    const allLeads = await storage.getAllLeads();
+    const lead = allLeads.find(l => l.email === contact.email);
+    if (!lead) return;
+
+    // Create follow-up task for agent
+    await storage.createTask({
+      leadId: lead.id,
+      agentId,
+      title: "Post-Showing Follow-up Required",
+      description: `Follow up with ${lead.name} after showing session. Review toured units and next steps.`,
+      priority: "high",
+      status: "pending",
+      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Due in 24 hours
+      automationSource: "showing_complete",
+    });
+
+    console.log(`[Automation] Created post-showing follow-up task for lead ${lead.id}`);
+  } catch (error) {
+    console.error("[Automation] Error in handleShowingComplete:", error);
+  }
+}
+
 export async function handleEngagementSpike(
   lead: Lead,
   agentId: string,

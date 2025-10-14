@@ -241,9 +241,14 @@ export default function AgentViewer() {
 
   // Calculate unit matches based on active lead preferences
   const unitMatches = useMemo(() => {
-    if (!activeLead || !units || units.length === 0) return new Map();
-    return getMatchedUnitsWithScores(units, activeLead);
-  }, [units, activeLead]);
+    if (!activeLead || !units || units.length === 0) {
+      console.log(`[${actionId}] No active lead or units - preference matching disabled`);
+      return new Map();
+    }
+    const matches = getMatchedUnitsWithScores(units, activeLead);
+    console.log(`[${actionId}] Preference matching active - ${matches.size} units scored for ${activeLead.firstName} ${activeLead.lastName}`);
+    return matches;
+  }, [units, activeLead, actionId]);
 
   // Setup intersection observer for lazy loading
   useEffect(() => {
@@ -408,39 +413,46 @@ export default function AgentViewer() {
     }
   };
 
-  // Handle unit tour tracking checkbox change (debounced)
-  const handleTourTrackingChange = useMemo(
-    () =>
-      debounce((unitId: string, isToured: boolean) => {
-        if (!sessionId) return;
+  // Handle unit tour tracking checkbox change - immediate response for better UX
+  const handleTourTrackingChange = useCallback(
+    (unitId: string, isToured: boolean) => {
+      if (!sessionId) {
+        toast({
+          title: "No Active Session",
+          description: "Please start a showing session first.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-        console.log(
-          `[${actionId}] ${isToured ? 'Marking' : 'Unmarking'} unit ${unitId} as toured`,
-        );
+      console.log(
+        `[${actionId}] ${isToured ? 'Marking' : 'Unmarking'} unit ${unitId} as toured`,
+      );
 
-        if (isToured) {
-          // Mark as toured
-          markTouredMutation.mutate(unitId, {
-            onSuccess: () => {
-              console.log(`[${actionId}] Tour status updated successfully`);
-              toast({
-                title: "Unit Toured",
-                description: "Unit marked as toured in this session.",
-                duration: 2000,
-              });
-            },
-            onError: (error) => {
-              console.error(`[${actionId}] Error updating tour status:`, error);
-              toast({
-                title: "Error",
-                description: "Failed to mark unit as toured.",
-                variant: "destructive",
-              });
-            },
-          });
-        }
-        // Note: Unchecking is not currently implemented on backend - checkboxes are additive only
-      }, 300),
+      if (isToured) {
+        // Mark as toured - immediate API call for real-time tracking
+        markTouredMutation.mutate(unitId, {
+          onSuccess: () => {
+            console.log(`[${actionId}] Unit marked as toured successfully`);
+            toast({
+              title: "Unit Toured",
+              description: "Unit marked as toured in this session.",
+              duration: 2000,
+            });
+          },
+          onError: (error) => {
+            console.error(`[${actionId}] Error marking unit as toured:`, error);
+            toast({
+              title: "Error",
+              description: "Failed to mark unit as toured. Please try again.",
+              variant: "destructive",
+              duration: 3000,
+            });
+          },
+        });
+      }
+      // Note: Unchecking is not currently implemented on backend - checkboxes are additive only
+    },
     [sessionId, markTouredMutation, actionId, toast]
   );
 

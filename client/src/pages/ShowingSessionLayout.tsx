@@ -351,23 +351,24 @@ export default function ShowingSessionLayout() {
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex-shrink-0 bg-card border-b p-4">
-          <div className="flex items-center justify-between">
+        <div className="flex-shrink-0 bg-card border-b-4 border-primary p-4 shadow-lg">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 variant="outline"
                 size="icon"
-                className="md:hidden"
+                className="md:hidden flex-shrink-0 min-h-[44px] min-w-[44px]"
+                data-testid="button-toggle-sidebar"
               >
-                <Menu className="h-4 w-4" />
+                <Menu className="h-5 w-5" />
               </Button>
               <div>
-                <h2 className="text-xl font-black uppercase">{currentProject?.name || 'Select Project'}</h2>
+                <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight">{currentProject?.name || 'Select Project'}</h2>
                 {isLoading ? (
                   <p className="text-sm text-muted-foreground">Loading units...</p>
                 ) : (
-                  <p className="text-sm text-muted-foreground">{units.length} units available</p>
+                  <p className="text-sm text-muted-foreground font-medium">{units.length} units available</p>
                 )}
               </div>
             </div>

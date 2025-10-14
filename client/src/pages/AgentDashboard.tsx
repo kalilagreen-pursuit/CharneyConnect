@@ -88,13 +88,13 @@ export default function AgentDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header: Agent Profile */}
-      <div className="border-b bg-card shadow-sm">
-        <div className="px-6 py-8">
+      <div className="border-b-4 border-primary bg-card shadow-xl">
+        <div className="px-6 py-10">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-5xl font-black uppercase tracking-tight mb-3 leading-tight" data-testid="text-welcome">
+            <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tight mb-3 leading-none" data-testid="text-welcome">
               WELCOME BACK, <span className="text-primary">{AGENT_NAME}</span>
             </h1>
-            <p className="text-sm text-muted-foreground uppercase tracking-widest font-semibold" data-testid="text-role">
+            <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold" data-testid="text-role">
               {AGENT_ROLE}
             </p>
           </div>

@@ -551,6 +551,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Also support /api/portals/generate for frontend consistency
+  app.post("/api/portals/generate", async (req, res) => {
+    try {
+      const portalLinkSchema = z.object({
+        sessionId: z.string().uuid(),
+        contactId: z.string().uuid(),
+        touredUnitIds: z.array(z.string().uuid()).optional(),
+      });
+
+      const validation = portalLinkSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: "Invalid request data",
+          details: validation.error.message 
+        });
+      }
+
+      const { sessionId, contactId, touredUnitIds = [] } = validation.data;
+
+      // Generate a unique, short token (8 characters)
+      const linkToken = Math.random().toString(36).substring(2, 10);
+
+      // Set expiration date (30 days from now)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+
+      // Create the portal link record in database
+      const newPortalLink = await db.insert(portalLinks).values({
+        sessionId,
+        contactId,
+        linkToken,
+        touredUnitIds,
+        sentAt: new Date(),
+        expiresAt,
+      }).returning();
+
+      console.log(`Portal link generated with token: ${linkToken} for session: ${sessionId}`);
+
+      res.json({ 
+        linkToken: newPortalLink[0].linkToken,
+        portalUrl: `/portal/${newPortalLink[0].linkToken}`,
+        expiresAt: newPortalLink[0].expiresAt,
+      });
+    } catch (error) {
+      console.error("Error generating portal link:", error);
+      res.status(500).json({ error: "Failed to generate portal link" });
+    }
+  });
+
   // E. Fetch Portal Data by Token (for client portal view)
   app.get("/api/portals/:token", async (req, res) => {
     try {

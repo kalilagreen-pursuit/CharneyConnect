@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bed, Bath, Maximize2, Calendar, Mail, Phone, CheckCircle } from 'lucide-react';
+import { Bed, Bath, Maximize2, Calendar, Mail, Phone, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface PortalData {
   id: string;

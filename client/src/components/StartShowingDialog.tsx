@@ -47,13 +47,15 @@ export function StartShowingDialog({
   // Add Andrew K. as a mock lead if not present for demo purposes
   const leadsWithMock = useMemo(() => {
     const hasAndrewK = leads.some(lead => 
-      lead.firstName === 'Andrew' && lead.lastName === 'K.'
+      (lead.firstName === 'Andrew' && lead.lastName === 'K.') ||
+      lead.name === 'Andrew K.' ||
+      lead.id === 'demo-lead-andrew-k'
     );
 
     if (!hasAndrewK && !isLoading) {
       return [
         {
-          id: 'mock-andrew-k',
+          id: 'demo-lead-andrew-k',
           firstName: 'Andrew',
           lastName: 'K.',
           email: 'andrew.k@example.com',

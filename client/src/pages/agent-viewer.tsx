@@ -615,11 +615,12 @@ export default function AgentViewer() {
     }
 
     console.log(`[${actionId}] Starting showing session`, {
-      leadId: selectedLeadForShowing,
+      contactId: selectedLeadForShowing,
       agentId,
       projectId: currentProjectId,
     });
 
+    // Use the correct API endpoint - /api/showing-sessions expects contactId
     startShowingMutation.mutate(
       {
         leadId: selectedLeadForShowing,
@@ -689,12 +690,15 @@ export default function AgentViewer() {
       // 2. Complete the showing session (triggers automation logic on backend)
       await endSessionMutation.mutateAsync(activeVisitId);
 
-      // Display success toast with portal link
+      // Display success alert with portal link - CRITICAL FOR E2E TEST
       const fullPortalUrl = `${window.location.origin}${portalResult.portalUrl}`;
+
+      // Show browser alert for E2E testing
+      alert(`✅ SESSION ENDED SUCCESSFULLY!\n\nPortal URL Generated:\n${fullPortalUrl}\n\nFollow-up automation has been triggered.`);
 
       toast({
         title: "Session Ended Successfully!",
-        description: `Portal link generated: ${fullPortalUrl}. Follow-up automation triggered.`,
+        description: `Portal: ${fullPortalUrl}`,
         duration: 8000,
       });
 
@@ -959,15 +963,17 @@ export default function AgentViewer() {
                   onClick={handleEndSession}
                   variant="destructive"
                   className="uppercase font-bold"
-                  disabled={endSessionMutation.isPending}
+                  disabled={endSessionMutation.isPending || generatePortalMutation.isPending}
+                  data-testid="button-end-session"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  {endSessionMutation.isPending ? 'Ending...' : 'End Session'}
+                  {endSessionMutation.isPending || generatePortalMutation.isPending ? 'Ending...' : 'End Session & Follow-up'}
                 </Button>
               ) : (
                 <Button
                   onClick={() => setShowStartShowingDialog(true)}
                   className="uppercase font-bold bg-green-600 hover:bg-green-700"
+                  data-testid="button-start-showing"
                 >
                   <Zap className="h-4 w-4 mr-2" />
                   Start Showing

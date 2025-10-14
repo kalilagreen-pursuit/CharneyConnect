@@ -92,16 +92,17 @@ export default function ShowingSessionLayout() {
   
   // Fetch units for current project - depends only on currentProjectId state being populated
   const { data: units = [], isLoading: unitsLoading, isError: unitsError, error: unitsFetchError } = useQuery<UnitWithDetails[]>({
-    queryKey: ["/api/units", currentProjectId, activeLeadId],
+    queryKey: ["/api/units", currentProjectId, "available", activeLeadId],
     queryFn: async () => {
       if (!currentProjectId) {
         console.log('[ShowingSession] No project selected, returning empty units');
         return [];
       }
-      console.log('[ShowingSession] Fetching units for project:', currentProjectId);
+      console.log('[ShowingSession] Fetching available units for project:', currentProjectId);
       
       const url = new URL('/api/units', window.location.origin);
       url.searchParams.set('projectId', currentProjectId);
+      url.searchParams.set('status', 'available');
       
       const response = await fetch(url.toString());
       if (!response.ok) {
@@ -110,7 +111,7 @@ export default function ShowingSessionLayout() {
         throw new Error(`Failed to fetch units: ${response.statusText}`);
       }
       const data = await response.json();
-      console.log('[ShowingSession] Units fetched:', data.length);
+      console.log('[ShowingSession] Available units fetched:', data.length);
       return data;
     },
     // Only enable when currentProjectId state is populated (avoids race condition with sessionStatus)

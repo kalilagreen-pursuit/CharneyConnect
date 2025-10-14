@@ -839,7 +839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Units endpoints
   app.get("/api/units", async (req, res) => {
     try {
-      const { projectId, matchPreferences } = req.query;
+      const { projectId, matchPreferences, status } = req.query;
 
       // Fetch units (optionally filtered by projectId if needed)
       let units = await storage.getAllUnits();
@@ -847,6 +847,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter by projectId if provided
       if (projectId) {
         units = units.filter(unit => unit.projectId === projectId);
+      }
+
+      // Filter by status if provided
+      if (status) {
+        units = units.filter(unit => unit.status === status);
+        console.log(`[API] Filtered units by status '${status}': ${units.length} units`);
       }
 
       // Check if match preferences are provided

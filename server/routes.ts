@@ -602,6 +602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { agentId, projectId, status } = req.query;
 
+      // NOTE: storage.getAllLeads() pulls from both 'leads' and 'threads' tables
       let leads = await storage.getAllLeads();
 
       // 1. Filter by Agent ID (MUST be preserved, critical for the workflow)
@@ -616,14 +617,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[API] Leads after status filter: ${leads.length}`);
       }
 
-      // 3. Filter by Project ID
+      // 3. Filter by Project ID (robust array check for targetLocations)
       if (projectId) {
         // First, get the project name from the UUID
-        const project = await storage.getProjectById(projectId);
+        const project = await storage.getProjectById(projectId as string);
         const projectName = project?.name;
 
         if (projectName) {
           leads = leads.filter((lead) => {
+            // Robust check: ensure targetLocations exists and is an array
             if (lead.targetLocations && Array.isArray(lead.targetLocations)) {
               return lead.targetLocations.some(
                 (loc) => loc.toLowerCase() === projectName.toLowerCase(),
@@ -639,20 +641,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // DEMO FAIL-SAFE: If no leads match filters, inject a qualified demo lead
-      if (leads.length === 0 && agentId && projectId) {
-        console.log(`[API] No leads found - injecting demo fail-safe lead`);
+      // DEMO FAIL-SAFE: If no leads match filters, inject a mock qualified lead for agent-001
+      if (leads.length === 0 && agentId === 'agent-001' && status === 'qualified') {
+        console.log(`[API] No leads found - injecting demo fail-safe lead for Sarah Chen`);
         const project = await storage.getProjectById(projectId as string);
         const demoLead = {
-          id: "demo-lead-failsafe",
+          id: "demo-lead-andrew",
           name: "Andrew K.",
           email: "andrew.k@demo.com",
           phone: "(555) 999-0001",
           status: "qualified",
           pipelineStage: "qualified",
-          agentId: agentId as string,
+          agentId: "agent-001",
           targetPriceMin: "400000",
-          targetPriceMax: "800000",
+          targetPriceMax: "1500000",
           targetLocations: project?.name ? [project.name] : [],
           leadScore: 85,
           value: null,
@@ -666,7 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedAt: new Date(),
         };
         leads = [demoLead];
-        console.log(`[API] Demo lead injected: Andrew K.`);
+        console.log(`[API] Demo lead injected: Andrew K. (agent-001)`);
       }
 
       console.log(`[API] Final leads returned: ${leads.length}`);

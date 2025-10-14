@@ -82,7 +82,7 @@ export default function AgentDashboard() {
     // Store agent context
     agentContextStore.setAgent(AGENT_ID, AGENT_NAME.split(' ')[0] + ' ' + AGENT_NAME.split(' ')[1]);
     // Navigate to new unified showing session layout
-    setLocation("/showing");
+    setLocation("/showing/new");
   };
 
   return (

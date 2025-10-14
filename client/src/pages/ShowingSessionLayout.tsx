@@ -261,11 +261,14 @@ export default function ShowingSessionLayout() {
       )}
 
       {/* LEFT SIDEBAR - Client Context */}
-      <aside className={cn(
-        "fixed md:relative z-50 md:z-auto w-80 h-full bg-card border-r p-6 flex-shrink-0 overflow-y-auto transition-transform duration-300",
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-      )}>
-        <h3 className="text-xl font-black uppercase mb-4">Client Context</h3>
+      <aside
+        className={cn(
+          "fixed md:relative z-50 md:z-auto w-80 h-full bg-card border-r border-border shadow-lg p-6 flex-shrink-0 overflow-y-auto transition-transform duration-300 ease-in-out",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
+
+        <h3 className="text-2xl font-black uppercase mb-6 tracking-tight border-b pb-3">Client Context</h3>
 
         {isLoading ? (
           <p className="text-muted-foreground">Loading client context...</p>
@@ -291,7 +294,7 @@ export default function ShowingSessionLayout() {
                     </span>
                   </li>
                   <li>
-                    <span className="text-muted-foreground">Views:</span>{" "}
+                    <span className="text-muted-foreground">Desired Views:</span>{" "}
                     <span className="font-semibold">{activeLead.preferences.desired_views?.join(", ") || "N/A"}</span>
                   </li>
                 </ul>

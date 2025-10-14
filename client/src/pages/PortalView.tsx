@@ -132,17 +132,17 @@ const PortalView: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-8 px-6 shadow-lg">
+      <header className="bg-primary text-primary-foreground py-12 px-6 shadow-2xl">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-start justify-between flex-wrap gap-4">
+          <div className="flex items-start justify-between flex-wrap gap-6">
             <div>
-              <h1 className="text-4xl font-black uppercase tracking-tight mb-2">
+              <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tight mb-3 leading-none">
                 {portalData.projectName || 'Luxury Residences'}
               </h1>
-              <p className="text-lg opacity-90">Your Personalized Tour Summary</p>
+              <p className="text-xl opacity-95 font-medium">Your Personalized Tour Summary</p>
             </div>
-            <Badge variant="secondary" className="bg-green-600 text-white text-sm px-4 py-2">
-              <CheckCircle className="h-4 w-4 mr-2" />
+            <Badge variant="secondary" className="bg-green-600 text-white text-base px-6 py-3 shadow-lg font-black uppercase">
+              <CheckCircle className="h-5 w-5 mr-2 fill-white" />
               Tour Confirmed
             </Badge>
           </div>
@@ -205,13 +205,13 @@ const PortalView: React.FC = () => {
               {portalData.units.map((unit) => (
                 <Card 
                   key={unit.id} 
-                  className="p-6 hover:shadow-xl transition-shadow"
+                  className="p-8 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] border-2"
                   data-testid={`portal-unit-${unit.unitNumber}`}
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div>
-                      <h4 className="text-2xl font-black uppercase">Unit {unit.unitNumber}</h4>
-                      <p className="text-3xl font-bold text-primary mt-2">
+                      <h4 className="text-3xl font-black uppercase tracking-tight">Unit {unit.unitNumber}</h4>
+                      <p className="text-4xl font-black text-primary mt-3">
                         {formatPrice(unit.price)}
                       </p>
                     </div>

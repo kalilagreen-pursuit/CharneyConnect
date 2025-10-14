@@ -16,12 +16,12 @@ const AGENT_ID = "agent-001";
 
 // Simple Metric Card Component
 const MetricCard = ({ title, value, color }: { title: string; value: string | number; color: string }) => (
-  <Card className="text-center shadow-lg hover-elevate transition-all">
-    <CardContent className="p-6">
-      <p className={`text-5xl font-black ${color} mb-2`} data-testid={`metric-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+  <Card className="text-center shadow-lg hover-elevate transition-all hover:shadow-xl border-2">
+    <CardContent className="p-8">
+      <p className={`text-6xl font-black ${color} mb-3 leading-none`} data-testid={`metric-${title.toLowerCase().replace(/\s+/g, '-')}`}>
         {value}
       </p>
-      <CardTitle className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+      <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">
         {title}
       </CardTitle>
     </CardContent>
@@ -88,13 +88,13 @@ export default function AgentDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header: Agent Profile */}
-      <div className="border-b bg-card">
-        <div className="px-6 py-6">
+      <div className="border-b bg-card shadow-sm">
+        <div className="px-6 py-8">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-4xl font-black uppercase tracking-tight mb-2" data-testid="text-welcome">
+            <h1 className="text-5xl font-black uppercase tracking-tight mb-3 leading-tight" data-testid="text-welcome">
               WELCOME BACK, <span className="text-primary">{AGENT_NAME}</span>
             </h1>
-            <p className="text-sm text-muted-foreground uppercase tracking-wide" data-testid="text-role">
+            <p className="text-sm text-muted-foreground uppercase tracking-widest font-semibold" data-testid="text-role">
               {AGENT_ROLE}
             </p>
           </div>

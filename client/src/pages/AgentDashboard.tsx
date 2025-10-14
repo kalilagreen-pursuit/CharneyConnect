@@ -81,8 +81,8 @@ export default function AgentDashboard() {
   const handleGoToViewer = () => {
     // Store agent context
     agentContextStore.setAgent(AGENT_ID, AGENT_NAME.split(' ')[0] + ' ' + AGENT_NAME.split(' ')[1]);
-    // Navigate directly to unified viewer - the viewer will handle client selection
-    setLocation("/agent/viewer");
+    // Navigate to new unified showing session layout
+    setLocation("/showing");
   };
 
   return (
@@ -220,9 +220,9 @@ export default function AgentDashboard() {
                   <Button
                     className="w-full uppercase font-black gap-2"
                     onClick={() => {
-                      // Navigate to unified viewer with /new route to trigger client selector dialog
+                      // Navigate to unified showing session with /new route to trigger client selector
                       agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
-                      setLocation('/agent/viewer/new');
+                      setLocation('/showing/new');
                     }}
                     data-testid="button-start-showing"
                   >

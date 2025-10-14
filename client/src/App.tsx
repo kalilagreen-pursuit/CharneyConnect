@@ -13,6 +13,7 @@ import AgentSelect from "@/pages/agent-select";
 import AgentDashboard from "@/pages/AgentDashboard";
 import ProjectSelect from "@/pages/project-select";
 import AgentViewer from "@/pages/agent-viewer";
+import ShowingSessionLayout from "@/pages/ShowingSessionLayout";
 import ManagerView from "@/pages/manager-view";
 import UnitLeads from "@/pages/unit-leads";
 import BuyerPortalStub from "@/pages/portal/BuyerPortalStub";
@@ -27,8 +28,9 @@ function Router() {
       <Route path="/leads" component={Leads} />
       <Route path="/agent/select" component={AgentSelect} />
       <Route path="/agent/dashboard" component={AgentDashboard} />
+      <Route path="/agent/viewer/:mode?" component={AgentViewer} />
       <Route path="/agent/project-select" component={ProjectSelect} />
-      <Route path="/agent/viewer" component={AgentViewer} />
+      <Route path="/showing/:mode?" component={ShowingSessionLayout} />
       <Route path="/manager" component={ManagerView} />
       <Route path="/unit/:projectId/:unitNumber/leads" component={UnitLeads} />
       <Route path="/portal/:leadId" component={BuyerPortalStub} />

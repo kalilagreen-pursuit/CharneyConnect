@@ -66,6 +66,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { agentId, contactId, projectId } = validation.data;
 
+      // Verify contact exists
+      const [contact] = await db
+        .select()
+        .from(contacts)
+        .where(eq(contacts.id, contactId))
+        .limit(1);
+
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
       // Create new showing session in database
       const [newSession] = await db.insert(showingSessions).values({
         agentId,
@@ -75,12 +86,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startedAt: new Date(),
       }).returning();
 
-      console.log(`Showing session created: ${newSession.id} for agent ${agentId}`);
+      console.log(`Showing session created: ${newSession.id} for agent ${agentId} with contact ${contact.firstName} ${contact.lastName}`);
 
       res.json({ 
         sessionId: newSession.id, 
         status: newSession.status, 
-        startedAt: newSession.startedAt 
+        startedAt: newSession.startedAt,
+        contactName: `${contact.firstName} ${contact.lastName}`
       });
     } catch (error) {
       console.error("Error creating showing session:", error);
@@ -106,6 +118,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(touredUnits)
         .where(eq(touredUnits.sessionId, req.params.id));
 
+      // Calculate duration if session is active
+      let duration = session.duration;
+      if (session.status === 'in_progress' && session.startedAt) {
+        duration = Math.floor((Date.now() - session.startedAt.getTime()) / 60000);
+      }
+
       res.json({ 
         id: session.id, 
         status: session.status, 
@@ -114,7 +132,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completedAt: session.completedAt,
         agentId: session.agentId,
         contactId: session.contactId,
-        projectId: session.projectId
+        projectId: session.projectId,
+        duration
       });
     } catch (error) {
       console.error("Error fetching showing session:", error);
@@ -137,6 +156,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Session not found" });
       }
 
+      if (session.status !== 'in_progress') {
+        return res.status(400).json({ error: "Session is not active" });
+      }
+
       // Calculate duration
       const duration = Math.floor((Date.now() - session.startedAt.getTime()) / 60000); // minutes
 
@@ -146,28 +169,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(touredUnits)
         .where(eq(touredUnits.sessionId, sessionId));
 
+      const totalViewed = Number(touredUnitsCount[0]?.count || 0);
+
       // Update session status to completed
-      await db
+      const [completedSession] = await db
         .update(showingSessions)
         .set({
           status: 'completed',
           completedAt: new Date(),
           duration,
-          totalUnitsViewed: Number(touredUnitsCount[0]?.count || 0)
+          totalUnitsViewed: totalViewed
         })
-        .where(eq(showingSessions.id, sessionId));
+        .where(eq(showingSessions.id, sessionId))
+        .returning();
 
       // Trigger follow-up automation
-      const { handleShowingComplete } = await import("./automation");
-      await handleShowingComplete(session.contactId, session.agentId, sessionId);
+      try {
+        const { handleShowingComplete } = await import("./automation");
+        await handleShowingComplete(session.contactId, session.agentId, sessionId);
+      } catch (autoError) {
+        console.error("Error in automation:", autoError);
+        // Don't fail the session completion if automation fails
+      }
 
-      console.log(`Session ${sessionId} completed with ${touredUnitsCount[0]?.count || 0} units viewed`);
+      console.log(`Session ${sessionId} completed - Duration: ${duration}min, Units viewed: ${totalViewed}`);
 
       res.json({ 
         message: "Session completed, follow-up automation triggered.", 
         status: 'completed',
-        totalUnitsViewed: Number(touredUnitsCount[0]?.count || 0),
-        duration
+        totalUnitsViewed: totalViewed,
+        duration,
+        completedAt: completedSession.completedAt
       });
     } catch (error) {
       console.error("Error ending showing session:", error);
@@ -223,7 +255,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { sessionId, unitId, agentNotes, clientInterestLevel } = validation.data;
 
-      // Create toured unit record
+      // Verify session exists and is active
+      const [session] = await db
+        .select()
+        .from(showingSessions)
+        .where(eq(showingSessions.id, sessionId))
+        .limit(1);
+
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      if (session.status !== 'in_progress') {
+        return res.status(400).json({ error: "Session is not active" });
+      }
+
+      // Verify unit exists
+      const [unit] = await db
+        .select()
+        .from(units)
+        .where(eq(units.id, unitId))
+        .limit(1);
+
+      if (!unit) {
+        return res.status(404).json({ error: "Unit not found" });
+      }
+
+      // Check if unit already toured in this session
+      const [existing] = await db
+        .select()
+        .from(touredUnits)
+        .where(
+          and(
+            eq(touredUnits.sessionId, sessionId),
+            eq(touredUnits.unitId, unitId)
+          )
+        )
+        .limit(1);
+
+      if (existing) {
+        // Update existing record instead of creating duplicate
+        const [updated] = await db
+          .update(touredUnits)
+          .set({
+            agentNotes,
+            clientInterestLevel,
+            viewedAt: new Date(), // Update timestamp
+          })
+          .where(eq(touredUnits.id, existing.id))
+          .returning();
+
+        console.log(`Unit ${unit.unitNumber} toured again in session ${sessionId}`);
+
+        return res.json({ 
+          message: "Unit view updated successfully.", 
+          viewedAt: updated.viewedAt,
+          id: updated.id
+        });
+      }
+
+      // Create new toured unit record
       const [newTouredUnit] = await db.insert(touredUnits).values({
         sessionId,
         unitId,
@@ -232,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         viewedAt: new Date(),
       }).returning();
 
-      console.log(`Unit ${unitId} marked as toured in session ${sessionId}`);
+      console.log(`Unit ${unit.unitNumber} marked as toured in session ${sessionId}`);
 
       res.json({ 
         message: "Unit view logged successfully.", 
@@ -249,15 +340,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionId = req.params.id;
 
-      // Fetch toured units with unit details
+      // Verify session exists
+      const [session] = await db
+        .select()
+        .from(showingSessions)
+        .where(eq(showingSessions.id, sessionId))
+        .limit(1);
+
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      // Fetch toured units with full unit details
       const result = await db
         .select({
           touredUnit: touredUnits,
           unit: units,
+          floorPlan: floorPlans,
         })
         .from(touredUnits)
         .innerJoin(units, eq(touredUnits.unitId, units.id))
-        .where(eq(touredUnits.sessionId, sessionId));
+        .leftJoin(floorPlans, eq(units.floorPlanId, floorPlans.id))
+        .where(eq(touredUnits.sessionId, sessionId))
+        .orderBy(touredUnits.viewedAt);
 
       const touredUnitsData = result.map(row => ({
         id: row.touredUnit.id,
@@ -266,6 +371,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         viewedAt: row.touredUnit.viewedAt,
         agentNotes: row.touredUnit.agentNotes,
         clientInterestLevel: row.touredUnit.clientInterestLevel,
+        bedrooms: row.floorPlan?.bedrooms || 0,
+        bathrooms: parseFloat(row.floorPlan?.bathrooms?.toString() || "0"),
+        price: row.unit.price,
+        floor: row.unit.floor,
       }));
 
       res.json(touredUnitsData); 
@@ -383,17 +492,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Fetching active clients for agent: ${agentId}`);
 
-      // Fetch qualified leads assigned to this agent with next follow-up task
+      // Fetch qualified leads assigned to this agent
       const qualifiedLeads = await db
         .select({
           id: leads.id,
           name: leads.name,
-          firstName: leads.firstName,
-          lastName: leads.lastName,
           email: leads.email,
           leadScore: leads.leadScore,
           status: leads.status,
-          pipelineStage: leads.pipelineStage
+          pipelineStage: leads.pipelineStage,
+          phone: leads.phone,
         })
         .from(leads)
         .where(
@@ -411,7 +519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .from(tasks)
             .where(
               and(
-                eq(tasks.contactId, client.id),
+                eq(tasks.leadId, client.id),
                 eq(tasks.status, 'pending')
               )
             )
@@ -419,7 +527,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .limit(1);
 
           return {
-            ...client,
+            id: client.id,
+            name: client.name,
+            email: client.email,
+            phone: client.phone || null,
+            leadScore: client.leadScore || 0,
+            status: client.status,
+            pipelineStage: client.pipelineStage,
             nextFollowUpDate: nextTask[0]?.dueDate || null
           };
         })

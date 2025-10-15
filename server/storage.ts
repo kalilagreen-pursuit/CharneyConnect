@@ -148,6 +148,7 @@ export interface IStorage {
     visitData: Pick<Visit, "leadId" | "agentId" | "projectId">,
   ): Promise<Visit>;
   logUnitView(visitId: string, unitId: string): Promise<ViewedUnit>;
+  logTouredUnit(sessionId: string, unitId: string): Promise<any>;
   getVisitSummary(visitId: string): Promise<UnitWithDetails[]>;
   getVisitById(visitId: string): Promise<Visit | undefined>;
 } // FIXED: Correctly closed the IStorage interface
@@ -971,6 +972,18 @@ export class MemStorage implements IStorage {
     };
     console.log("[MemStorage] Logging mock unit view:", newView);
     return newView;
+  }
+
+  async logTouredUnit(sessionId: string, unitId: string) {
+    const [newTouredUnit] = await db
+      .insert(touredUnits)
+      .values({
+        sessionId,
+        unitId,
+        viewedAt: new Date(),
+      })
+      .returning();
+    return newTouredUnit;
   }
 
   async getVisitSummary(visitId: string): Promise<UnitWithDetails[]> {

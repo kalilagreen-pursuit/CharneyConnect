@@ -1,0 +1,40 @@
+client:536 WebSocket connection to 'wss://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/?token=LX7YOIogtLfS' failed: 
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=LX7YOIogtLfS' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+chunk-276SZO74.js?v=cd66831d:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+agent-viewer.tsx:277 [action-1760484435440-n6ucdwm63] No active lead or units - preference matching disabled
+agent-viewer.tsx:324 [action-1760484435440-n6ucdwm63] Agent Viewer initialized - Agent: Loading Agent... (agent-001), Project: THE JACKSON
+use-websocket.ts:30 [WebSocket] Connecting to: wss://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/ws
+RealtimeContext.tsx:22 [RealtimeContext] Initializing Supabase Realtime subscriptions
+supabase-realtime.ts:23 [Supabase Realtime] Subscribing to units table changes
+agent-viewer.tsx:277 [action-1760484435440-n6ucdwm63] No active lead or units - preference matching disabled
+agent-viewer.tsx:324 [action-1760484435440-n6ucdwm63] Agent Viewer initialized - Agent: Loading Agent... (agent-001), Project: THE JACKSON
+agent-viewer.tsx:277 [action-1760484435440-n6ucdwm63] No active lead or units - preference matching disabled
+agent-viewer.tsx:324 [action-1760484435440-n6ucdwm63] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON
+supabase-realtime.ts:46 [Supabase Realtime] Subscription status: SUBSCRIBED
+use-websocket.ts:37 WebSocket connected
+agent-viewer.tsx:277 [action-1760484435440-n6ucdwm63] No active lead or units - preference matching disabled
+agent-viewer.tsx:324 [action-1760484435440-n6ucdwm63] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON
+agent-viewer.tsx:277 [action-1760484435440-n6ucdwm63] No active lead or units - preference matching disabled
+agent-viewer.tsx:324 [action-1760484435440-n6ucdwm63] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON
+agent-viewer.tsx:324 [action-1760484435440-n6ucdwm63] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON
+unit-sheet-drawer.tsx:165 [action-1760484435606-1xccrrr3s] Computing Next Best Action for Unit 201
+unit-sheet-drawer.tsx:87 [action-1760484435606-1xccrrr3s] Unit Sheet opened for Unit 201
+@radix-ui_react-dialog.js?v=cd66831d:339 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+agent-viewer.tsx:324 [action-1760484435440-n6ucdwm63] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON
+unit-sheet-drawer.tsx:165 [action-1760484435606-1xccrrr3s] Computing Next Best Action for Unit 201
+﻿
+
+Chrome DevTools (MCP) for your AI agent
+With the newly launched Chrome DevTools MCP server, AI coding assistants can now debug web pages directly in Chrome, and benefit from DevTools debugging capabilities and performance insights.
+
+Debug the network dependency tree with Gemini
+In Performance > Insights > Network dependency tree, click the corresponding AI button to discuss and debug said tree with Gemini in the 'AI assistance' panel.
+
+Export your chats with Gemini
+You can now export your current chat with Gemini or copy its response to clipboard with a click of a button.
+
+Filter IP protected network requests
+In the Network panel, you can now filter requests sent to IP Protection proxies.

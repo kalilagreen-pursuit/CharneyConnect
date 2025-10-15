@@ -1,0 +1,27 @@
+client:536 WebSocket connection to 'wss://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/?token=LX7YOIogtLfS' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=LX7YOIogtLfS' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+setupWebSocket @ client:536
+fallback @ client:509
+(anonymous) @ client:555
+chunk-276SZO74.js?v=cd66831d:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+agent-viewer.tsx:280 [action-1760484762435-eqe2m2pt7] No active lead or units - preference matching disabled
+agent-viewer.tsx:327 [action-1760484762435-eqe2m2pt7] Agent Viewer initialized - Agent: Loading Agent... (agent-001), Project: THE JACKSON
+use-websocket.ts:30 [WebSocket] Connecting to: wss://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/ws
+RealtimeContext.tsx:22 [RealtimeContext] Initializing Supabase Realtime subscriptions
+supabase-realtime.ts:23 [Supabase Realtime] Subscribing to units table changes
+agent-viewer.tsx:280 [action-1760484762435-eqe2m2pt7] No active lead or units - preference matching disabled
+agent-viewer.tsx:327 [action-1760484762435-eqe2m2pt7] Agent Viewer initialized - Agent: Loading Agent... (agent-001), Project: THE JACKSON
+agent-viewer.tsx:280 [action-1760484762435-eqe2m2pt7] No active lead or units - preference matching disabled
+agent-viewer.tsx:327 [action-1760484762435-eqe2m2pt7] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON
+use-websocket.ts:37 WebSocket connected
+agent-viewer.tsx:280 [action-1760484762435-eqe2m2pt7] No active lead or units - preference matching disabled
+agent-viewer.tsx:327 [action-1760484762435-eqe2m2pt7] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON
+supabase-realtime.ts:46 [Supabase Realtime] Subscription status: SUBSCRIBED
+agent-viewer.tsx:280 [action-1760484762435-eqe2m2pt7] No active lead or units - preference matching disabled
+agent-viewer.tsx:327 [action-1760484762435-eqe2m2pt7] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON
+agent-viewer.tsx:327 [action-1760484762435-eqe2m2pt7] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON

@@ -1,0 +1,177 @@
+Uncaught ReferenceError: Cannot access 'units' before initialization
+    at AgentViewer (agent-viewer.tsx:133:22)
+    at renderWithHooks (chunk-276SZO74.js?v=cd66831d:11548:26)
+    at mountIndeterminateComponent (chunk-276SZO74.js?v=cd66831d:14926:21)
+    at beginWork (chunk-276SZO74.js?v=cd66831d:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-276SZO74.js?v=cd66831d:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-276SZO74.js?v=cd66831d:3699:24)
+    at invokeGuardedCallback (chunk-276SZO74.js?v=cd66831d:3733:39)
+    at beginWork$1 (chunk-276SZO74.js?v=cd66831d:19765:15)
+    at performUnitOfWork (chunk-276SZO74.js?v=cd66831d:19198:20)
+    at workLoopSync (chunk-276SZO74.js?v=cd66831d:19137:13)
+AgentViewer @ agent-viewer.tsx:133
+renderWithHooks @ chunk-276SZO74.js?v=cd66831d:11548
+mountIndeterminateComponent @ chunk-276SZO74.js?v=cd66831d:14926
+beginWork @ chunk-276SZO74.js?v=cd66831d:15914
+callCallback2 @ chunk-276SZO74.js?v=cd66831d:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=cd66831d:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=cd66831d:3733
+beginWork$1 @ chunk-276SZO74.js?v=cd66831d:19765
+performUnitOfWork @ chunk-276SZO74.js?v=cd66831d:19198
+workLoopSync @ chunk-276SZO74.js?v=cd66831d:19137
+renderRootSync @ chunk-276SZO74.js?v=cd66831d:19116
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18874
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+setTimeout
+handleSelectProject @ project-select.tsx:31
+onClick @ project-select.tsx:78
+callCallback2 @ chunk-276SZO74.js?v=cd66831d:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=cd66831d:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=cd66831d:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=cd66831d:3736
+executeDispatch @ chunk-276SZO74.js?v=cd66831d:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=cd66831d:7034
+processDispatchQueue @ chunk-276SZO74.js?v=cd66831d:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=cd66831d:7051
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=cd66831d:18913
+batchedUpdates @ chunk-276SZO74.js?v=cd66831d:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=cd66831d:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=cd66831d:5478
+dispatchEvent @ chunk-276SZO74.js?v=cd66831d:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=cd66831d:5449
+agent-viewer.tsx:133 Uncaught ReferenceError: Cannot access 'units' before initialization
+    at AgentViewer (agent-viewer.tsx:133:22)
+    at renderWithHooks (chunk-276SZO74.js?v=cd66831d:11548:26)
+    at mountIndeterminateComponent (chunk-276SZO74.js?v=cd66831d:14926:21)
+    at beginWork (chunk-276SZO74.js?v=cd66831d:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-276SZO74.js?v=cd66831d:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-276SZO74.js?v=cd66831d:3699:24)
+    at invokeGuardedCallback (chunk-276SZO74.js?v=cd66831d:3733:39)
+    at beginWork$1 (chunk-276SZO74.js?v=cd66831d:19765:15)
+    at performUnitOfWork (chunk-276SZO74.js?v=cd66831d:19198:20)
+    at workLoopSync (chunk-276SZO74.js?v=cd66831d:19137:13)
+AgentViewer @ agent-viewer.tsx:133
+renderWithHooks @ chunk-276SZO74.js?v=cd66831d:11548
+mountIndeterminateComponent @ chunk-276SZO74.js?v=cd66831d:14926
+beginWork @ chunk-276SZO74.js?v=cd66831d:15914
+callCallback2 @ chunk-276SZO74.js?v=cd66831d:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=cd66831d:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=cd66831d:3733
+beginWork$1 @ chunk-276SZO74.js?v=cd66831d:19765
+performUnitOfWork @ chunk-276SZO74.js?v=cd66831d:19198
+workLoopSync @ chunk-276SZO74.js?v=cd66831d:19137
+renderRootSync @ chunk-276SZO74.js?v=cd66831d:19116
+recoverFromConcurrentError @ chunk-276SZO74.js?v=cd66831d:18736
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18879
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+setTimeout
+handleSelectProject @ project-select.tsx:31
+onClick @ project-select.tsx:78
+callCallback2 @ chunk-276SZO74.js?v=cd66831d:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=cd66831d:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=cd66831d:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=cd66831d:3736
+executeDispatch @ chunk-276SZO74.js?v=cd66831d:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=cd66831d:7034
+processDispatchQueue @ chunk-276SZO74.js?v=cd66831d:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=cd66831d:7051
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=cd66831d:18913
+batchedUpdates @ chunk-276SZO74.js?v=cd66831d:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=cd66831d:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=cd66831d:5478
+dispatchEvent @ chunk-276SZO74.js?v=cd66831d:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=cd66831d:5449
+project-select.tsx:31 The above error occurred in the <AgentViewer> component:
+
+    at AgentViewer (https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/src/pages/agent-viewer.tsx?t=1760482382564:75:35)
+    at Route (https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=cd66831d:323:16)
+    at Switch (https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=cd66831d:379:17)
+    at Router
+    at main
+    at div
+    at AppContent (https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/src/App.tsx?t=1760482382564&v=o0OEzrZG3Q7CdxWzdOOVq:115:3)
+    at RealtimeProvider (https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/src/contexts/RealtimeContext.tsx:21:36)
+    at Provider (https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-KNFGE554.js?v=cd66831d:43:15)
+    at TooltipProvider (https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=cd66831d:61:5)
+    at QueryClientProvider (https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=cd66831d:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-276SZO74.js?v=cd66831d:14032
+update.callback @ chunk-276SZO74.js?v=cd66831d:14052
+callCallback @ chunk-276SZO74.js?v=cd66831d:11248
+commitUpdateQueue @ chunk-276SZO74.js?v=cd66831d:11265
+commitLayoutEffectOnFiber @ chunk-276SZO74.js?v=cd66831d:17093
+commitLayoutMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:17980
+commitLayoutEffects_begin @ chunk-276SZO74.js?v=cd66831d:17969
+commitLayoutEffects @ chunk-276SZO74.js?v=cd66831d:17920
+commitRootImpl @ chunk-276SZO74.js?v=cd66831d:19353
+commitRoot @ chunk-276SZO74.js?v=cd66831d:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+setTimeout
+handleSelectProject @ project-select.tsx:31
+onClick @ project-select.tsx:78
+callCallback2 @ chunk-276SZO74.js?v=cd66831d:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=cd66831d:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=cd66831d:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=cd66831d:3736
+executeDispatch @ chunk-276SZO74.js?v=cd66831d:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=cd66831d:7034
+processDispatchQueue @ chunk-276SZO74.js?v=cd66831d:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=cd66831d:7051
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=cd66831d:18913
+batchedUpdates @ chunk-276SZO74.js?v=cd66831d:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=cd66831d:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=cd66831d:5478
+dispatchEvent @ chunk-276SZO74.js?v=cd66831d:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=cd66831d:5449
+chunk-276SZO74.js?v=cd66831d:9129 Uncaught ReferenceError: Cannot access 'units' before initialization
+    at AgentViewer (agent-viewer.tsx:133:22)
+    at renderWithHooks (chunk-276SZO74.js?v=cd66831d:11548:26)
+    at mountIndeterminateComponent (chunk-276SZO74.js?v=cd66831d:14926:21)
+    at beginWork (chunk-276SZO74.js?v=cd66831d:15914:22)
+    at beginWork$1 (chunk-276SZO74.js?v=cd66831d:19753:22)
+    at performUnitOfWork (chunk-276SZO74.js?v=cd66831d:19198:20)
+    at workLoopSync (chunk-276SZO74.js?v=cd66831d:19137:13)
+    at renderRootSync (chunk-276SZO74.js?v=cd66831d:19116:15)
+    at recoverFromConcurrentError (chunk-276SZO74.js?v=cd66831d:18736:28)
+    at performSyncWorkOnRoot (chunk-276SZO74.js?v=cd66831d:18879:28)
+AgentViewer @ agent-viewer.tsx:133
+renderWithHooks @ chunk-276SZO74.js?v=cd66831d:11548
+mountIndeterminateComponent @ chunk-276SZO74.js?v=cd66831d:14926
+beginWork @ chunk-276SZO74.js?v=cd66831d:15914
+beginWork$1 @ chunk-276SZO74.js?v=cd66831d:19753
+performUnitOfWork @ chunk-276SZO74.js?v=cd66831d:19198
+workLoopSync @ chunk-276SZO74.js?v=cd66831d:19137
+renderRootSync @ chunk-276SZO74.js?v=cd66831d:19116
+recoverFromConcurrentError @ chunk-276SZO74.js?v=cd66831d:18736
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18879
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+setTimeout
+handleSelectProject @ project-select.tsx:31
+onClick @ project-select.tsx:78
+callCallback2 @ chunk-276SZO74.js?v=cd66831d:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=cd66831d:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=cd66831d:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=cd66831d:3736
+executeDispatch @ chunk-276SZO74.js?v=cd66831d:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=cd66831d:7034
+processDispatchQueue @ chunk-276SZO74.js?v=cd66831d:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=cd66831d:7051
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=cd66831d:18913
+batchedUpdates @ chunk-276SZO74.js?v=cd66831d:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=cd66831d:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=cd66831d:5478
+dispatchEvent @ chunk-276SZO74.js?v=cd66831d:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=cd66831d:5449
+RealtimeContext.tsx:35 

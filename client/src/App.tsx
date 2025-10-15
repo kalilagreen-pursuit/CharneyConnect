@@ -46,7 +46,7 @@ function AppContent() {
   return (
     <div className="flex flex-col h-screen">
       <Header />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-y-auto">
         <Router />
       </main>
     </div>

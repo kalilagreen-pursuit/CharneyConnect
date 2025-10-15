@@ -44,7 +44,7 @@ interface FloorplanViewer3DProps {
   prospectContext?: ProspectContext; // Prospect context for linking unit
   activeVisitId?: string | null; // Active showing session ID
   viewedUnitIds?: Set<string>; // Set of viewed unit IDs in current session
-  vizMode?: 'LIVE' | 'GALLERY'; // Visualization mode: LIVE 3D or PRE-CONSTRUCTION GALLERY
+  vizMode?: "LIVE" | "GALLERY"; // Visualization mode: LIVE 3D or PRE-CONSTRUCTION GALLERY
 }
 
 const PROJECTS: Project[] = [
@@ -74,17 +74,20 @@ const STATUS_COLORS: Record<string, number> = {
 
 // Pre-construction gallery renderings by project
 const GALLERY_RENDERINGS: Record<string, string[]> = {
-  "2320eeb4-596b-437d-b4cb-830bdb3c3b01": [ // The Jackson
+  "2320eeb4-596b-437d-b4cb-830bdb3c3b01": [
+    // The Jackson
     "/jacksonph.png",
     "/jackson1br.png",
     "/jackson2br.png",
   ],
-  "f3ae960d-a0a9-4449-82fe-ffab7b01f3fa": [ // The Dime
+  "f3ae960d-a0a9-4449-82fe-ffab7b01f3fa": [
+    // The Dime
     "/dimeph.png",
     "/dime1br.png",
     "/dime2br.png",
   ],
-  "6f9a358c-0fc6-41bd-bd5e-6234b68295cb": [ // Gowanus
+  "6f9a358c-0fc6-41bd-bd5e-6234b68295cb": [
+    // Gowanus
     "/gowanusph.png",
     "/gowanus1br.png",
     "/gowanus2br.png",
@@ -102,7 +105,7 @@ export default function FloorplanViewer3D({
   prospectContext,
   activeVisitId = null,
   viewedUnitIds = new Set(),
-  vizMode = 'LIVE',
+  vizMode = "LIVE",
 }: FloorplanViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -191,9 +194,9 @@ export default function FloorplanViewer3D({
 
   const fetchAndUpdateUnitColors = async (projectId: string) => {
     try {
-      const url = new URL('/api/units', window.location.origin);
-      url.searchParams.set('projectId', projectId);
-      
+      const url = new URL("/api/units", window.location.origin);
+      url.searchParams.set("projectId", projectId);
+
       const response = await fetch(url.toString());
       if (!response.ok) {
         throw new Error(`Failed to fetch units: ${response.statusText}`);
@@ -218,10 +221,10 @@ export default function FloorplanViewer3D({
         if (mesh) {
           const isMatched = matchedUnitNumbers.includes(unit.unitNumber);
           const color = STATUS_COLORS[unit.status] || 0xbdc3c7;
-          
+
           if (isMatched) {
             // Matched units: bright with pulsing glow
-            mesh.material = new THREE.MeshStandardMaterial({ 
+            mesh.material = new THREE.MeshStandardMaterial({
               color,
               emissive: 0x00ff00, // Green glow for matched units
               emissiveIntensity: 0.4,
@@ -230,7 +233,7 @@ export default function FloorplanViewer3D({
             });
           } else if (hasMatchedUnits) {
             // Non-matched units when there are matches: faded
-            mesh.material = new THREE.MeshStandardMaterial({ 
+            mesh.material = new THREE.MeshStandardMaterial({
               color,
               transparent: true,
               opacity: 0.3,
@@ -272,9 +275,9 @@ export default function FloorplanViewer3D({
     setIsLoading(true);
 
     try {
-      const url = new URL('/api/units', window.location.origin);
-      url.searchParams.set('projectId', currentProject.id);
-      
+      const url = new URL("/api/units", window.location.origin);
+      url.searchParams.set("projectId", currentProject.id);
+
       const response = await fetch(url.toString());
       if (!response.ok) {
         throw new Error(`Failed to fetch units: ${response.statusText}`);
@@ -301,19 +304,20 @@ export default function FloorplanViewer3D({
             : undefined,
         });
         setShowPanel(true);
-        
+
         // Log the unit view if there's an active showing session
-        if (activeVisitId && unit.id && !viewedUnitIds?.has(unit.id)) {
-          console.log(`[3D Viewer] Logging unit view for showing session: ${activeVisitId}`);
-          logUnitViewMutation.mutate(unit.id, {
-            onSuccess: () => {
-              console.log(`[3D Viewer] Unit view logged successfully`);
-            },
-            onError: (error) => {
-              console.error(`[3D Viewer] Error logging unit view:`, error);
-            },
-          });
-        }
+        // if (activeVisitId && unit.id && !viewedUnitIds?.has(unit.id)) {
+        //   console.log(
+        //     `[3D Viewer] Logging unit view for showing session: ${activeVisitId}`,
+        //   );
+        //   // Temporarily disabled due to issues with database interactions.
+        //   // logUnitViewMutation.mutate(unit.id, {
+        //   //   onError: (error) => {
+        //   //     console.error("[3D Viewer] Error logging unit view:", error);
+        //   //     // Don't block rendering on logging failure
+        //   //   },
+        //   // });
+        // }
       }
     } catch (error) {
       console.error("Error fetching unit details:", error);
@@ -333,11 +337,14 @@ export default function FloorplanViewer3D({
       }
 
       // Update unit status to on_hold
-      const statusResponse = await fetch(`/api/units/${selectedUnit.id}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "on_hold" }),
-      });
+      const statusResponse = await fetch(
+        `/api/units/${selectedUnit.id}/status`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "on_hold" }),
+        },
+      );
 
       if (!statusResponse.ok) {
         throw new Error("Failed to update unit status");
@@ -374,7 +381,9 @@ export default function FloorplanViewer3D({
       });
 
       // Update the 3D view
-      const mesh = unitMeshMapRef.current.get(`Unit_${selectedUnit.unitNumber}`);
+      const mesh = unitMeshMapRef.current.get(
+        `Unit_${selectedUnit.unitNumber}`,
+      );
       if (mesh) {
         mesh.material = new THREE.MeshStandardMaterial({
           color: STATUS_COLORS["on_hold"] || 0xbdc3c7,
@@ -383,7 +392,7 @@ export default function FloorplanViewer3D({
 
       setSelectedUnit({ ...selectedUnit, status: "on_hold" });
       hideDetailsPanel();
-      
+
       console.log("[3D Viewer] Unit held for prospect successfully", {
         unitId: selectedUnit.id,
         prospectName: prospectContext.prospectName,
@@ -605,7 +614,13 @@ export default function FloorplanViewer3D({
   }, [isMounted, currentProject, loadProject, handleCanvasInteraction]);
 
   return (
-    <div className={embedded ? "relative w-full h-full bg-[#f6f1eb]" : "fixed inset-0 z-50 bg-[#f6f1eb]"}>
+    <div
+      className={
+        embedded
+          ? "relative w-full h-full bg-[#f6f1eb]"
+          : "fixed inset-0 z-50 bg-[#f6f1eb]"
+      }
+    >
       {webglError && (
         <div className="absolute inset-0 flex items-center justify-center z-[100]">
           <div className="bg-card p-8 rounded-lg shadow-lg max-w-md text-center">
@@ -628,7 +643,7 @@ export default function FloorplanViewer3D({
           </div>
         </div>
       )}
-      
+
       {!embedded && (
         <div className="absolute top-5 right-5 z-[100] flex gap-3">
           {PROJECTS.map((project) => (
@@ -678,8 +693,8 @@ export default function FloorplanViewer3D({
                 UNIT {selectedUnit.unitNumber}
               </h2>
               {activeVisitId && viewedUnitIds.has(selectedUnit.id) && (
-                <Badge 
-                  variant="outline" 
+                <Badge
+                  variant="outline"
                   className="bg-primary/10 text-primary border-primary text-xs"
                   data-testid={`badge-viewed-3d-${selectedUnit.unitNumber}`}
                 >
@@ -749,10 +764,12 @@ export default function FloorplanViewer3D({
             <>
               <div className="mt-4 p-3 bg-muted rounded-lg">
                 <p className="text-sm font-bold uppercase mb-1">Prospect</p>
-                <p className="text-sm text-muted-foreground">{prospectContext.prospectName}</p>
+                <p className="text-sm text-muted-foreground">
+                  {prospectContext.prospectName}
+                </p>
               </div>
-              
-              {selectedUnit.status === 'available' && (
+
+              {selectedUnit.status === "available" && (
                 <Button
                   data-testid="button-hold-for-prospect"
                   onClick={handleHoldUnitForProspect}
@@ -762,11 +779,16 @@ export default function FloorplanViewer3D({
                   HOLD UNIT FOR PROSPECT
                 </Button>
               )}
-              
-              {selectedUnit.status !== 'available' && (
+
+              {selectedUnit.status !== "available" && (
                 <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg text-center">
                   <p className="text-sm font-bold uppercase">
-                    Unit {selectedUnit.status === 'on_hold' ? 'On Hold' : selectedUnit.status === 'contract' ? 'In Contract' : 'Sold'}
+                    Unit{" "}
+                    {selectedUnit.status === "on_hold"
+                      ? "On Hold"
+                      : selectedUnit.status === "contract"
+                        ? "In Contract"
+                        : "Sold"}
                   </p>
                 </div>
               )}
@@ -781,7 +803,7 @@ export default function FloorplanViewer3D({
               >
                 SAVE CHANGES
               </Button>
-              
+
               <Button
                 data-testid="button-add-prospect"
                 onClick={() => setShowProspectForm(true)}
@@ -805,7 +827,7 @@ export default function FloorplanViewer3D({
         />
       </div>
 
-      {vizMode === 'LIVE' ? (
+      {vizMode === "LIVE" ? (
         <canvas
           ref={canvasRef}
           className="w-full h-full block"
@@ -814,7 +836,8 @@ export default function FloorplanViewer3D({
       ) : (
         // PRE-CONSTRUCTION GALLERY MODE
         <div className="w-full h-full flex items-center justify-center bg-[#1a1a1a] relative">
-          {GALLERY_RENDERINGS[currentProject.id] && GALLERY_RENDERINGS[currentProject.id].length > 0 ? (
+          {GALLERY_RENDERINGS[currentProject.id] &&
+          GALLERY_RENDERINGS[currentProject.id].length > 0 ? (
             <>
               <img
                 src={GALLERY_RENDERINGS[currentProject.id][currentGalleryIndex]}
@@ -822,29 +845,38 @@ export default function FloorplanViewer3D({
                 className="max-w-full max-h-full object-contain"
                 data-testid="gallery-rendering"
               />
-              
+
               {/* Gallery Navigation */}
               <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-black/60 backdrop-blur-sm px-6 py-3 rounded-full">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setCurrentGalleryIndex((prev) => 
-                    prev === 0 ? GALLERY_RENDERINGS[currentProject.id].length - 1 : prev - 1
-                  )}
+                  onClick={() =>
+                    setCurrentGalleryIndex((prev) =>
+                      prev === 0
+                        ? GALLERY_RENDERINGS[currentProject.id].length - 1
+                        : prev - 1,
+                    )
+                  }
                   data-testid="button-gallery-prev"
                   className="text-white hover:text-primary"
                 >
                   PREV
                 </Button>
                 <span className="text-white font-bold uppercase text-sm">
-                  {currentGalleryIndex + 1} / {GALLERY_RENDERINGS[currentProject.id].length}
+                  {currentGalleryIndex + 1} /{" "}
+                  {GALLERY_RENDERINGS[currentProject.id].length}
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setCurrentGalleryIndex((prev) => 
-                    prev === GALLERY_RENDERINGS[currentProject.id].length - 1 ? 0 : prev + 1
-                  )}
+                  onClick={() =>
+                    setCurrentGalleryIndex((prev) =>
+                      prev === GALLERY_RENDERINGS[currentProject.id].length - 1
+                        ? 0
+                        : prev + 1,
+                    )
+                  }
                   data-testid="button-gallery-next"
                   className="text-white hover:text-primary"
                 >
@@ -864,20 +896,24 @@ export default function FloorplanViewer3D({
             </>
           ) : (
             <div className="text-center text-white">
-              <p className="text-xl font-bold uppercase mb-2">No Renderings Available</p>
-              <p className="text-sm text-white/70">Switch to LIVE 3D view to explore units</p>
+              <p className="text-xl font-bold uppercase mb-2">
+                No Renderings Available
+              </p>
+              <p className="text-sm text-white/70">
+                Switch to LIVE 3D view to explore units
+              </p>
             </div>
           )}
         </div>
       )}
-      
+
       {selectedUnit && (
         <ProspectQuickAddForm
           isOpen={showProspectForm}
           onClose={() => setShowProspectForm(false)}
           unitId={selectedUnit.id}
           unitNumber={selectedUnit.unitNumber}
-          agentName={agentContextStore.getAgentName() || 'Agent'}
+          agentName={agentContextStore.getAgentName() || "Agent"}
         />
       )}
     </div>

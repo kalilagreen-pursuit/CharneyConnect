@@ -1,0 +1,32 @@
+chunk-276SZO74.js?v=cd66831d:9129 Uncaught ReferenceError: Cannot access 'units' before initialization
+    at AgentViewer (agent-viewer.tsx:133:22)
+    at renderWithHooks (chunk-276SZO74.js?v=cd66831d:11548:26)
+    at mountIndeterminateComponent (chunk-276SZO74.js?v=cd66831d:14926:21)
+    at beginWork (chunk-276SZO74.js?v=cd66831d:15914:22)
+    at beginWork$1 (chunk-276SZO74.js?v=cd66831d:19753:22)
+    at performUnitOfWork (chunk-276SZO74.js?v=cd66831d:19198:20)
+    at workLoopSync (chunk-276SZO74.js?v=cd66831d:19137:13)
+    at renderRootSync (chunk-276SZO74.js?v=cd66831d:19116:15)
+    at recoverFromConcurrentError (chunk-276SZO74.js?v=cd66831d:18736:28)
+    at performSyncWorkOnRoot (chunk-276SZO74.js?v=cd66831d:18879:28)
+AgentViewer @ agent-viewer.tsx:133
+renderWithHooks @ chunk-276SZO74.js?v=cd66831d:11548
+mountIndeterminateComponent @ chunk-276SZO74.js?v=cd66831d:14926
+beginWork @ chunk-276SZO74.js?v=cd66831d:15914
+beginWork$1 @ chunk-276SZO74.js?v=cd66831d:19753
+performUnitOfWork @ chunk-276SZO74.js?v=cd66831d:19198
+workLoopSync @ chunk-276SZO74.js?v=cd66831d:19137
+renderRootSync @ chunk-276SZO74.js?v=cd66831d:19116
+recoverFromConcurrentError @ chunk-276SZO74.js?v=cd66831d:18736
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18879
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+RealtimeContext.tsx:35 [RealtimeContext] Cleaning up Supabase Realtime subscriptions
+supabase-realtime.ts:103 [Supabase Realtime] Unsubscribing from units-realtime
+supabase-realtime.ts:46 [Supabase Realtime] Subscription status: CLOSED
+2use-websocket.ts:88 WebSocket disconnected
+use-websocket.ts:96 Reconnecting... (attempt 1)
+use-websocket.ts:30 [WebSocket] Connecting to: wss://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/ws
+use-websocket.ts:96 Reconnecting... (attempt 1)
+use-websocket.ts:30 [WebSocket] Connecting to: wss://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/ws
+2use-websocket.ts:37 WebSocket connected

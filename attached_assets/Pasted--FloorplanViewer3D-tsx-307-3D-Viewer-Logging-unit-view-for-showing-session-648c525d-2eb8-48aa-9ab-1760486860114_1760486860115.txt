@@ -1,0 +1,495 @@
+
+FloorplanViewer3D.tsx:307 [3D Viewer] Logging unit view for showing session: 648c525d-2eb8-48aa-9abd-9d9d3e680a19
+queryClient.ts:20  POST https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/api/showings/648c525d-2eb8-48aa-9abd-9d9d3e680a19/log-view 500 (Internal Server Error)
+apiRequest @ queryClient.ts:20
+logUnitView @ queryClient.ts:140
+mutationFn @ queryClient.ts:154
+fn @ @tanstack_react-query.js?v=cd66831d:1189
+run @ @tanstack_react-query.js?v=cd66831d:494
+start @ @tanstack_react-query.js?v=cd66831d:536
+execute @ @tanstack_react-query.js?v=cd66831d:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+fetchUnitDetails @ FloorplanViewer3D.tsx:308
+await in fetchUnitDetails
+fetchAndUpdateUnitColors @ FloorplanViewer3D.tsx:262
+await in fetchAndUpdateUnitColors
+(anonymous) @ FloorplanViewer3D.tsx:171
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:230
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1514
+Promise.then
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1510
+Promise.then
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1496
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:373
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:229
+(anonymous) @ chunk-5RXPUGEA.js?v=cd66831d:23535
+Promise.then
+load @ chunk-5RXPUGEA.js?v=cd66831d:23529
+load @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:227
+(anonymous) @ FloorplanViewer3D.tsx:152
+(anonymous) @ FloorplanViewer3D.tsx:590
+commitHookEffectListMount @ chunk-276SZO74.js?v=cd66831d:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=cd66831d:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=cd66831d:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=cd66831d:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=cd66831d:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=cd66831d:19447
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:19328
+workLoop @ chunk-276SZO74.js?v=cd66831d:197
+flushWork @ chunk-276SZO74.js?v=cd66831d:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=cd66831d:384
+FloorplanViewer3D.tsx:313 [3D Viewer] Error logging unit view: Error: 500: {"error":"Failed to log unit view"}
+    at throwIfResNotOk (queryClient.ts:11:11)
+    at async apiRequest (queryClient.ts:27:3)
+    at async logUnitView (queryClient.ts:140:20)
+onError @ FloorplanViewer3D.tsx:313
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:2654
+batch @ @tanstack_react-query.js?v=cd66831d:583
+notify_fn3 @ @tanstack_react-query.js?v=cd66831d:2645
+onMutationUpdate @ @tanstack_react-query.js?v=cd66831d:2612
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:1340
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:1339
+batch @ @tanstack_react-query.js?v=cd66831d:583
+dispatch_fn2 @ @tanstack_react-query.js?v=cd66831d:1338
+execute @ @tanstack_react-query.js?v=cd66831d:1277
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+fetchUnitDetails @ FloorplanViewer3D.tsx:308
+await in fetchUnitDetails
+fetchAndUpdateUnitColors @ FloorplanViewer3D.tsx:262
+await in fetchAndUpdateUnitColors
+(anonymous) @ FloorplanViewer3D.tsx:171
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:230
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1514
+Promise.then
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1510
+Promise.then
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1496
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:373
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:229
+(anonymous) @ chunk-5RXPUGEA.js?v=cd66831d:23535
+Promise.then
+load @ chunk-5RXPUGEA.js?v=cd66831d:23529
+load @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:227
+(anonymous) @ FloorplanViewer3D.tsx:152
+(anonymous) @ FloorplanViewer3D.tsx:590
+commitHookEffectListMount @ chunk-276SZO74.js?v=cd66831d:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=cd66831d:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=cd66831d:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=cd66831d:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=cd66831d:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=cd66831d:19447
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:19328
+workLoop @ chunk-276SZO74.js?v=cd66831d:197
+flushWork @ chunk-276SZO74.js?v=cd66831d:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=cd66831d:384
+FloorplanViewer3D.tsx:307 [3D Viewer] Logging unit view for showing session: 648c525d-2eb8-48aa-9abd-9d9d3e680a19
+queryClient.ts:20  POST https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/api/showings/648c525d-2eb8-48aa-9abd-9d9d3e680a19/log-view 500 (Internal Server Error)
+apiRequest @ queryClient.ts:20
+logUnitView @ queryClient.ts:140
+mutationFn @ queryClient.ts:154
+fn @ @tanstack_react-query.js?v=cd66831d:1189
+run @ @tanstack_react-query.js?v=cd66831d:494
+start @ @tanstack_react-query.js?v=cd66831d:536
+execute @ @tanstack_react-query.js?v=cd66831d:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+fetchUnitDetails @ FloorplanViewer3D.tsx:308
+await in fetchUnitDetails
+fetchAndUpdateUnitColors @ FloorplanViewer3D.tsx:262
+await in fetchAndUpdateUnitColors
+(anonymous) @ FloorplanViewer3D.tsx:171
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:230
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1514
+Promise.then
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1510
+Promise.then
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1496
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:373
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:229
+(anonymous) @ chunk-5RXPUGEA.js?v=cd66831d:23535
+Promise.then
+load @ chunk-5RXPUGEA.js?v=cd66831d:23529
+load @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:227
+(anonymous) @ FloorplanViewer3D.tsx:152
+(anonymous) @ FloorplanViewer3D.tsx:590
+commitHookEffectListMount @ chunk-276SZO74.js?v=cd66831d:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=cd66831d:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=cd66831d:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=cd66831d:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=cd66831d:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=cd66831d:19447
+commitRootImpl @ chunk-276SZO74.js?v=cd66831d:19416
+commitRoot @ chunk-276SZO74.js?v=cd66831d:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=cd66831d:555
+flush @ @tanstack_react-query.js?v=cd66831d:569
+batch @ @tanstack_react-query.js?v=cd66831d:587
+dispatch_fn @ @tanstack_react-query.js?v=cd66831d:996
+setData @ @tanstack_react-query.js?v=cd66831d:696
+onSuccess @ @tanstack_react-query.js?v=cd66831d:897
+resolve @ @tanstack_react-query.js?v=cd66831d:456
+Promise.then
+run @ @tanstack_react-query.js?v=cd66831d:498
+start @ @tanstack_react-query.js?v=cd66831d:536
+fetch @ @tanstack_react-query.js?v=cd66831d:926
+executeFetch_fn @ @tanstack_react-query.js?v=cd66831d:2211
+setOptions @ @tanstack_react-query.js?v=cd66831d:1955
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3032
+commitHookEffectListMount @ chunk-276SZO74.js?v=cd66831d:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=cd66831d:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=cd66831d:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=cd66831d:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=cd66831d:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=cd66831d:19447
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:19328
+workLoop @ chunk-276SZO74.js?v=cd66831d:197
+flushWork @ chunk-276SZO74.js?v=cd66831d:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=cd66831d:384
+FloorplanViewer3D.tsx:313 [3D Viewer] Error logging unit view: Error: 500: {"error":"Failed to log unit view"}
+    at throwIfResNotOk (queryClient.ts:11:11)
+    at async apiRequest (queryClient.ts:27:3)
+    at async logUnitView (queryClient.ts:140:20)
+onError @ FloorplanViewer3D.tsx:313
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:2654
+batch @ @tanstack_react-query.js?v=cd66831d:583
+notify_fn3 @ @tanstack_react-query.js?v=cd66831d:2645
+onMutationUpdate @ @tanstack_react-query.js?v=cd66831d:2612
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:1340
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:1339
+batch @ @tanstack_react-query.js?v=cd66831d:583
+dispatch_fn2 @ @tanstack_react-query.js?v=cd66831d:1338
+execute @ @tanstack_react-query.js?v=cd66831d:1277
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+fetchUnitDetails @ FloorplanViewer3D.tsx:308
+await in fetchUnitDetails
+fetchAndUpdateUnitColors @ FloorplanViewer3D.tsx:262
+await in fetchAndUpdateUnitColors
+(anonymous) @ FloorplanViewer3D.tsx:171
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:230
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1514
+Promise.then
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1510
+Promise.then
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1496
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:373
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:229
+(anonymous) @ chunk-5RXPUGEA.js?v=cd66831d:23535
+Promise.then
+load @ chunk-5RXPUGEA.js?v=cd66831d:23529
+load @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:227
+(anonymous) @ FloorplanViewer3D.tsx:152
+(anonymous) @ FloorplanViewer3D.tsx:590
+commitHookEffectListMount @ chunk-276SZO74.js?v=cd66831d:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=cd66831d:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=cd66831d:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=cd66831d:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=cd66831d:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=cd66831d:19447
+commitRootImpl @ chunk-276SZO74.js?v=cd66831d:19416
+commitRoot @ chunk-276SZO74.js?v=cd66831d:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=cd66831d:555
+flush @ @tanstack_react-query.js?v=cd66831d:569
+batch @ @tanstack_react-query.js?v=cd66831d:587
+dispatch_fn @ @tanstack_react-query.js?v=cd66831d:996
+setData @ @tanstack_react-query.js?v=cd66831d:696
+onSuccess @ @tanstack_react-query.js?v=cd66831d:897
+resolve @ @tanstack_react-query.js?v=cd66831d:456
+Promise.then
+run @ @tanstack_react-query.js?v=cd66831d:498
+start @ @tanstack_react-query.js?v=cd66831d:536
+fetch @ @tanstack_react-query.js?v=cd66831d:926
+executeFetch_fn @ @tanstack_react-query.js?v=cd66831d:2211
+setOptions @ @tanstack_react-query.js?v=cd66831d:1955
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3032
+commitHookEffectListMount @ chunk-276SZO74.js?v=cd66831d:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=cd66831d:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=cd66831d:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=cd66831d:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=cd66831d:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=cd66831d:19447
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:19328
+workLoop @ chunk-276SZO74.js?v=cd66831d:197
+flushWork @ chunk-276SZO74.js?v=cd66831d:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=cd66831d:384
+agent-viewer.tsx:429 [action-1760486832559-ymvu9z7bd] Unit selected: 1201
+agent-viewer.tsx:433 [action-1760486832559-ymvu9z7bd] Logging unit view for showing session: 648c525d-2eb8-48aa-9abd-9d9d3e680a19
+agent-viewer.tsx:360 [action-1760486832559-ymvu9z7bd] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON
+queryClient.ts:20  POST https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/api/showings/648c525d-2eb8-48aa-9abd-9d9d3e680a19/log-view 400 (Bad Request)
+apiRequest @ queryClient.ts:20
+logUnitView @ queryClient.ts:140
+mutationFn @ queryClient.ts:154
+fn @ @tanstack_react-query.js?v=cd66831d:1189
+run @ @tanstack_react-query.js?v=cd66831d:494
+start @ @tanstack_react-query.js?v=cd66831d:536
+execute @ @tanstack_react-query.js?v=cd66831d:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+handleUnitSelect @ agent-viewer.tsx:436
+(anonymous) @ FloorplanViewer3D.tsx:464
+FloorplanViewer3D.tsx:174 Loading The Jackson: 100.00%
+agent-viewer.tsx:441 [action-1760486832559-ymvu9z7bd] Error logging unit view: Error: 400: {"error":"Invalid input","details":{"formErrors":[],"fieldErrors":{"unitId":["Invalid uuid"]}}}
+    at throwIfResNotOk (queryClient.ts:11:11)
+    at async apiRequest (queryClient.ts:27:3)
+    at async logUnitView (queryClient.ts:140:20)
+onError @ agent-viewer.tsx:441
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:2654
+batch @ @tanstack_react-query.js?v=cd66831d:583
+notify_fn3 @ @tanstack_react-query.js?v=cd66831d:2645
+onMutationUpdate @ @tanstack_react-query.js?v=cd66831d:2612
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:1340
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:1339
+batch @ @tanstack_react-query.js?v=cd66831d:583
+dispatch_fn2 @ @tanstack_react-query.js?v=cd66831d:1338
+execute @ @tanstack_react-query.js?v=cd66831d:1277
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+handleUnitSelect @ agent-viewer.tsx:436
+(anonymous) @ FloorplanViewer3D.tsx:464
+agent-viewer.tsx:360 [action-1760486832559-ymvu9z7bd] Agent Viewer initialized - Agent: Sarah Chen (agent-001), Project: THE JACKSON
+FloorplanViewer3D.tsx:174 Loading The Jackson: 100.00%
+FloorplanViewer3D.tsx:307 [3D Viewer] Logging unit view for showing session: 648c525d-2eb8-48aa-9abd-9d9d3e680a19
+queryClient.ts:20  POST https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/api/showings/648c525d-2eb8-48aa-9abd-9d9d3e680a19/log-view 500 (Internal Server Error)
+apiRequest @ queryClient.ts:20
+logUnitView @ queryClient.ts:140
+mutationFn @ queryClient.ts:154
+fn @ @tanstack_react-query.js?v=cd66831d:1189
+run @ @tanstack_react-query.js?v=cd66831d:494
+start @ @tanstack_react-query.js?v=cd66831d:536
+execute @ @tanstack_react-query.js?v=cd66831d:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+fetchUnitDetails @ FloorplanViewer3D.tsx:308
+await in fetchUnitDetails
+fetchAndUpdateUnitColors @ FloorplanViewer3D.tsx:262
+await in fetchAndUpdateUnitColors
+(anonymous) @ FloorplanViewer3D.tsx:171
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:230
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1514
+Promise.then
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1510
+Promise.then
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1496
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:373
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:229
+(anonymous) @ chunk-5RXPUGEA.js?v=cd66831d:23535
+Promise.then
+load @ chunk-5RXPUGEA.js?v=cd66831d:23529
+load @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:227
+(anonymous) @ FloorplanViewer3D.tsx:152
+(anonymous) @ FloorplanViewer3D.tsx:590
+commitHookEffectListMount @ chunk-276SZO74.js?v=cd66831d:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=cd66831d:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=cd66831d:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=cd66831d:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=cd66831d:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=cd66831d:19447
+commitRootImpl @ chunk-276SZO74.js?v=cd66831d:19416
+commitRoot @ chunk-276SZO74.js?v=cd66831d:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=cd66831d:555
+flush @ @tanstack_react-query.js?v=cd66831d:569
+batch @ @tanstack_react-query.js?v=cd66831d:587
+dispatch_fn2 @ @tanstack_react-query.js?v=cd66831d:1338
+execute @ @tanstack_react-query.js?v=cd66831d:1209
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+handleUnitSelect @ agent-viewer.tsx:436
+(anonymous) @ FloorplanViewer3D.tsx:464
+FloorplanViewer3D.tsx:313 [3D Viewer] Error logging unit view: Error: 500: {"error":"Failed to log unit view"}
+    at throwIfResNotOk (queryClient.ts:11:11)
+    at async apiRequest (queryClient.ts:27:3)
+    at async logUnitView (queryClient.ts:140:20)
+onError @ FloorplanViewer3D.tsx:313
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:2654
+batch @ @tanstack_react-query.js?v=cd66831d:583
+notify_fn3 @ @tanstack_react-query.js?v=cd66831d:2645
+onMutationUpdate @ @tanstack_react-query.js?v=cd66831d:2612
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:1340
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:1339
+batch @ @tanstack_react-query.js?v=cd66831d:583
+dispatch_fn2 @ @tanstack_react-query.js?v=cd66831d:1338
+execute @ @tanstack_react-query.js?v=cd66831d:1277
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+fetchUnitDetails @ FloorplanViewer3D.tsx:308
+await in fetchUnitDetails
+fetchAndUpdateUnitColors @ FloorplanViewer3D.tsx:262
+await in fetchAndUpdateUnitColors
+(anonymous) @ FloorplanViewer3D.tsx:171
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:230
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1514
+Promise.then
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1510
+Promise.then
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1496
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:373
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:229
+(anonymous) @ chunk-5RXPUGEA.js?v=cd66831d:23535
+Promise.then
+load @ chunk-5RXPUGEA.js?v=cd66831d:23529
+load @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:227
+(anonymous) @ FloorplanViewer3D.tsx:152
+(anonymous) @ FloorplanViewer3D.tsx:590
+commitHookEffectListMount @ chunk-276SZO74.js?v=cd66831d:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=cd66831d:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=cd66831d:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=cd66831d:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=cd66831d:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=cd66831d:19447
+commitRootImpl @ chunk-276SZO74.js?v=cd66831d:19416
+commitRoot @ chunk-276SZO74.js?v=cd66831d:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=cd66831d:555
+flush @ @tanstack_react-query.js?v=cd66831d:569
+batch @ @tanstack_react-query.js?v=cd66831d:587
+dispatch_fn2 @ @tanstack_react-query.js?v=cd66831d:1338
+execute @ @tanstack_react-query.js?v=cd66831d:1209
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+handleUnitSelect @ agent-viewer.tsx:436
+(anonymous) @ FloorplanViewer3D.tsx:464
+FloorplanViewer3D.tsx:307 [3D Viewer] Logging unit view for showing session: 648c525d-2eb8-48aa-9abd-9d9d3e680a19
+queryClient.ts:20  POST https://844a3fe9-6f28-4f65-a520-d715987e1885-00-e1qrntaaoe98.janeway.replit.dev/api/showings/648c525d-2eb8-48aa-9abd-9d9d3e680a19/log-view 500 (Internal Server Error)
+apiRequest @ queryClient.ts:20
+logUnitView @ queryClient.ts:140
+mutationFn @ queryClient.ts:154
+fn @ @tanstack_react-query.js?v=cd66831d:1189
+run @ @tanstack_react-query.js?v=cd66831d:494
+start @ @tanstack_react-query.js?v=cd66831d:536
+execute @ @tanstack_react-query.js?v=cd66831d:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+fetchUnitDetails @ FloorplanViewer3D.tsx:308
+await in fetchUnitDetails
+fetchAndUpdateUnitColors @ FloorplanViewer3D.tsx:262
+await in fetchAndUpdateUnitColors
+(anonymous) @ FloorplanViewer3D.tsx:171
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:230
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1514
+Promise.then
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1510
+Promise.then
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1496
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:373
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:229
+(anonymous) @ chunk-5RXPUGEA.js?v=cd66831d:23535
+Promise.then
+load @ chunk-5RXPUGEA.js?v=cd66831d:23529
+load @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:227
+(anonymous) @ FloorplanViewer3D.tsx:152
+(anonymous) @ FloorplanViewer3D.tsx:590
+commitHookEffectListMount @ chunk-276SZO74.js?v=cd66831d:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=cd66831d:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=cd66831d:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=cd66831d:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=cd66831d:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=cd66831d:19447
+commitRootImpl @ chunk-276SZO74.js?v=cd66831d:19416
+commitRoot @ chunk-276SZO74.js?v=cd66831d:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=cd66831d:555
+flush @ @tanstack_react-query.js?v=cd66831d:569
+batch @ @tanstack_react-query.js?v=cd66831d:587
+dispatch_fn2 @ @tanstack_react-query.js?v=cd66831d:1338
+execute @ @tanstack_react-query.js?v=cd66831d:1277
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+handleUnitSelect @ agent-viewer.tsx:436
+(anonymous) @ FloorplanViewer3D.tsx:464
+FloorplanViewer3D.tsx:313 [3D Viewer] Error logging unit view: Error: 500: {"error":"Failed to log unit view"}
+    at throwIfResNotOk (queryClient.ts:11:11)
+    at async apiRequest (queryClient.ts:27:3)
+    at async logUnitView (queryClient.ts:140:20)
+onError @ FloorplanViewer3D.tsx:313
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:2654
+batch @ @tanstack_react-query.js?v=cd66831d:583
+notify_fn3 @ @tanstack_react-query.js?v=cd66831d:2645
+onMutationUpdate @ @tanstack_react-query.js?v=cd66831d:2612
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:1340
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:1339
+batch @ @tanstack_react-query.js?v=cd66831d:583
+dispatch_fn2 @ @tanstack_react-query.js?v=cd66831d:1338
+execute @ @tanstack_react-query.js?v=cd66831d:1277
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+fetchUnitDetails @ FloorplanViewer3D.tsx:308
+await in fetchUnitDetails
+fetchAndUpdateUnitColors @ FloorplanViewer3D.tsx:262
+await in fetchAndUpdateUnitColors
+(anonymous) @ FloorplanViewer3D.tsx:171
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:230
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1514
+Promise.then
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1510
+Promise.then
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:1496
+parse @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:373
+(anonymous) @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:229
+(anonymous) @ chunk-5RXPUGEA.js?v=cd66831d:23535
+Promise.then
+load @ chunk-5RXPUGEA.js?v=cd66831d:23529
+load @ three_examples_jsm_loaders_GLTFLoader__js.js?v=cd66831d:227
+(anonymous) @ FloorplanViewer3D.tsx:152
+(anonymous) @ FloorplanViewer3D.tsx:590
+commitHookEffectListMount @ chunk-276SZO74.js?v=cd66831d:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=cd66831d:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=cd66831d:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=cd66831d:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=cd66831d:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=cd66831d:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=cd66831d:19447
+commitRootImpl @ chunk-276SZO74.js?v=cd66831d:19416
+commitRoot @ chunk-276SZO74.js?v=cd66831d:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=cd66831d:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=cd66831d:9119
+(anonymous) @ chunk-276SZO74.js?v=cd66831d:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=cd66831d:555
+flush @ @tanstack_react-query.js?v=cd66831d:569
+batch @ @tanstack_react-query.js?v=cd66831d:587
+dispatch_fn2 @ @tanstack_react-query.js?v=cd66831d:1338
+execute @ @tanstack_react-query.js?v=cd66831d:1277
+await in execute
+mutate @ @tanstack_react-query.js?v=cd66831d:2630
+(anonymous) @ @tanstack_react-query.js?v=cd66831d:3295
+handleUnitSelect @ agent-viewer.tsx:436
+(anonymous) @ FloorplanViewer3D.tsx:464

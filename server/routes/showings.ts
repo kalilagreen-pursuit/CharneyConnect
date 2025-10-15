@@ -1,9 +1,11 @@
 // server/routes/showings.ts
 
 import { Router } from "express";
-import { storage } from "../storage";
 import { z } from "zod";
-
+import { storage } from "../storage";
+import { touredUnits } from "../../shared/schema"; // CORRECTED PATH
+import { eq } from "drizzle-orm";
+import { db } from "../db"; // ADD THIS IMPORT
 const router = Router();
 
 // Define the expected input shape for starting a showing
@@ -47,11 +49,10 @@ router.post("/start", async (req, res) => {
 });
 // --- END OF MISSING ENDPOINT ---
 
-// API Endpoint: POST /api/showings/:visitId/log-view
-router.post("/:visitId/log-view", async (req, res) => {
-  const { visitId } = req.params;
-  console.log(`Attempting to log a viewed unit for visit: ${visitId}`);
-
+// API Endpoint: POST /api/showings/:sessionId/log-view
+router.post("/:sessionId/log-view", async (req, res) => {
+  const { sessionId } = req.params;
+  console.log(`Attempting to log a toured unit for session: ${sessionId}`);
   // 1. Validate the input from the frontend
   const validation = logViewSchema.safeParse(req.body);
   if (!validation.success) {
@@ -60,45 +61,44 @@ router.post("/:visitId/log-view", async (req, res) => {
       .status(400)
       .json({ error: "Invalid input", details: validation.error.flatten() });
   }
-
   try {
-    // 2. Call the storage layer to create the viewed_units record
+    // 2. Call the storage layer to create the toured_units record
     const { unitId } = validation.data;
-    const newViewedUnit = await storage.logUnitView(visitId, unitId);
-
+    const newTouredUnit = await storage.logTouredUnit(sessionId, unitId);
     console.log(
-      `Successfully logged view for unit ${unitId} on visit ${visitId}`,
+      `Successfully logged toured unit ${unitId} for session ${sessionId}`,
     );
-
     // 3. Send the new record back to the frontend
-    res.status(201).json(newViewedUnit);
+    res.status(201).json(newTouredUnit);
   } catch (error) {
-    console.error(`Error logging unit view for visit ${visitId}:`, error);
-    res.status(500).json({ error: "Failed to log unit view" });
+    console.error(`Error logging toured unit for session ${sessionId}:`, error);
+    res.status(500).json({ error: "Failed to log toured unit" });
   }
 });
 
-// API Endpoint: GET /api/showings/:visitId/summary
-router.get("/:visitId/summary", async (req, res) => {
-  const { visitId } = req.params;
-  console.log(`Fetching summary for visit: ${visitId}`);
-
+// API Endpoint: GET /api/showings/:sessionId/summary
+router.get("/:sessionId/summary", async (req, res) => {
+  const { sessionId } = req.params;
+  console.log(`Fetching summary for session: ${sessionId}`);
   try {
-    const viewedUnitsSummary = await storage.getVisitSummary(visitId);
-
-    if (!viewedUnitsSummary) {
-      return res
-        .status(404)
-        .json({ error: "Visit not found or no units viewed." });
-    }
-
+    // Query toured_units instead of viewed_units
+    const touredUnitsSummary = await db
+      .select({
+        id: touredUnits.id,
+        unitId: touredUnits.unitId,
+        viewedAt: touredUnits.viewedAt,
+        agentNotes: touredUnits.agentNotes,
+        clientInterestLevel: touredUnits.clientInterestLevel,
+      })
+      .from(touredUnits)
+      .where(eq(touredUnits.sessionId, sessionId));
     console.log(
-      `Found ${viewedUnitsSummary.length} viewed units for visit ${visitId}`,
+      `Found ${touredUnitsSummary.length} toured units for session ${sessionId}`,
     );
-    res.status(200).json(viewedUnitsSummary);
+    res.status(200).json(touredUnitsSummary);
   } catch (error) {
-    console.error(`Error fetching summary for visit ${visitId}:`, error);
-    res.status(500).json({ error: "Failed to fetch visit summary" });
+    console.error(`Error fetching summary for session ${sessionId}:`, error);
+    res.status(500).json({ error: "Failed to fetch session summary" });
   }
 });
 

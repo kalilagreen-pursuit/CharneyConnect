@@ -1,26 +1,36 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, CheckSquare, Eye } from "lucide-react";
+import { UnitCheckboxList } from "@/components/UnitCheckboxList";
+import { TouredUnitChip } from "@/components/TouredUnitChip";
 import type { Lead, UnitWithDetails } from "@shared/schema";
 
 interface LeftSidebarProps {
   lead: Lead | null;
   availableUnits: UnitWithDetails[];
   touredUnits: any[];
-  onToggleUnit?: (unitId: string) => void;
-  onViewUnits?: () => void;
+  selectedUnitIds: string[];
+  onToggleUnit: (unitId: string, isChecked: boolean) => void;
+  onViewUnits: () => void;
 }
 
 export function LeftSidebar({
   lead,
   availableUnits,
   touredUnits,
+  selectedUnitIds,
   onToggleUnit,
   onViewUnits,
 }: LeftSidebarProps) {
+  // Filter selected units for the toured section
+  const selectedUnits = availableUnits.filter(unit => 
+    selectedUnitIds.includes(unit.id)
+  );
+  
+  const handleRemoveUnit = (unitId: string) => {
+    onToggleUnit(unitId, false);
+  };
   return (
     <aside className="w-80 h-full bg-card border-r border-border shadow-lg flex flex-col">
       {/* Client Info Card */}
@@ -77,36 +87,11 @@ export function LeftSidebar({
             </h3>
           </div>
         </div>
-        <ScrollArea className="flex-1">
-          <div className="p-4 space-y-2">
-            {availableUnits.length > 0 ? (
-              availableUnits.map((unit) => (
-                <div
-                  key={unit.id}
-                  className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <Checkbox
-                    id={`unit-${unit.id}`}
-                    onCheckedChange={() => onToggleUnit?.(unit.id)}
-                  />
-                  <label
-                    htmlFor={`unit-${unit.id}`}
-                    className="flex-1 cursor-pointer"
-                  >
-                    <p className="font-bold">Unit {unit.unitNumber}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {unit.bedrooms} bed • {unit.bathrooms} bath
-                    </p>
-                  </label>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No units available
-              </p>
-            )}
-          </div>
-        </ScrollArea>
+        <UnitCheckboxList
+          units={availableUnits}
+          selectedUnitIds={selectedUnitIds}
+          onUnitToggle={onToggleUnit}
+        />
       </div>
 
       {/* Toured Units Section */}
@@ -115,29 +100,23 @@ export function LeftSidebar({
           <div className="flex items-center gap-2">
             <Eye className="h-5 w-5 text-primary" />
             <h3 className="text-lg font-black uppercase tracking-tight">
-              Toured Units
+              Selected for Tour
             </h3>
           </div>
         </div>
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-2">
-            {touredUnits.length > 0 ? (
-              touredUnits.map((unit, index) => (
-                <div
-                  key={unit.id || index}
-                  className="p-3 bg-green-50 border-2 border-green-200 rounded-lg"
-                >
-                  <p className="font-bold text-green-900">
-                    Unit {unit.unitNumber || 'N/A'}
-                  </p>
-                  <p className="text-xs text-green-700">
-                    {new Date(unit.viewedAt).toLocaleTimeString()}
-                  </p>
-                </div>
+            {selectedUnits.length > 0 ? (
+              selectedUnits.map((unit) => (
+                <TouredUnitChip
+                  key={unit.id}
+                  unit={unit}
+                  onRemove={handleRemoveUnit}
+                />
               ))
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No units toured yet
+                No units selected yet
               </p>
             )}
           </div>
@@ -148,10 +127,11 @@ export function LeftSidebar({
       <div className="p-4">
         <Button
           onClick={onViewUnits}
+          disabled={selectedUnitIds.length === 0}
           className="w-full font-black uppercase"
           size="lg"
         >
-          View Units
+          View Units ({selectedUnitIds.length})
         </Button>
       </div>
     </aside>

@@ -4,6 +4,7 @@ import { useLocation, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useSessionStatus, useTouredUnits } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { NBASuggestions } from "@/components/NBASuggestions";
 import { LeftSidebar } from "@/components/LeftSidebar";
@@ -30,6 +31,8 @@ export default function ClientContextPage() {
 
   const [nbaSuggestions, setNbaSuggestions] = useState<string[]>([]);
   const [isLoadingNBA, setIsLoadingNBA] = useState(false);
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
+  const [viewingUnits, setViewingUnits] = useState(false);
 
   // Fetch session status
   const { data: sessionStatus, isLoading: isSessionLoading } = useSessionStatus(sessionId);
@@ -95,7 +98,23 @@ export default function ClientContextPage() {
     enabled: !!sessionStatus?.projectId,
   });
 
-  const handleViewUnits = () => {
+  const handleUnitToggle = (unitId: string, isChecked: boolean) => {
+    setSelectedUnitIds(prev => {
+      if (isChecked) {
+        return [...prev, unitId];
+      } else {
+        return prev.filter(id => id !== unitId);
+      }
+    });
+  };
+
+  const handleViewUnits = async () => {
+    if (selectedUnitIds.length === 0) return;
+    
+    setViewingUnits(true);
+    
+    // TODO: Create toured_units records via API
+    // For now, just navigate to the showing session
     setLocation(`/showing/session/${sessionId}`);
   };
 
@@ -140,6 +159,8 @@ export default function ClientContextPage() {
           lead={lead || null}
           availableUnits={availableUnits}
           touredUnits={touredUnits}
+          selectedUnitIds={selectedUnitIds}
+          onToggleUnit={handleUnitToggle}
           onViewUnits={handleViewUnits}
         />
         <RightPanel

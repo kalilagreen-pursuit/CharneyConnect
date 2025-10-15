@@ -85,6 +85,21 @@ export default function AgentDashboard() {
     setLocation("/showing/new");
   };
 
+  // New handler for starting a new session (leads to creation dialog)
+  const handleStartNewSession = () => {
+    agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
+    // For now, navigate to a placeholder or trigger a dialog.
+    // Assuming a dialog component will be implemented and shown here.
+    // As a temporary measure for testing, we can navigate to a generic creation route.
+    setLocation("/session/new"); // Placeholder for session creation flow
+  };
+
+  // New handler for resuming an active session
+  const handleResumeSession = (sessionId: string) => {
+    agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
+    setLocation(`/session/${sessionId}`);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header: Agent Profile */}
@@ -168,10 +183,7 @@ export default function AgentDashboard() {
                     <Card
                       key={client.id}
                       className="shadow-lg hover-elevate active-elevate-2 transition-all cursor-pointer"
-                      onClick={() => {
-                        agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
-                        setLocation('/showing/new');
-                      }}
+                      onClick={() => handleResumeSession(client.id)}
                       data-testid={`card-client-${client.id}`}
                     >
                       <CardHeader>
@@ -191,12 +203,11 @@ export default function AgentDashboard() {
                           className="w-full uppercase font-black gap-2"
                           onClick={(e) => {
                             e.stopPropagation();
-                            agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
-                            setLocation('/showing/new');
+                            handleResumeSession(client.id);
                           }}
                           data-testid={`button-start-session-${client.id}`}
                         >
-                          Start/Resume Session
+                          Resume Session
                           <ArrowRight className="h-4 w-4" />
                         </Button>
                       </CardContent>
@@ -210,7 +221,7 @@ export default function AgentDashboard() {
                   <CardContent className="py-12 text-center">
                     <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <p className="text-muted-foreground mb-4">No active clients found.</p>
-                    <Button onClick={handleGoToViewer} data-testid="button-start-new-session">
+                    <Button onClick={handleStartNewSession} data-testid="button-start-new-session">
                       Start New Session
                     </Button>
                   </CardContent>
@@ -228,10 +239,7 @@ export default function AgentDashboard() {
                 <CardContent className="space-y-3">
                   <Button
                     className="w-full uppercase font-black gap-2"
-                    onClick={() => {
-                      agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
-                      setLocation('/showing/new');
-                    }}
+                    onClick={handleStartNewSession}
                     data-testid="button-start-showing"
                   >
                     🎯 Start New Showing Session

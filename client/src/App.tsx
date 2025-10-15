@@ -27,9 +27,11 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/leads" component={Leads} />
       <Route path="/agent/select" component={AgentSelect} />
+      <Route path="/agent/:agentId" component={AgentDashboard} />
       <Route path="/agent/dashboard" component={AgentDashboard} />
       <Route path="/agent/viewer/:mode?" component={AgentViewer} />
       <Route path="/agent/project-select" component={ProjectSelect} />
+      <Route path="/session/:sessionId" component={ShowingSessionLayout} />
       <Route path="/showing/:mode?" component={ShowingSessionLayout} />
       <Route path="/manager" component={ManagerView} />
       <Route path="/unit/:projectId/:unitNumber/leads" component={UnitLeads} />

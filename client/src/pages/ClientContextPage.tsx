@@ -111,11 +111,9 @@ export default function ClientContextPage() {
   const handleViewUnits = async () => {
     if (selectedUnitIds.length === 0) return;
     
+    // TODO: Create toured_units records via API when endpoint is available
+    // For now, just set viewing state to show the cards
     setViewingUnits(true);
-    
-    // TODO: Create toured_units records via API
-    // For now, just navigate to the showing session
-    setLocation(`/showing/session/${sessionId}`);
   };
 
   const handleEndSession = () => {
@@ -165,6 +163,9 @@ export default function ClientContextPage() {
         />
         <RightPanel
           sessionId={sessionId}
+          viewingUnits={viewingUnits}
+          touredUnits={touredUnits}
+          availableUnits={availableUnits}
           onEndSession={handleEndSession}
           onSaveDraft={handleSaveDraft}
         />

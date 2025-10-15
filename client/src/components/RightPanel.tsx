@@ -2,9 +2,14 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Save, X } from "lucide-react";
+import { UnitCardsGrid } from "@/components/UnitCardsGrid";
+import type { TouredUnit, UnitWithDetails } from "@shared/schema";
 
 interface RightPanelProps {
   sessionId: string;
+  viewingUnits?: boolean;
+  touredUnits?: TouredUnit[];
+  availableUnits?: UnitWithDetails[];
   onEndSession?: () => void;
   onSaveDraft?: () => void;
   children?: React.ReactNode;
@@ -12,6 +17,9 @@ interface RightPanelProps {
 
 export function RightPanel({
   sessionId,
+  viewingUnits = false,
+  touredUnits = [],
+  availableUnits = [],
   onEndSession,
   onSaveDraft,
   children,
@@ -53,21 +61,25 @@ export function RightPanel({
       {/* Content Area */}
       <div className="flex-1 overflow-auto">
         {children || (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center space-y-4 p-8 max-w-md">
-              <div className="w-24 h-24 mx-auto bg-muted rounded-lg flex items-center justify-center">
-                <div className="text-4xl font-black text-muted-foreground">
-                  📋
+          viewingUnits ? (
+            <UnitCardsGrid touredUnits={touredUnits} availableUnits={availableUnits} />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center space-y-4 p-8 max-w-md">
+                <div className="w-24 h-24 mx-auto bg-muted rounded-lg flex items-center justify-center">
+                  <div className="text-4xl font-black text-muted-foreground">
+                    📋
+                  </div>
                 </div>
+                <h3 className="text-2xl font-black uppercase text-muted-foreground">
+                  Select Units to Begin
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose units from the left sidebar and click "View Units" to display them here
+                </p>
               </div>
-              <h3 className="text-2xl font-black uppercase text-muted-foreground">
-                Unit Cards Grid Will Appear Here
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Unit cards will be displayed in a responsive grid layout
-              </p>
             </div>
-          </div>
+          )
         )}
       </div>
     </div>

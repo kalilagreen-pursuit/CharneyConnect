@@ -70,7 +70,6 @@ export default function AgentDashboard() {
   });
 
   // Calculate dynamic stats from metrics
-  const activeSessions = metrics?.activeSessions ?? 0;
   const pendingFollowUps = metrics?.pendingFollowUps ?? 0;
   const projectCount = metrics?.projectCount ?? 0;
 

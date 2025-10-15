@@ -295,6 +295,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // B. Tour Tracking Endpoints
+  
+  // Update toured unit (notes, interest level)
+  app.patch("/api/toured-units/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateSchema = z.object({
+        agentNotes: z.string().optional(),
+        clientInterestLevel: z.enum(['low', 'medium', 'high', 'very_high']).optional(),
+      });
+
+      const validation = updateSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Invalid request data",
+          details: validation.error.message
+        });
+      }
+
+      const { agentNotes, clientInterestLevel } = validation.data;
+
+      // Verify toured unit exists
+      const [existing] = await db
+        .select()
+        .from(touredUnits)
+        .where(eq(touredUnits.id, id))
+        .limit(1);
+
+      if (!existing) {
+        return res.status(404).json({ error: "Toured unit not found" });
+      }
+
+      // Update the toured unit
+      const [updated] = await db
+        .update(touredUnits)
+        .set({
+          agentNotes: agentNotes !== undefined ? agentNotes : existing.agentNotes,
+          clientInterestLevel: clientInterestLevel !== undefined ? clientInterestLevel : existing.clientInterestLevel,
+        })
+        .where(eq(touredUnits.id, id))
+        .returning();
+
+      console.log(`Toured unit ${id} updated successfully`);
+
+      res.json({
+        message: "Toured unit updated successfully",
+        touredUnit: updated
+      });
+    } catch (error) {
+      console.error("Error updating toured unit:", error);
+      res.status(500).json({ error: "Failed to update toured unit" });
+    }
+  });
+
   app.post("/api/toured-units", async (req, res) => {
     try {
       const touredUnitSchema = z.object({

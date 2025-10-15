@@ -1,9 +1,12 @@
 
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Bed, Bath, Square, Eye, ExternalLink } from "lucide-react";
+import { debounce } from "@/lib/debounce";
+import { useToast } from "@/hooks/use-toast";
 import type { UnitWithDetails, TouredUnit } from "@shared/schema";
 
 interface TouredUnitCardProps {
@@ -13,6 +16,10 @@ interface TouredUnitCardProps {
 }
 
 export function TouredUnitCard({ unit, touredUnit, onCardClick }: TouredUnitCardProps) {
+  const { toast } = useToast();
+  const [notes, setNotes] = useState(touredUnit.agentNotes || "");
+  const [isSaving, setIsSaving] = useState(false);
+
   const formatPrice = (price: string | number): string => {
     const numPrice = typeof price === "string" ? parseFloat(price) : price;
     if (isNaN(numPrice)) return "N/A";
@@ -22,6 +29,50 @@ export function TouredUnitCard({ unit, touredUnit, onCardClick }: TouredUnitCard
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(numPrice);
+  };
+
+  // Auto-save function
+  const saveNotes = async (notesText: string) => {
+    try {
+      setIsSaving(true);
+      const response = await fetch(`/api/toured-units/${touredUnit.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          agentNotes: notesText,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save notes");
+      }
+
+      console.log("Notes auto-saved for toured unit:", touredUnit.id);
+    } catch (error) {
+      console.error("Error saving notes:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save notes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Create debounced save function (saves 1 second after user stops typing)
+  const debouncedSave = useRef(
+    debounce((notesText: string) => {
+      saveNotes(notesText);
+    }, 1000)
+  ).current;
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newNotes = e.target.value;
+    setNotes(newNotes);
+    debouncedSave(newNotes);
   };
 
   const getStatusColor = (status: string) => {
@@ -118,19 +169,23 @@ export function TouredUnitCard({ unit, touredUnit, onCardClick }: TouredUnitCard
           </div>
         </div>
 
-        {/* Agent Notes Placeholder */}
+        {/* Agent Notes with Auto-Save */}
         <div className="pt-4 border-t">
-          <label className="text-sm font-medium text-muted-foreground mb-2 block">
-            Agent Notes
+          <label className="text-sm font-medium text-muted-foreground mb-2 block flex items-center justify-between">
+            <span>Agent Notes</span>
+            {isSaving && (
+              <span className="text-xs text-blue-600">Saving...</span>
+            )}
           </label>
           <Textarea
+            value={notes}
+            onChange={handleNotesChange}
             placeholder="Add notes about this unit for the client..."
             className="min-h-[80px] resize-none"
             onClick={(e) => e.stopPropagation()}
-            disabled
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Notes feature coming in C4
+            Notes are auto-saved as you type
           </p>
         </div>
 

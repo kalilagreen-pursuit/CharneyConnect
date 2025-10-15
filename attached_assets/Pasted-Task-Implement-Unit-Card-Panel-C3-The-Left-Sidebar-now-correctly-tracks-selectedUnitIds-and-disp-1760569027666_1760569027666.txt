@@ -1,0 +1,57 @@
+Task: Implement Unit Card Panel (C3)
+
+The Left Sidebar now correctly tracks selectedUnitIds and displays confirmed units. The next task is to make the "View Units" button functional and render the Unit Cards in the Right Panel.
+
+Goal: Implement the logic to switch the Right Panel from a placeholder to a dynamic grid of detailed unit cards.
+
+Files to Create/Edit:
+
+client/src/pages/ClientContextPage.tsx (State management and data passing)
+
+client/src/components/RightPanel.tsx (Conditional rendering)
+
+NEW: client/src/components/UnitCardsGrid.tsx
+
+NEW: client/src/components/TouredUnitCard.tsx
+
+Implementation Steps:
+
+Update ClientContextPage.tsx:
+
+Introduce state: const [viewingUnits, setViewingUnits] = useState(false); (This flag determines the Right Panel's content).
+
+Ensure the handleViewUnits function (from C2) successfully sets setViewingUnits(true) after the API calls to create the toured_units records have completed.
+
+Pass the touredUnits data and the viewingUnits state to the <RightPanel />.
+
+Update RightPanel.tsx:
+
+Conditionally render the content based on the received viewingUnits prop:
+
+If viewingUnits is true, render the new <UnitCardsGrid /> component, passing it the touredUnits data.
+
+If viewingUnits is false, continue rendering the large placeholder div.
+
+Create UnitCardsGrid.tsx:
+
+This component receives the list of touredUnits as a prop.
+
+Implement a responsive Tailwind CSS grid layout (e.g., grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6).
+
+Map over the touredUnits and render a <TouredUnitCard /> for each one.
+
+Create TouredUnitCard.tsx:
+
+This is the detailed component for the cards in the grid.
+
+Design a visually appealing card structure (rounded corners, shadow, padding) displaying mock content:
+
+Unit Image/Placeholder (<div className="h-40 bg-gray-200 rounded-t-lg"> or a placeholder image URL).
+
+Unit Number and Price (prominently displayed).
+
+Specs (Beds/Baths).
+
+Add a placeholder section for the Agent Notes Textarea (to be implemented in C4).
+
+Add a placeholder onClick handler to the main card container, essential for opening the modal later (V2).

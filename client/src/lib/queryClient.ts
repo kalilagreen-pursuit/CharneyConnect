@@ -693,6 +693,76 @@ export const useMarkUnitToured = (sessionId: string | null) => {
   });
 };
 
+// Remove a toured unit from session
+const removeTouredUnit = async (sessionId: string, unitId: string): Promise<void> => {
+  const response = await apiRequest(
+    "DELETE",
+    `/api/showing-sessions/${sessionId}/toured-units/${unitId}`,
+    undefined
+  );
+  return response.json();
+};
+
+// Hook to remove a toured unit
+export const useRemoveTouredUnit = (sessionId: string | null) => {
+  const queryClientInstance = queryClient;
+
+  return useMutation({
+    mutationFn: (unitId: string) => {
+      if (!sessionId) throw new Error("No active session");
+      return removeTouredUnit(sessionId, unitId);
+    },
+    onSuccess: () => {
+      if (sessionId) {
+        queryClientInstance.invalidateQueries({
+          queryKey: ["/api/showing-sessions", sessionId],
+        });
+        queryClientInstance.invalidateQueries({
+          queryKey: ["touredUnits", sessionId],
+        });
+      }
+      console.log("Toured unit removed successfully");
+    },
+    onError: (error) => {
+      console.error("Failed to remove toured unit:", error);
+    },
+  });
+};
+
+// Update toured unit notes and interest level
+const updateTouredUnit = async (
+  touredUnitId: string,
+  data: { agentNotes?: string; clientInterestLevel?: string }
+): Promise<TouredUnitResponse> => {
+  const response = await apiRequest("PATCH", `/api/toured-units/${touredUnitId}`, data);
+  return response.json();
+};
+
+// Hook to update toured unit with debounced auto-save
+export const useUpdateTouredUnit = (sessionId: string | null) => {
+  const queryClientInstance = queryClient;
+
+  return useMutation({
+    mutationFn: ({ touredUnitId, data }: { 
+      touredUnitId: string; 
+      data: { agentNotes?: string; clientInterestLevel?: string } 
+    }) => {
+      return updateTouredUnit(touredUnitId, data);
+    },
+    onSuccess: () => {
+      if (sessionId) {
+        queryClientInstance.invalidateQueries({
+          queryKey: ["touredUnits", sessionId],
+        });
+      }
+      console.log("Toured unit updated successfully");
+    },
+    onError: (error) => {
+      console.error("Failed to update toured unit:", error);
+    },
+  });
+};
+
 // Hook to fetch the current list of toured units for sidebar/context
 export const useTouredUnits = (sessionId: string | null) => {
   return useQuery<TouredUnitResponse[]>({

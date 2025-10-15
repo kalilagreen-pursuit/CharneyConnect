@@ -1,24 +1,25 @@
-
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Bed, Bath, Square, Eye, ExternalLink } from "lucide-react";
-import { debounce } from "@/lib/debounce";
+import { useUpdateTouredUnit } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { debounce } from "@/lib/debounce";
 import type { UnitWithDetails, TouredUnit } from "@shared/schema";
 
 interface TouredUnitCardProps {
   unit: UnitWithDetails;
   touredUnit: TouredUnit;
+  sessionId: string;
   onCardClick?: (unitId: string) => void;
 }
 
-export function TouredUnitCard({ unit, touredUnit, onCardClick }: TouredUnitCardProps) {
-  const { toast } = useToast();
+export function TouredUnitCard({ unit, touredUnit, sessionId, onCardClick }: TouredUnitCardProps) {
   const [notes, setNotes] = useState(touredUnit.agentNotes || "");
-  const [isSaving, setIsSaving] = useState(false);
+  const updateMutation = useUpdateTouredUnit(sessionId);
+  const { toast } = useToast();
 
   const formatPrice = (price: string | number): string => {
     const numPrice = typeof price === "string" ? parseFloat(price) : price;
@@ -32,48 +33,39 @@ export function TouredUnitCard({ unit, touredUnit, onCardClick }: TouredUnitCard
   };
 
   // Auto-save function
-  const saveNotes = async (notesText: string) => {
-    try {
-      setIsSaving(true);
-      const response = await fetch(`/api/toured-units/${touredUnit.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          agentNotes: notesText,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save notes");
-      }
-
-      console.log("Notes auto-saved for toured unit:", touredUnit.id);
-    } catch (error) {
-      console.error("Error saving notes:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save notes. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Create debounced save function (saves 1 second after user stops typing)
-  const debouncedSave = useRef(
-    debounce((notesText: string) => {
-      saveNotes(notesText);
-    }, 1000)
-  ).current;
-
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newNotes = e.target.value;
     setNotes(newNotes);
     debouncedSave(newNotes);
   };
+
+  // Debounced save function
+  const debouncedSave = useRef(
+    debounce((notesText: string) => {
+      updateMutation.mutate({
+        touredUnitId: touredUnit.id,
+        data: { agentNotes: notesText },
+      });
+    }, 1000)
+  ).current;
+
+  useEffect(() => {
+    // If the mutation is successful, show a toast
+    if (updateMutation.isSuccess) {
+      toast({
+        title: "Success",
+        description: "Notes saved successfully.",
+      });
+    }
+    // If the mutation fails, show an error toast
+    if (updateMutation.isError) {
+      toast({
+        title: "Error",
+        description: "Failed to save notes. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [updateMutation.isSuccess, updateMutation.isError, toast]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -97,7 +89,7 @@ export function TouredUnitCard({ unit, touredUnit, onCardClick }: TouredUnitCard
   };
 
   return (
-    <Card 
+    <Card
       className="hover:shadow-xl transition-all duration-300 border-2 cursor-pointer overflow-hidden"
       onClick={handleCardClick}
     >
@@ -171,11 +163,8 @@ export function TouredUnitCard({ unit, touredUnit, onCardClick }: TouredUnitCard
 
         {/* Agent Notes with Auto-Save */}
         <div className="pt-4 border-t">
-          <label className="text-sm font-medium text-muted-foreground mb-2 block flex items-center justify-between">
-            <span>Agent Notes</span>
-            {isSaving && (
-              <span className="text-xs text-blue-600">Saving...</span>
-            )}
+          <label className="text-sm font-medium text-muted-foreground mb-2 block">
+            Agent Notes
           </label>
           <Textarea
             value={notes}
@@ -185,23 +174,23 @@ export function TouredUnitCard({ unit, touredUnit, onCardClick }: TouredUnitCard
             onClick={(e) => e.stopPropagation()}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Notes are auto-saved as you type
+            {updateMutation.isPending ? "Saving..." : "Auto-saved"}
           </p>
         </div>
 
         {/* Actions */}
         <div className="pt-4 border-t flex gap-2">
-          <Button 
-            variant="outline" 
-            className="flex-1" 
+          <Button
+            variant="outline"
+            className="flex-1"
             size="sm"
             onClick={(e) => e.stopPropagation()}
           >
             <Eye className="h-4 w-4 mr-2" />
             View Details
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={(e) => e.stopPropagation()}
           >

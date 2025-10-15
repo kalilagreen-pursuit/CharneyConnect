@@ -1,13 +1,13 @@
-
 import { TouredUnitCard } from "@/components/TouredUnitCard";
 import type { TouredUnit, UnitWithDetails } from "@shared/schema";
 
 interface UnitCardsGridProps {
   touredUnits: TouredUnit[];
   availableUnits: UnitWithDetails[];
+  sessionId: string;
 }
 
-export function UnitCardsGrid({ touredUnits, availableUnits }: UnitCardsGridProps) {
+export function UnitCardsGrid({ touredUnits, availableUnits, sessionId }: UnitCardsGridProps) {
   // Map toured units to their full unit details
   const unitsWithDetails = touredUnits.map(touredUnit => {
     const unitDetails = availableUnits.find(u => u.id === touredUnit.unitId);
@@ -51,6 +51,7 @@ export function UnitCardsGrid({ touredUnits, availableUnits }: UnitCardsGridProp
             key={touredUnit.id}
             unit={unitDetails!}
             touredUnit={touredUnit}
+            sessionId={sessionId}
           />
         ))}
       </div>

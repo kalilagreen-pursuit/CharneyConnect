@@ -509,6 +509,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DELETE toured unit from session
+  app.delete("/api/showing-sessions/:sessionId/toured-units/:unitId", async (req, res) => {
+    try {
+      const { sessionId, unitId } = req.params;
+
+      // Find the toured unit record
+      const [touredUnit] = await db
+        .select()
+        .from(touredUnits)
+        .where(
+          and(
+            eq(touredUnits.sessionId, sessionId),
+            eq(touredUnits.unitId, unitId)
+          )
+        )
+        .limit(1);
+
+      if (!touredUnit) {
+        return res.status(404).json({ error: "Toured unit not found" });
+      }
+
+      // Delete the toured unit
+      await db
+        .delete(touredUnits)
+        .where(eq(touredUnits.id, touredUnit.id));
+
+      console.log(`Toured unit ${unitId} removed from session ${sessionId}`);
+
+      // Broadcast WebSocket event
+      if (wss) {
+        const message = JSON.stringify({
+          type: 'toured_unit_removed',
+          data: {
+            sessionId,
+            unitId,
+            touredUnitId: touredUnit.id
+          }
+        });
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+          }
+        });
+      }
+
+      res.json({ message: "Toured unit removed successfully", id: touredUnit.id });
+    } catch (error) {
+      console.error("Error removing toured unit:", error);
+      res.status(500).json({ error: "Failed to remove toured unit" });
+    }
+  });
+
+  // PATCH toured unit (update notes and interest level)
+  app.patch("/api/toured-units/:id", async (req, res) => {
+    try {
+      const touredUnitId = req.params.id;
+
+      const updateSchema = z.object({
+        agentNotes: z.string().optional(),
+        clientInterestLevel: z.enum(['low', 'medium', 'high', 'very_high']).optional(),
+      });
+
+      const validation = updateSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Invalid request data",
+          details: validation.error.message
+        });
+      }
+
+      const { agentNotes, clientInterestLevel } = validation.data;
+
+      // Update the toured unit
+      const [updatedTouredUnit] = await db
+        .update(touredUnits)
+        .set({
+          agentNotes: agentNotes !== undefined ? agentNotes : sql`agent_notes`,
+          clientInterestLevel: clientInterestLevel !== undefined ? clientInterestLevel : sql`client_interest_level`,
+        })
+        .where(eq(touredUnits.id, touredUnitId))
+        .returning();
+
+      if (!updatedTouredUnit) {
+        return res.status(404).json({ error: "Toured unit not found" });
+      }
+
+      console.log(`Toured unit ${touredUnitId} updated - Notes: ${agentNotes ? 'updated' : 'unchanged'}, Interest: ${clientInterestLevel || 'unchanged'}`);
+
+      // Broadcast WebSocket event
+      if (wss) {
+        const message = JSON.stringify({
+          type: 'toured_unit_updated',
+          data: updatedTouredUnit
+        });
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+          }
+        });
+      }
+
+      res.json(updatedTouredUnit);
+    } catch (error) {
+      console.error("Error updating toured unit:", error);
+      res.status(500).json({ error: "Failed to update toured unit" });
+    }
+  });
+
   // C. Dashboard Endpoints
   app.get("/api/agents/:id/dashboard", async (req, res) => {
     try {

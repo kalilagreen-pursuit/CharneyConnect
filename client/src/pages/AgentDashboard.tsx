@@ -9,6 +9,7 @@ import { agentContextStore } from "@/lib/localStores";
 import { useDashboardMetrics, useActiveClients, queryClient } from "@/lib/queryClient";
 import type { Lead, UnitWithDetails } from "@shared/schema";
 import { useMemo } from "react";
+import { SessionCreationDialog } from "@/components/SessionCreationDialog";
 
 // Hardcoded agent context for Demo Day
 const AGENT_NAME = "SARAH CHEN";
@@ -317,23 +318,16 @@ export default function AgentDashboard() {
         </div>
       </div>
 
-      {/* Session Creation Dialog - Placeholder for now */}
-      {isSessionCreationOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4">Start New Session</h2>
-            <p className="text-muted-foreground mb-4">
-              Session creation dialog will be implemented here.
-            </p>
-            <Button 
-              onClick={() => setIsSessionCreationOpen(false)}
-              className="w-full"
-            >
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Session Creation Dialog */}
+      <SessionCreationDialog
+        isOpen={isSessionCreationOpen}
+        onClose={() => setIsSessionCreationOpen(false)}
+        agentId={AGENT_ID}
+        onSessionStart={(sessionId, leadId, projectId) => {
+          console.log(`[AgentDashboard] Session started: ${sessionId}, Lead: ${leadId}, Project: ${projectId}`);
+          setLocation(`/session/${sessionId}`);
+        }}
+      />
     </div>
   );
 }

@@ -1,14 +1,23 @@
 
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useSessionStatus, useTouredUnits } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { ArrowLeft, Save, Send } from "lucide-react";
 import { NBASuggestions } from "@/components/NBASuggestions";
 import { LeftSidebar } from "@/components/LeftSidebar";
 import { RightPanel } from "@/components/RightPanel";
+import { useToast } from "@/hooks/use-toast";
 import type { Lead, UnitWithDetails } from "@shared/schema";
 
 // Mock NBA suggestions function (replace with real API call when available)
@@ -33,6 +42,60 @@ export default function ClientContextPage() {
   const [isLoadingNBA, setIsLoadingNBA] = useState(false);
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
   const [viewingUnits, setViewingUnits] = useState(false);
+  const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
+  const { toast } = useToast();
+
+  // Mutation to save session as active (draft)
+  const saveAsActiveMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const response = await fetch(`/api/showing-sessions/${sessionId}/save-draft`, {
+        method: "PATCH",
+      });
+      if (!response.ok) throw new Error("Failed to save session as active");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Session Saved",
+        description: "This session has been saved and can be resumed later.",
+      });
+      setLocation("/agent-dashboard");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save session. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation to complete session and send synopsis
+  const completeSessionMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const response = await fetch(`/api/showing-sessions/${sessionId}/complete`, {
+        method: "POST",
+      });
+      if (!response.ok) throw new Error("Failed to complete session");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Session Completed",
+        description: data.portalUrl 
+          ? `Synopsis sent to client. Portal: ${data.portalUrl}`
+          : "Synopsis sent to client successfully.",
+      });
+      setLocation("/agent-dashboard");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to complete session. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Fetch session status
   const { data: sessionStatus, isLoading: isSessionLoading } = useSessionStatus(sessionId);
@@ -117,7 +180,19 @@ export default function ClientContextPage() {
   };
 
   const handleEndSession = () => {
-    setLocation("/agent-dashboard");
+    setShowEndSessionDialog(true);
+  };
+
+  const handleSaveAsActive = () => {
+    if (sessionId) {
+      saveAsActiveMutation.mutate(sessionId);
+    }
+  };
+
+  const handleCompleteSession = () => {
+    if (sessionId) {
+      completeSessionMutation.mutate(sessionId);
+    }
   };
 
   const handleSaveDraft = () => {
@@ -170,6 +245,76 @@ export default function ClientContextPage() {
           onSaveDraft={handleSaveDraft}
         />
       </div>
+
+      {/* End Session Dialog */}
+      <Dialog open={showEndSessionDialog} onOpenChange={setShowEndSessionDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight">
+              End Showing Session
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              How would you like to conclude this session?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-4">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Client:</span>
+                <span className="font-bold">
+                  {lead ? `${lead.firstName} ${lead.lastName}` : "Unknown"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-border/30 pt-2">
+                <span className="text-sm font-medium">Units Toured:</span>
+                <span className="font-bold">{touredUnits.length}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Button
+                onClick={handleSaveAsActive}
+                disabled={saveAsActiveMutation.isPending || completeSessionMutation.isPending}
+                className="w-full h-auto py-4 flex-col items-start gap-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <div className="flex items-center gap-2 font-black uppercase text-base">
+                  <Save className="h-5 w-5" />
+                  Save as Active Session
+                </div>
+                <span className="text-xs font-normal text-blue-100">
+                  Resume this session later without sending updates
+                </span>
+              </Button>
+
+              <Button
+                onClick={handleCompleteSession}
+                disabled={saveAsActiveMutation.isPending || completeSessionMutation.isPending}
+                className="w-full h-auto py-4 flex-col items-start gap-1 bg-green-600 hover:bg-green-700"
+              >
+                <div className="flex items-center gap-2 font-black uppercase text-base">
+                  <Send className="h-5 w-5" />
+                  Log Session & Send Synopsis
+                </div>
+                <span className="text-xs font-normal text-green-100">
+                  Complete session and send portal link to client
+                </span>
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowEndSessionDialog(false)}
+              disabled={saveAsActiveMutation.isPending || completeSessionMutation.isPending}
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

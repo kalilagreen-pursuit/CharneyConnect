@@ -19,6 +19,7 @@ import UnitLeads from "@/pages/unit-leads";
 import BuyerPortalStub from "@/pages/portal/BuyerPortalStub";
 import PortalView from "@/pages/PortalView";
 import NotFound from "@/pages/not-found";
+import ClientContextPage from "@/pages/ClientContextPage";
 
 function Router() {
   return (
@@ -32,7 +33,7 @@ function Router() {
       <Route path="/agent/viewer/:mode?" component={AgentViewer} />
       <Route path="/agent/project-select" component={ProjectSelect} />
       {/* Main session context page - uses ShowingSessionLayout temporarily */}
-      <Route path="/session/:sessionId" component={ShowingSessionLayout} />
+      <Route path="/session/:sessionId" component={ClientContextPage} />
       <Route path="/showing/:mode?" component={ShowingSessionLayout} />
       <Route path="/manager" component={ManagerView} />
       <Route path="/unit/:projectId/:unitNumber/leads" component={UnitLeads} />

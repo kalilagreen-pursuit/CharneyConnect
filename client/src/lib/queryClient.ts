@@ -511,6 +511,43 @@ export const useActiveClients = (agentId: string | null) => {
   });
 };
 
+// Type for active session response
+type ActiveSession = {
+  id: string;
+  clientId: string;
+  clientName: string;
+  projectId: string;
+  projectName: string;
+  unitsViewed: number;
+  lastActivity: string;
+  status: string;
+};
+
+// Fetch active sessions for an agent
+const fetchActiveSessions = async (
+  agentId: string,
+): Promise<ActiveSession[]> => {
+  const response = await apiRequest(
+    "GET",
+    `/api/agents/${agentId}/active-sessions`,
+    undefined,
+  );
+  return response.json();
+};
+
+// Hook to fetch active sessions
+export const useActiveSessions = (agentId: string | null) => {
+  return useQuery<ActiveSession[]>({
+    queryKey: ["/api/agents", agentId, "active-sessions"],
+    queryFn: () => {
+      if (!agentId) throw new Error("No agent ID provided");
+      return fetchActiveSessions(agentId);
+    },
+    enabled: !!agentId,
+    staleTime: 10000, // Cache for 10 seconds - more frequent refresh for active sessions
+  });
+};
+
 // Type for showing session response (used by both session and visit endpoints)
 export type ShowingSession = {
   id: string;

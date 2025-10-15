@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users, Calendar, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { agentContextStore } from "@/lib/localStores";
-import { useDashboardMetrics, useActiveClients, queryClient } from "@/lib/queryClient";
+import { useDashboardMetrics, useActiveClients, useActiveSessions, queryClient } from "@/lib/queryClient";
 import type { Lead, UnitWithDetails } from "@shared/schema";
 import { useMemo } from "react";
 import { SessionCreationDialog } from "@/components/SessionCreationDialog";
+import { ActiveSessionCard } from "@/components/ActiveSessionCard";
 
 // Hardcoded agent context for Demo Day
 const AGENT_NAME = "SARAH CHEN";
@@ -41,6 +42,9 @@ export default function AgentDashboard() {
 
   // Fetch active clients (qualified leads) for an agent
   const { data: activeClients = [], isLoading: isClientsLoading, isError: isClientsError } = useActiveClients(AGENT_ID);
+
+  // Fetch active sessions for the agent
+  const { data: activeSessions = [], isLoading: isSessionsLoading, isError: isSessionsError } = useActiveSessions(AGENT_ID);
 
   // Format active clients with computed fields
   const formattedClients = useMemo(() => {
@@ -154,75 +158,52 @@ export default function AgentDashboard() {
             </div>
           )}
 
-          {/* Main Content: Active Clients & Quick Actions */}
+          {/* Main Content: Active Sessions & Quick Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {/* Active Clients Grid */}
+            {/* Active Sessions Grid */}
             <div className="lg:col-span-2 space-y-4">
-              <h2 className="text-2xl font-black uppercase tracking-tight">Active Clients</h2>
+              <h2 className="text-2xl font-black uppercase tracking-tight">Active Sessions</h2>
 
-              {isClientsLoading && (
-                <p className="text-muted-foreground" data-testid="loading-clients">Loading clients...</p>
+              {isSessionsLoading && (
+                <p className="text-muted-foreground" data-testid="loading-sessions">Loading active sessions...</p>
               )}
 
-              {isClientsError && (
-                <Card className="shadow-lg p-8 text-center" data-testid="card-clients-error">
+              {isSessionsError && (
+                <Card className="shadow-lg p-8 text-center" data-testid="card-sessions-error">
                   <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
-                  <p className="text-destructive font-bold mb-2">Failed to Load Active Clients</p>
-                  <p className="text-sm text-muted-foreground mb-4">There was an error fetching your client list</p>
+                  <p className="text-destructive font-bold mb-2">Failed to Load Active Sessions</p>
+                  <p className="text-sm text-muted-foreground mb-4">There was an error fetching your active sessions</p>
                   <Button 
-                    onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", AGENT_ID, "active-clients"] })}
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", AGENT_ID, "active-sessions"] })}
                     className="min-h-[48px] touch-manipulation"
                   >
-                    Retry Loading Clients
+                    Retry Loading Sessions
                   </Button>
                 </Card>
               )}
 
-              {!isClientsLoading && !isClientsError && formattedClients.length > 0 && (
+              {!isSessionsLoading && !isSessionsError && activeSessions.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {formattedClients.map(client => (
-                    <Card
-                      key={client.id}
-                      className="shadow-lg hover-elevate active-elevate-2 transition-all cursor-pointer"
-                      onClick={() => handleResumeSession(client.id)}
-                      data-testid={`card-client-${client.id}`}
-                    >
-                      <CardHeader>
-                        <CardTitle className="text-lg font-black uppercase">{client.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Lead Score</span>
-                          <Badge variant="outline">{client.leadScore}</Badge>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Next Follow-up</span>
-                          <span className="font-medium">{client.nextFollowUpDate}</span>
-                        </div>
-                        <Button
-                          size="sm"
-                          className="w-full uppercase font-black gap-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleResumeSession(client.id);
-                          }}
-                          data-testid={`button-start-session-${client.id}`}
-                        >
-                          Resume Session
-                          <ArrowRight className="h-4 w-4" />
-                        </Button>
-                      </CardContent>
-                    </Card>
+                  {activeSessions.map(session => (
+                    <ActiveSessionCard
+                      key={session.id}
+                      sessionId={session.id}
+                      clientName={session.clientName}
+                      projectName={session.projectName}
+                      unitsViewed={session.unitsViewed}
+                      lastActivity={session.lastActivity}
+                      onResume={handleResumeSession}
+                    />
                   ))}
                 </div>
               )}
 
-              {!isClientsLoading && !isClientsError && formattedClients.length === 0 && (
-                <Card className="shadow-lg" data-testid="card-no-clients">
+              {!isSessionsLoading && !isSessionsError && activeSessions.length === 0 && (
+                <Card className="shadow-lg" data-testid="card-no-sessions">
                   <CardContent className="py-12 text-center">
                     <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground mb-4">No active clients found.</p>
+                    <p className="text-muted-foreground mb-4">No active sessions found.</p>
                     <Button onClick={handleStartNewSession} data-testid="button-start-new-session">
                       Start New Session
                     </Button>

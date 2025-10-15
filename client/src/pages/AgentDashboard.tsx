@@ -130,7 +130,7 @@ export default function AgentDashboard() {
               <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
               <p className="text-lg font-bold text-destructive mb-2">Failed to Load Metrics</p>
               <p className="text-sm text-muted-foreground mb-4">Unable to fetch dashboard data</p>
-              <Button 
+              <Button
                 onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", AGENT_ID, "dashboard"] })}
                 className="min-h-[48px] touch-manipulation"
               >
@@ -141,7 +141,7 @@ export default function AgentDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <MetricCard
                 title="Active Sessions"
-                value={isMetricsLoading ? '...' : activeSessions}
+                value={isMetricsLoading ? '...' : activeSessions.length}
                 color="text-primary"
               />
               <MetricCard
@@ -173,7 +173,7 @@ export default function AgentDashboard() {
                   <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
                   <p className="text-destructive font-bold mb-2">Failed to Load Active Sessions</p>
                   <p className="text-sm text-muted-foreground mb-4">There was an error fetching your active sessions</p>
-                  <Button 
+                  <Button
                     onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/agents", AGENT_ID, "active-sessions"] })}
                     className="min-h-[48px] touch-manipulation"
                   >

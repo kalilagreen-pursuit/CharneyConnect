@@ -49,13 +49,12 @@ export function TouredUnitCard({ unit, touredUnit, sessionId, onCardClick }: Tou
     }, 1000)
   ).current;
 
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
   useEffect(() => {
-    // If the mutation is successful, show a toast
+    // If the mutation is successful, update last saved time
     if (updateMutation.isSuccess) {
-      toast({
-        title: "Success",
-        description: "Notes saved successfully.",
-      });
+      setLastSaved(new Date());
     }
     // If the mutation fails, show an error toast
     if (updateMutation.isError) {
@@ -174,7 +173,13 @@ export function TouredUnitCard({ unit, touredUnit, sessionId, onCardClick }: Tou
             onClick={(e) => e.stopPropagation()}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            {updateMutation.isPending ? "Saving..." : "Auto-saved"}
+            {updateMutation.isPending ? (
+              <span className="text-yellow-600">⏳ Saving...</span>
+            ) : lastSaved ? (
+              <span className="text-green-600">✓ Saved at {lastSaved.toLocaleTimeString()}</span>
+            ) : (
+              <span>Auto-save enabled</span>
+            )}
           </p>
         </div>
 

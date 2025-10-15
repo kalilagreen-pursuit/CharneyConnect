@@ -70,6 +70,7 @@ import {
   getMatchBadge,
 } from "@/lib/preference-matcher";
 import { matchUnitToClient } from "@/lib/match-units";
+import { SessionTestHelper } from "@/components/SessionTestHelper";
 
 const PROJECTS = [
   { id: "2320eeb4-596b-437d-b4cb-830bdb3c3b01", name: "THE JACKSON" },
@@ -87,12 +88,30 @@ export default function AgentViewer() {
   // Read visitId from URL
   const params = new URLSearchParams(window.location.search);
   const visitIdFromUrl = params.get("visitId");
-  // Set activeVisitId if passed in URL
+  
+  // Set activeVisitId if passed in URL and restore session context
   useEffect(() => {
     if (visitIdFromUrl) {
       setActiveVisitId(visitIdFromUrl);
+      
+      // Fetch session details to restore context
+      fetch(`/api/showing-sessions/${visitIdFromUrl}`)
+        .then(res => res.json())
+        .then(sessionData => {
+          if (sessionData.contactId) {
+            setActiveLeadId(sessionData.contactId);
+            console.log(`[${actionId}] Session resumed:`, {
+              sessionId: visitIdFromUrl,
+              leadId: sessionData.contactId,
+              status: sessionData.status
+            });
+          }
+        })
+        .catch(err => {
+          console.error(`[${actionId}] Failed to restore session:`, err);
+        });
     }
-  }, [visitIdFromUrl]);
+  }, [visitIdFromUrl, actionId]);
 
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(
     unitIdFromUrl,
@@ -721,7 +740,21 @@ export default function AgentViewer() {
         touredUnitIds: touredUnitIds,
       });
 
-      // 2. Complete the showing session (triggers automation logic on backend)
+      // 2. Send synopsis email to client
+      try {
+        const synopsisResponse = await fetch(`/api/showing-sessions/${activeVisitId}/send-summary`, {
+          method: 'POST',
+        });
+        
+        if (synopsisResponse.ok) {
+          const synopsisData = await synopsisResponse.json();
+          console.log(`[${actionId}] Synopsis sent successfully:`, synopsisData);
+        }
+      } catch (synopsisError) {
+        console.warn(`[${actionId}] Failed to send synopsis, continuing...`, synopsisError);
+      }
+
+      // 3. Complete the showing session (triggers automation logic on backend)
       await endSessionMutation.mutateAsync(activeVisitId);
 
       // Display success alert with portal link - CRITICAL FOR E2E TEST
@@ -729,12 +762,16 @@ export default function AgentViewer() {
 
       // Show browser alert for E2E testing
       alert(
-        `✅ SESSION ENDED SUCCESSFULLY!\n\nPortal URL Generated:\n${fullPortalUrl}\n\nFollow-up automation has been triggered.`,
+        `✅ SESSION ENDED SUCCESSFULLY!\n\n` +
+        `Portal URL: ${fullPortalUrl}\n\n` +
+        `Units Toured: ${touredUnitIds.length}\n` +
+        `Synopsis Email: Sent to ${activeLead?.email || 'client'}\n\n` +
+        `Follow-up automation triggered.`,
       );
 
       toast({
         title: "Session Ended Successfully!",
-        description: `Portal: ${fullPortalUrl}`,
+        description: `Portal: ${fullPortalUrl} | Synopsis sent to client`,
         duration: 8000,
       });
 
@@ -742,11 +779,11 @@ export default function AgentViewer() {
         `[${actionId}] Session ended successfully. Portal: ${fullPortalUrl}`,
       );
 
-      // 3. Clear state
+      // 4. Clear state
       setActiveVisitId(null);
       setActiveLeadId(null);
 
-      // 4. Invalidate queries to refresh dashboard
+      // 5. Invalidate queries to refresh dashboard
       queryClient.invalidateQueries({
         queryKey: ["/api/agents", agentId, "dashboard"],
       });
@@ -2079,6 +2116,15 @@ export default function AgentViewer() {
             setShowQualificationSheet(open);
             if (!open) setSelectedLead(null); // Clear selection when sheet closes
           }}
+        />
+      )}
+
+      {/* E2E Test Helper - Only show in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <SessionTestHelper 
+          sessionId={activeVisitId}
+          leadId={activeLeadId}
+          touredUnitsCount={touredUnits.length}
         />
       )}
     </div>

@@ -276,6 +276,34 @@ export const useGeneratePortal = () => {
   });
 };
 
+// Type for session synopsis response
+type SessionSynopsisResponse = {
+  message: string;
+  synopsis: string;
+  recipientEmail: string;
+  recipientName: string;
+  unitsCount: number;
+  sessionId: string;
+};
+
+// Send session synopsis email
+const sendSessionSynopsis = async (sessionId: string): Promise<SessionSynopsisResponse> => {
+  const response = await apiRequest("POST", `/api/showing-sessions/${sessionId}/send-summary`, undefined);
+  return response.json();
+};
+
+export const useSendSynopsis = () => {
+  return useMutation({
+    mutationFn: (sessionId: string) => sendSessionSynopsis(sessionId),
+    onSuccess: (data) => {
+      console.log("Session synopsis sent successfully:", data.synopsis);
+    },
+    onError: (error) => {
+      console.error("Failed to send session synopsis:", error);
+    },
+  });
+};
+
 // Type for ending a showing session and triggering automation
 type EndShowingPayload = {
   visitId: string;

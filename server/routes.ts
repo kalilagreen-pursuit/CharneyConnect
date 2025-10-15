@@ -220,6 +220,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate and send session synopsis email
+  app.post("/api/showing-sessions/:sessionId/send-summary", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+
+      // Fetch session details
+      const [session] = await db
+        .select()
+        .from(showingSessions)
+        .where(eq(showingSessions.id, sessionId))
+        .limit(1);
+
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      // Fetch contact details (using contactId which stores leadId)
+      const [lead] = await db
+        .select()
+        .from(leads)
+        .where(eq(leads.id, session.contactId))
+        .limit(1);
+
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      // Fetch toured units with full details
+      const touredUnitsData = await db
+        .select({
+          touredUnit: touredUnits,
+          unit: units,
+          floorPlan: floorPlans,
+          project: projects,
+        })
+        .from(touredUnits)
+        .innerJoin(units, eq(touredUnits.unitId, units.id))
+        .leftJoin(floorPlans, eq(units.floorPlanId, floorPlans.id))
+        .leftJoin(projects, eq(units.projectId, projects.id))
+        .where(eq(touredUnits.sessionId, sessionId))
+        .orderBy(touredUnits.viewedAt);
+
+      if (touredUnitsData.length === 0) {
+        return res.status(400).json({ error: "No units toured in this session" });
+      }
+
+      // Format toured units for synopsis
+      const touredUnitsFormatted = touredUnitsData.map(row => ({
+        unitNumber: row.unit.unitNumber,
+        price: row.unit.price,
+        floor: row.unit.floor,
+        bedrooms: row.floorPlan?.bedrooms || 0,
+        bathrooms: parseFloat(row.floorPlan?.bathrooms?.toString() || "0"),
+        squareFeet: row.floorPlan?.sqFt || 0,
+        building: row.project?.name || "Unknown",
+        viewedAt: row.touredUnit.viewedAt,
+        agentNotes: row.touredUnit.agentNotes,
+        clientInterestLevel: row.touredUnit.clientInterestLevel,
+      }));
+
+      // Generate synopsis using AI (Gemini)
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+
+      const synopsisPrompt = `Generate a professional property showing session synopsis email for ${lead.name}.
+
+Session Details:
+- Date: ${new Date(session.startedAt).toLocaleDateString()}
+- Duration: ${session.duration || 'N/A'} minutes
+- Total Units Viewed: ${touredUnitsFormatted.length}
+
+Units Toured:
+${touredUnitsFormatted.map((u, i) => `
+${i + 1}. Unit ${u.unitNumber} - ${u.building}
+   - ${u.bedrooms}BR/${u.bathrooms}BA, ${u.squareFeet}sqft
+   - Price: $${parseFloat(u.price).toLocaleString()}
+   - Floor: ${u.floor}
+   ${u.agentNotes ? `- Agent Notes: ${u.agentNotes}` : ''}
+   ${u.clientInterestLevel ? `- Interest Level: ${u.clientInterestLevel}` : ''}
+`).join('\n')}
+
+Create a warm, professional email that:
+1. Thanks the client for their time
+2. Summarizes the units viewed with key details
+3. Highlights units with high interest level
+4. Includes next steps (portal link will be added separately)
+5. Encourages follow-up questions
+
+Keep it concise, friendly, and action-oriented.`;
+
+      const result = await model.generateContent(synopsisPrompt);
+      const synopsis = result.response.text();
+
+      // In a real implementation, you would send the email here using a service like:
+      // - SendGrid
+      // - AWS SES
+      // - Resend
+      // - Nodemailer with SMTP
+      
+      // For now, we'll log the synopsis and return it
+      console.log(`[Synopsis Generated] Session: ${sessionId}, Lead: ${lead.name}`);
+      console.log(synopsis);
+
+      // Store the synopsis in the session (we'll need to add this field to the schema later)
+      // For now, just return the synopsis
+      res.json({
+        message: "Synopsis generated successfully",
+        synopsis,
+        recipientEmail: lead.email,
+        recipientName: lead.name,
+        unitsCount: touredUnitsFormatted.length,
+        sessionId,
+      });
+    } catch (error) {
+      console.error("Error generating session synopsis:", error);
+      res.status(500).json({ error: "Failed to generate session synopsis" });
+    }
+  });
+
   // Get portal view by token
   app.get("/api/portal/:token", async (req, res) => {
     try {

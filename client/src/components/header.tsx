@@ -8,7 +8,6 @@ export function Header() {
 
   const navItems = [
     { path: "/", label: "Unit Map", icon: Building2, testId: "link-dashboard" },
-    { path: "/manager", label: "Manager", icon: LayoutDashboard, testId: "link-manager" },
     { path: "/leads", label: "Leads", icon: Users, testId: "link-leads" },
     { path: "/agent/select", label: "Agent", icon: UserCog, testId: "link-agent" },
   ];
@@ -49,13 +48,6 @@ export function Header() {
               );
             })}
           </nav>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1 rounded bg-muted">
-            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" data-testid="indicator-realtime" />
-            <span className="text-xs font-bold uppercase tracking-wide">Real-time</span>
-          </div>
         </div>
       </div>
     </header>

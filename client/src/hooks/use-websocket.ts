@@ -23,11 +23,11 @@ export function useWebSocket() {
   }, []);
 
   const connect = useCallback(() => {
-    // Determine WebSocket protocol based on current page protocol
+    // Determine the protocol: Use wss:// if the current location is https://, otherwise use ws://
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    // Get host (includes hostname and port, e.g., 'localhost:5000' or 'example.com')
+    // Get the hostname and port (e.g., 'localhost:5000' or 'example.com')
     const host = window.location.host;
-    // Construct WebSocket URL pointing to /ws endpoint
+    // Construct WebSocket URL - assumes WebSocket endpoint is '/ws'
     const wsUrl = `${protocol}://${host}/ws`;
 
     console.log('[WebSocket] Connecting to:', wsUrl);

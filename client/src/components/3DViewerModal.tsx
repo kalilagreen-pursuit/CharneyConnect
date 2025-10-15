@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +42,27 @@ export function ThreeDViewerModal({
   vizMode = "LIVE",
 }: ThreeDViewerModalProps) {
   const [activeTab, setActiveTab] = useState<"3d" | "floorplan">("3d");
+
+  // Reset to 3D tab when unit changes
+  useEffect(() => {
+    if (unitNumber) {
+      setActiveTab("3d");
+    }
+  }, [unitNumber]);
+
+  // Reset to 3D tab when project changes
+  useEffect(() => {
+    if (projectId) {
+      setActiveTab("3d");
+    }
+  }, [projectId]);
+
+  // Close modal and reset when isOpen becomes false
+  useEffect(() => {
+    if (!isOpen) {
+      setActiveTab("3d");
+    }
+  }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

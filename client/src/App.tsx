@@ -31,6 +31,7 @@ function Router() {
       <Route path="/agent/dashboard" component={AgentDashboard} />
       <Route path="/agent/viewer/:mode?" component={AgentViewer} />
       <Route path="/agent/project-select" component={ProjectSelect} />
+      {/* Main session context page - uses ShowingSessionLayout temporarily */}
       <Route path="/session/:sessionId" component={ShowingSessionLayout} />
       <Route path="/showing/:mode?" component={ShowingSessionLayout} />
       <Route path="/manager" component={ManagerView} />

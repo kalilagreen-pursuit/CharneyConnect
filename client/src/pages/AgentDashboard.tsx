@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,9 @@ const MetricCard = ({ title, value, color }: { title: string; value: string | nu
 
 export default function AgentDashboard() {
   const [, setLocation] = useLocation();
+
+  // Session creation dialog state
+  const [isSessionCreationOpen, setIsSessionCreationOpen] = useState(false);
 
   // Fetch dashboard metrics
   const { data: metrics, isLoading: isMetricsLoading, isError: isMetricsError } = useDashboardMetrics(AGENT_ID);
@@ -85,16 +89,13 @@ export default function AgentDashboard() {
     setLocation("/showing/new");
   };
 
-  // New handler for starting a new session (leads to creation dialog)
+  // Handler for starting a new session - opens dialog
   const handleStartNewSession = () => {
     agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
-    // For now, navigate to a placeholder or trigger a dialog.
-    // Assuming a dialog component will be implemented and shown here.
-    // As a temporary measure for testing, we can navigate to a generic creation route.
-    setLocation("/session/new"); // Placeholder for session creation flow
+    setIsSessionCreationOpen(true);
   };
 
-  // New handler for resuming an active session
+  // Handler for resuming an active session - navigates to session context page
   const handleResumeSession = (sessionId: string) => {
     agentContextStore.setAgent(AGENT_ID, AGENT_NAME);
     setLocation(`/session/${sessionId}`);
@@ -315,6 +316,24 @@ export default function AgentDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Session Creation Dialog - Placeholder for now */}
+      {isSessionCreationOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h2 className="text-2xl font-bold mb-4">Start New Session</h2>
+            <p className="text-muted-foreground mb-4">
+              Session creation dialog will be implemented here.
+            </p>
+            <Button 
+              onClick={() => setIsSessionCreationOpen(false)}
+              className="w-full"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
